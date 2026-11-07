@@ -4,6 +4,11 @@ User-visible changes are recorded here. Development snapshots are not releases.
 
 ## Unreleased
 
+### Fixed
+
+- Prevent Android's transitive JNI plugin from adding an unused JVM dependency
+  to Linux builds on hosts with a JDK, including GitHub Actions runners.
+
 ### Added
 
 - Debian packaging with native dependency detection, desktop integration,

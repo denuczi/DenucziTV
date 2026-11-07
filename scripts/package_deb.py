@@ -101,6 +101,11 @@ def main():
         raise ValueError("The bundle executable is not executable.")
     check_links(bundle)
     source_elfs = elf_files(bundle)
+    if any(path.name == "libdartjni.so" for path in source_elfs):
+        raise ValueError("Unexpected libdartjni.so in the Linux desktop bundle. "
+                         "Java is not used by DenucziTV on Linux. Update the native "
+                         "runner, then run flutter clean, flutter pub get, and "
+                         "flutter build linux --release before packaging.")
     for path in source_elfs:
         header = run(["readelf", "--file-header", path])
         if not re.search(r"Machine:\s*" + re.escape(machine) + r"\s*$", header, re.M):

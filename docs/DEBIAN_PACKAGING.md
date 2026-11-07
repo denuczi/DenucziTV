@@ -102,6 +102,32 @@ original-bundle comparison expects the matching standard repository build path.
 
 ## Distribution compatibility
 
+### Java on build hosts
+
+Android implementations of `path_provider` and `shared_preferences` introduce
+`jni` transitively. Its Linux CMake build optionally discovers a JDK and can
+bundle `libdartjni.so`, which links to `libjvm.so`. DenucziTV does not use JNI on
+Linux. `linux/cmake/desktop_dependencies.cmake` disables that optional discovery
+before the generated plugin rules run, including when `JNI_FOUND` was cached.
+This uses CMake's documented
+[optional-package switch](https://cmake.org/cmake/help/latest/variable/CMAKE_DISABLE_FIND_PACKAGE_PackageName.html).
+Regression tests configure the actual JNI plugin with simulated JDK discovery.
+
+The packaging script rejects a stale bundle containing `libdartjni.so`; it does
+not delete the library or ignore its missing dependency. After updating an older
+build that included JNI, run:
+
+```bash
+flutter clean
+flutter pub get
+flutter build linux --release
+bash scripts/package-deb.sh
+```
+
+No Java runtime is needed by the Linux application.
+
+### Native ABI requirements
+
 The generated dependency list comes from the actual build and the distribution's
 package metadata, rather than a handwritten list. This follows
 [Debian's shared-library dependency rules](https://www.debian.org/doc/debian-policy/ch-sharedlibs.html)

@@ -61,6 +61,13 @@ class DebianPackageTest(unittest.TestCase):
         self.assertIn("libsecret-1-0", fields)
         self.assertNotIn("libflutter", fields)
 
+    def test_package_has_no_unused_java_runtime(self):
+        app = self.extracted / "usr/lib/denuczitv"
+        self.assertEqual(list(app.rglob("libdartjni.so")), [])
+        self.assertEqual(list(app.rglob("libjvm.so")), [])
+        fields = (self.control / "control").read_text()
+        self.assertNotRegex(fields, r"(?i)openjdk|java-runtime|libjvm")
+
     def test_desktop_launcher_and_icons(self):
         launcher = self.extracted / "usr/bin/denuczitv"
         self.assertTrue(os.access(launcher, os.X_OK))
@@ -120,6 +127,25 @@ class DebianPackageTest(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("Missing native dependencies", result.stderr)
             self.assertEqual(list(destination.glob("*.deb")), [])
+
+    def test_rejects_stale_jni_bundle_without_modifying_it(self):
+        app = self.extracted / "usr/lib/denuczitv"
+        with tempfile.TemporaryDirectory(prefix="denuczitv-stale-jni-test-") as temporary:
+            bundle = Path(temporary) / "bundle"
+            shutil.copytree(app, bundle)
+            stale = bundle / "lib/libdartjni.so"
+            shutil.copyfile(bundle / "lib/libsqlite3.so", stale)
+            before = stale.read_bytes()
+            destination = Path(temporary) / "output"
+            result = subprocess.run(
+                ["python3", ROOT / "scripts/package_deb.py", "--bundle", bundle,
+                 "--output-dir", destination], text=True, capture_output=True
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Unexpected libdartjni.so", result.stderr)
+            self.assertIn("flutter clean", result.stderr)
+            self.assertEqual(stale.read_bytes(), before)
+            self.assertFalse(destination.exists())
 
 
 if __name__ == "__main__":
