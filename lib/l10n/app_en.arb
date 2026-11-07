@@ -1,0 +1,790 @@
+{
+  "@@locale": "en",
+  "appName": "DenucziTV",
+  "library": "LIBRARY",
+  "liveTv": "Live TV",
+  "movies": "Movies",
+  "series": "Series",
+  "myLibrary": "My Library",
+  "downloads": "Downloads",
+  "settings": "Settings",
+  "accounts": "Accounts",
+  "manageAccounts": "Manage accounts",
+  "noAccountSelected": "No account selected",
+  "manageProviders": "Manage providers",
+  "connectedManage": "Connected · Manage",
+  "versionLabel": "Version {version}",
+  "@versionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadComplete": "Download complete",
+  "downloadFailed": "Download failed",
+  "searchLiveTv": "Search live TV...",
+  "searchMovies": "Search movies...",
+  "searchSeries": "Search series...",
+  "clearCatalogSearch": "Clear catalog search",
+  "loading": "Loading…",
+  "channelCount": "{count, plural, =0{0 channels} one{1 channel} other{{count} channels}}",
+  "@channelCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "movieCount": "{count, plural, =0{0 movies} one{1 movie} other{{count} movies}}",
+  "@movieCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "seriesCount": "{count, plural, =0{0 series} one{1 series} other{{count} series}}",
+  "@seriesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "filteredCount": "{visible} of {total}",
+  "@filteredCount": {
+    "placeholders": {
+      "visible": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "reloadCatalog": "Reload catalog",
+  "exportM3u": "Export M3U",
+  "exportPlaylist": "Export playlist?",
+  "exportWarning": "M3U files contain playable links with your provider username and password. Anyone with the file may be able to use your account. Keep the file private.",
+  "cancel": "Cancel",
+  "export": "Export",
+  "reconnect": "Reconnect",
+  "addProvider": "Add a provider",
+  "connectSavedAccount": "Connect a saved account",
+  "yourMediaOnePlace": "Your media, one place.",
+  "chooseProvider": "Select your provider in Accounts to reconnect.",
+  "connectProviderHelp": "Connect your streaming provider to browse live channels, movies, and series.",
+  "dismiss": "Dismiss",
+  "retry": "Retry",
+  "unableLoadCatalog": "Unable to load the catalog",
+  "tryAgain": "Try again",
+  "noTitlesAvailable": "No titles available",
+  "noMatchingTitles": "No matching titles",
+  "emptyCatalogHelp": "The provider returned an empty catalog. Try refreshing.",
+  "noMatchesHelp": "Try another category or search term.",
+  "loadMoreTitles": "Load more titles",
+  "backToTop": "Back to top",
+  "showingTitles": "Showing {shown} of {total} titles",
+  "@showingTitles": {
+    "placeholders": {
+      "shown": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "continueWatching": "Continue watching",
+  "favorites": "Favorites",
+  "watchHistory": "Watch history",
+  "libraryForAccount": "Favorites and playback activity for {account}",
+  "@libraryForAccount": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "clearHistory": "Clear history",
+  "clearWatchHistoryQuestion": "Clear watch history?",
+  "clearWatchHistoryDetails": "This removes viewing history and saved playback positions for the active account. Favorites and downloaded videos are not affected.",
+  "nothingToResume": "Nothing to resume yet",
+  "noFavorites": "No favorites yet",
+  "emptyViewingHistory": "Your viewing history is empty",
+  "libraryEmptyHelp": "Start watching or save a movie or series to see it here.",
+  "connectToUseLibrary": "Connect to a provider to see your personal library.",
+  "libraryUnavailable": "Personal library storage is unavailable.",
+  "libraryUpdateFailed": "Unable to update My Library. Try again.",
+  "episodeUnavailable": "This episode is no longer available from the provider.",
+  "contentOpenFailed": "Could not open this content. Check your connection.",
+  "watched": "Watched",
+  "inProgress": "In progress",
+  "saved": "Saved",
+  "watchedAndRemaining": "{watched} watched · {remaining} remaining",
+  "@watchedAndRemaining": {
+    "placeholders": {
+      "watched": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lastWatched": "Last watched {date}",
+  "@lastWatched": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "openOrResume": "Open or resume",
+  "markAsWatched": "Mark as watched",
+  "markAsUnwatched": "Mark as unwatched",
+  "removeContinueWatching": "Remove from Continue Watching",
+  "removeFavorite": "Remove favorite",
+  "removeHistoryEntry": "Remove history entry",
+  "settingsSubtitle": "Adjust appearance, media actions and network behavior.",
+  "appearance": "Appearance",
+  "appearanceHelp": "A comfortable interface that follows your desktop when requested.",
+  "system": "System",
+  "light": "Light",
+  "dark": "Dark",
+  "language": "Language",
+  "languageHelp": "Choose the interface language. This does not translate content provided by your IPTV service.",
+  "systemLanguage": "System default",
+  "english": "English",
+  "spanish": "Español",
+  "languageSaveFailed": "Unable to save language preference.",
+  "mediaActions": "Media actions",
+  "mediaActionsHelp": "Keep the catalog uncluttered unless you want direct media tools.",
+  "downloadButtons": "Download buttons",
+  "downloadButtonsHelp": "Show video and season download actions.",
+  "copyStreamLink": "Copy stream link",
+  "copyStreamLinkHelp": "Show copy-link actions. Stream URLs may contain credentials.",
+  "exportM3uHelp": "Show playlist export in the TV and Movies headers.",
+  "networkIdentity": "Network identity",
+  "networkIdentityHelp": "The same User-Agent is used for API, posters and new streams or downloads.",
+  "globalUserAgent": "Global User-Agent · {mode}",
+  "@globalUserAgent": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "automatic": "Automatic",
+  "custom": "Custom",
+  "automaticUserAgentHelp": "Automatic mode follows the installed app version. A saved custom value is never overwritten by updates.",
+  "userAgentNewRequests": "Changes affect new network requests and playback sessions.",
+  "saving": "Saving…",
+  "saveUserAgent": "Save User-Agent",
+  "restoreDefault": "Restore default",
+  "connectionSecurity": "Connection security",
+  "connectionSecurityHelp": "Provider links and exported playlists can expose account credentials.",
+  "certificateVerification": "Certificate verification",
+  "certificateVerificationHelp": "TLS certificates are checked for provider API requests.",
+  "savedCredentials": "Saved credentials",
+  "savedCredentialsHelp": "Passwords are kept in the operating system secure storage.",
+  "directLinks": "Direct links",
+  "directLinksHelp": "Copied stream URLs may contain your username and password. Share carefully.",
+  "allowInsecureRedirects": "Allow HTTPS-to-HTTP download redirects",
+  "allowInsecureRedirectsHelp": "Some providers redirect to unencrypted HTTP video links. Enabling this can expose stream tokens or credentials in the URL to anyone observing the network. This affects downloads only; HTTPS certificate checks remain enabled.",
+  "createdBy": "Created by Ignacio Sanguina",
+  "visitGitHub": "Visit GitHub",
+  "settingsCouldNotSave": "Settings could not be saved",
+  "updatePreferenceFailed": "Unable to save this preference. Try again.",
+  "githubOpenFailed": "Cannot open GitHub.",
+  "userAgentSaved": "User-Agent saved for all new requests and streams.",
+  "userAgentSaveFailed": "Could not save the preference.",
+  "userAgentResetSuccess": "User-Agent saved: automatic version updates are enabled.",
+  "userAgentResetFailed": "Could not restore User-Agent.",
+  "favoriteUpdateFailed": "Could not update favorite.",
+  "addToFavorites": "Add to favorites",
+  "removeFromFavorites": "Remove from favorites",
+  "markEpisodeWatched": "Mark episode as watched",
+  "markEpisodeUnwatched": "Mark episode as unwatched",
+  "watchedStatusFailed": "Could not update watched status.",
+  "openMedia": "Open {kind}: {title}",
+  "@openMedia": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "live": "LIVE",
+  "chooseDownloadFolder": "Choose a download folder",
+  "chooseDownloadFolderHelp": "Choose where this video and your future downloads should be saved.",
+  "chooseFolder": "Choose folder",
+  "useThisFolder": "Use this folder",
+  "downloadLocation": "Download location",
+  "changeFolder": "Change folder",
+  "noFolderSelected": "No folder selected",
+  "transferActivity": "Transfer activity",
+  "manageDownloads": "Manage offline media and choose where files are saved.",
+  "downloadsEmptyHelp": "Your downloads will appear here.",
+  "mediaActionsDownloadsHelp": "Enable media actions in Settings to download movies or episodes.",
+  "clearDownloadHistoryQuestion": "Clear download history?",
+  "clearDownloadHistoryHelp": "Remove all completed, failed, cancelled and interrupted records?",
+  "completedFilesKept": "Completed files were kept; any saved partial was removed.",
+  "historyCleared": "History cleared",
+  "historyNotSaved": "History may not be saved",
+  "removeHistoryQuestion": "Remove history entry?",
+  "removeEntry": "Remove entry",
+  "historyEntryRemoved": "History entry removed",
+  "deleteDownloadedQuestion": "Delete downloaded file?",
+  "keepFile": "Keep file",
+  "deleteFile": "Delete file",
+  "fileDeleted": "File deleted",
+  "downloadActionFailed": "Download action failed",
+  "couldNotUpdateDownloads": "Could not update downloads",
+  "cancelDownload": "Cancel download",
+  "resume": "Resume",
+  "savedSuccessfully": "Saved successfully",
+  "playInSystemPlayer": "Play in system player",
+  "copyFilePath": "Copy file path",
+  "filePathCopied": "File path copied",
+  "openFolder": "Open folder",
+  "removeHistory": "Remove history",
+  "trackedStorage": "Tracked storage",
+  "refreshStorage": "Refresh storage usage",
+  "trackedStorageHelp": "Files still tracked in download history. Excludes files removed from history and unrelated folder contents.",
+  "loadingLibrary": "Loading your library",
+  "loadingMediaLibrary": "Loading your media library",
+  "loadingMediaLibraryHelp": "Retrieving titles from your provider. Large catalogs may take longer.",
+  "chooseCategory": "Choose a category",
+  "allCategories": "All categories",
+  "browseAllCategories": "Browse all categories",
+  "clearCategorySearch": "Clear category search",
+  "closeCategoryPicker": "Close category picker",
+  "nextCategories": "Next categories",
+  "previousCategories": "Previous categories",
+  "searchCategories": "Search categories",
+  "categoryNotFound": "No matching categories. Try a different search.",
+  "chooseSeason": "Choose a season",
+  "browseAllSeasons": "Browse all seasons",
+  "closeSeasonPicker": "Close season picker",
+  "nextSeasons": "Next seasons",
+  "previousSeasons": "Previous seasons",
+  "seasonsHeading": "Seasons",
+  "seasonOne": "Season {season}",
+  "@seasonOne": {
+    "placeholders": {
+      "season": {
+        "type": "int"
+      }
+    }
+  },
+  "episodesHeading": "Episodes",
+  "noEpisodes": "No episodes were returned by the provider.",
+  "playEpisode": "Play episode",
+  "seriesDetailsFailed": "Series details could not be loaded.",
+  "close": "Close",
+  "cast": "Cast: {cast}",
+  "@cast": {
+    "placeholders": {
+      "cast": {
+        "type": "String"
+      }
+    }
+  },
+  "movieDetails": "Movie details",
+  "movieSynopsisLoading": "Loading movie synopsis",
+  "loadingSynopsis": "Loading synopsis…",
+  "movieSynopsisFailed": "Synopsis could not be loaded.",
+  "movieDetailsFailed": "Could not load additional movie details.",
+  "noSynopsis": "No synopsis available.",
+  "playMovie": "Play movie",
+  "copyUrl": "Copy URL",
+  "mediaActionsTitle": "Media actions",
+  "copyStreamUrl": "Copy stream URL",
+  "copyCredentialUrlQuestion": "Copy a credential-bearing URL?",
+  "copyCredentialUrlHelp": "This link may include the provider username and password.",
+  "copyLink": "Copy link",
+  "closePlayer": "Close player",
+  "nextEpisode": "Next episode",
+  "previousEpisode": "Previous episode",
+  "endEpisodeList": "End of episode list",
+  "resumePlaybackQuestion": "Resume playback?",
+  "startOver": "Start over",
+  "liveStreamFormat": "Live stream format",
+  "subtitleUnavailable": "Subtitle unavailable",
+  "trackUnavailable": "Track unavailable",
+  "audio": "Audio",
+  "subtitles": "Subtitles",
+  "videoTracks": "Video tracks (when available)",
+  "audioSubtitlesTracks": "Audio, subtitles and video tracks",
+  "automaticAudio": "Automatic audio",
+  "automaticSubtitles": "Automatic subtitles",
+  "automaticTrack": "Automatic track selection",
+  "loadSubtitleFile": "Load subtitle file…",
+  "off": "Off",
+  "subtitleFileFailed": "Unable to open the selected subtitle file.",
+  "trackSwitchFailed": "Unable to switch the selected track.",
+  "connectProvider": "Connect to a provider",
+  "connectProviderSubtitle": "Enter the credentials supplied by your streaming service.",
+  "httpCredentialsWarning": "HTTP sends provider credentials without transport encryption. Prefer HTTPS.",
+  "connect": "Connect",
+  "accountType": "Account type",
+  "connections": "Connections",
+  "created": "Created",
+  "expires": "Expires",
+  "provider": "Provider",
+  "providerAccount": "Provider account",
+  "server": "Server",
+  "serverTimezone": "Server timezone",
+  "streamFormats": "Stream formats",
+  "username": "Username",
+  "localTimezoneDates": "Dates are displayed in your local time zone.",
+  "addAccount": "Add account",
+  "removeAccount": "Remove account",
+  "removeSavedAccount": "Remove saved account",
+  "removeSavedAccountQuestion": "Remove saved account?",
+  "accountSubtitle": "Manage providers and subscription details.",
+  "accountsEmpty": "No provider accounts have been saved yet.",
+  "moreDetails": "More details",
+  "disconnect": "Disconnect",
+  "connected": "Connected",
+  "expired": "Expired",
+  "exportChooseFile": "Choose where to save your playlist…",
+  "exportWritten": "{done} of {total} items saved",
+  "@exportWritten": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "exportFinished": "{count} items · {path}",
+  "@exportFinished": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "exportExists": "A file already exists at that location. Choose another filename.",
+  "exportWriteFailed": "Could not write the playlist. Check disk space and folder permissions.",
+  "exportSaveFailed": "Unable to save the playlist. Check the destination and try again.",
+  "resumeAt": "Continue from {position}?",
+  "@resumeAt": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "watchRemaining": "{watched} watched · {remaining} remaining",
+  "@watchRemaining": {
+    "placeholders": {
+      "watched": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lastWatchedAt": "Last watched {date}",
+  "@lastWatchedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "playbackAccountLibrary": "Favorites and playback activity for {account}",
+  "@playbackAccountLibrary": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "episodeCount": "{count, plural, =0{0 episodes} one{1 episode} other{{count} episodes}}",
+  "@episodeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "seasonCount": "{count, plural, =0{0 seasons} one{1 season} other{{count} seasons}}",
+  "@seasonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "episodesTotal": "{count, plural, =0{0 episodes total} one{1 episode total} other{{count} episodes total}}",
+  "@episodesTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "episodesInSeason": "{count, plural, =0{No episodes in season {season}} one{1 episode in season {season}} other{{count} episodes in season {season}}}",
+  "@episodesInSeason": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "season": {
+        "type": "int"
+      }
+    }
+  },
+  "seasonEpisodeLabel": "Season {season} · {count, plural, one{1 episode} other{{count} episodes}}",
+  "@seasonEpisodeLabel": {
+    "placeholders": {
+      "season": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "all": "All",
+  "categories": "Categories",
+  "categoriesCount": "{count, plural, one{1 category} other{{count} categories}}",
+  "@categoriesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearDownloadRecords": "{count} entries removed. Completed videos were kept; saved partials were discarded.",
+  "@clearDownloadRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "partialPreserved": "{size} preserved for resumption",
+  "@partialPreserved": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "savedForFuture": "Saved for future downloads. Seasons are organized in separate folders.",
+  "filesCompleted": "{count, plural, one{1 completed} other{{count} completed}}",
+  "@filesCompleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filesPartial": "{count, plural, one{1 partial} other{{count} partial}}",
+  "@filesPartial": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filesMissing": "{count} missing or inaccessible",
+  "@filesMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activeDownloads": "{count} active / queued",
+  "@activeDownloads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCredentialWarning": "This link may include the provider username and password.",
+  "removeAccountWarning": "Remove {name}, its saved password, and its local favorites and watch history? Downloaded files are not deleted.",
+  "@removeAccountWarning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unknownAccountDate": "Not provided",
+  "downloadHistoryRemoved": "The record will disappear from Downloads.",
+  "downloadDeleteWarning": "This permanently deletes the local video and removes its download history entry.",
+  "progressComplete": "100% · Download complete",
+  "selectSubtitle": "Subtitles",
+  "seasonsAvailable": "Available seasons: {count}",
+  "@seasonsAvailable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filteredCategories": "Filtered",
+  "downloadRemoveWarning": "The record will disappear from Downloads. Completed video files will be kept. If this transfer is unfinished, its saved partial data will be deleted.",
+  "downloadDeleteFullWarning": "This permanently deletes the local video and removes its history entry. It cannot be undone.",
+  "downloadAndHistoryRemoved": "The download and its history entry were removed.",
+  "downloadUpdateHistoryFailed": "Could not update download history.",
+  "storageCalculationFailed": "Storage usage could not be calculated.",
+  "storageOverview": "Download storage",
+  "downloadCurrentSize": "{size} preserved for resumption",
+  "@downloadCurrentSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmProceed": "Continue",
+  "filtered": "Filtered",
+  "categoriesFound": "{count, plural, =0{0 categories} one{1 category} other{{count} categories}}",
+  "@categoriesFound": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "savedAccountsMayBeOutdated": "For saved accounts that are not connected, dates and status come from the last successful connection and may be outdated.",
+  "playlistSaved": "Playlist saved",
+  "exportFailed": "Export failed",
+  "exportingPlaylist": "Exporting playlist",
+  "dismissNotification": "Dismiss notification",
+  "providerRating": "Provider rating: {rating}",
+  "@providerRating": {
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "ratingLabel": "Rating {rating}",
+  "@ratingLabel": {
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "appearanceSaveFailed": "Unable to save appearance preference.",
+  "downloadFolderSaveFailed": "Could not save this folder. Try another location.",
+  "downloadFolderHelp": "Choose where this video and your future downloads should be saved. You can change the folder later in Downloads.",
+  "downloadFolderSelectFailed": "Could not select this folder.",
+  "downloadHistoryClearDetails": "Remove all completed, failed, cancelled and interrupted records? Completed videos will stay on your computer. Saved partial files will be removed. Active transfers will not be affected.",
+  "downloadHistoryClearFailed": "Could not clear download history.",
+  "systemPlayerOpenFailed": "Could not launch the system video player.",
+  "fileManagerOpenFailed": "Could not open the folder in the file manager.",
+  "downloadHistoryUpdateFailed": "Could not update download history.",
+  "downloadFileDeleteFailed": "Could not delete the downloaded file.",
+  "downloadedTotalUnknown": "{received} downloaded · Total size unknown",
+  "@downloadedTotalUnknown": {
+    "placeholders": {
+      "received": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadedRemaining": "{received} / {total} · {remaining} remaining",
+  "@downloadedRemaining": {
+    "placeholders": {
+      "received": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaEnginePlaybackFailed": "The media engine could not play this stream.",
+  "resumeNotSupported": "The provider does not support resuming this video.",
+  "mediaResourceOpenFailed": "Unable to open the media resource.",
+  "episodeSwitchFailed": "Unable to switch episodes.",
+  "connectionFailed": "Connection could not be established.",
+  "displayNameOptional": "Display name (optional)",
+  "seasonDownloaded": "Season downloaded",
+  "seasonQueueing": "Queuing season",
+  "seasonAllQueued": "All episodes queued",
+  "seasonDownload": "Download season",
+  "seasonRemaining": "Download {count} remaining",
+  "@seasonRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "serverUrl": "Server URL",
+  "invalidServerUrl": "Enter an HTTP or HTTPS server URL",
+  "usernameRequired": "Username is required",
+  "password": "Password",
+  "passwordRequired": "Password is required",
+  "downloadStatusDownloaded": "Downloaded",
+  "downloadStatusDownloading": "Downloading",
+  "downloadStatusStopping": "Stopping",
+  "downloadStatusQueued": "Queued",
+  "downloadVerb": "Download",
+  "downloadVideo": "Download video",
+  "connectProviderFirst": "Connect to a provider first.",
+  "copyUrlSecurityDetails": "This link may include the provider username and password. Only paste it into an application you trust.",
+  "streamUrlCopiedWarning": "Stream URL copied. Handle it as a password.",
+  "accountChangedDownload": "The active account changed. Select the download again.",
+  "alreadyQueuedOrDownloaded": "This content is already queued or downloaded.",
+  "downloadQueuedCount": "{count, plural, =0{No downloads queued} one{1 download queued. Check progress in Downloads.} other{{count} downloads queued. Check progress in Downloads.}}",
+  "@downloadQueuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "mediaActionCompleteFailed": "Unable to complete this action.",
+  "accountChangedSeason": "The active account changed. Select the season again.",
+  "episodesAlreadyQueued": "All selected episodes are already queued or downloaded.",
+  "episodesQueuedCount": "{count, plural, one{1 episode queued. Check progress in Downloads.} other{{count} episodes queued. Check progress in Downloads.}}",
+  "@episodesQueuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "seasonQueueFailed": "Unable to queue the selected season.",
+  "actionFailed": "Action failed",
+  "actionRequired": "Action required",
+  "downloadStarted": "Download started",
+  "actionCompleted": "Action completed",
+  "downloadItemStatus": "{status}: {title}",
+  "@downloadItemStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadCompletedTitle": "Download completed: {title}",
+  "@downloadCompletedTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadStoppingTitle": "Stopping download: {title}",
+  "@downloadStoppingTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadQueuedTitle": "Queued for download: {title}",
+  "@downloadQueuedTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadTitle": "Download {title}",
+  "@downloadTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "accountStatusActive": "Active",
+  "accountStatusUnknown": "Unknown",
+  "trialAccount": "Trial",
+  "standardAccount": "Standard",
+  "networkPreferencesRestoreFailed": "Network preferences could not be restored.",
+  "pendingCredentialCleanupFailed": "Pending credential cleanup could not be completed.",
+  "savedAccountsRestoreFailed": "Saved accounts could not be read.",
+  "preferredAccountRestoreFailed": "The last selected account could not be restored.",
+  "accountMetadataRestoreFailed": "Account metadata could not be restored.",
+  "appearanceRestoreFailed": "Appearance preferences could not be restored.",
+  "languageRestoreFailed": "Language preferences could not be restored.",
+  "downloadControlsRestoreFailed": "Download button preference could not be restored.",
+  "copyLinkRestoreFailed": "Copy-link preference could not be restored.",
+  "exportPreferenceRestoreFailed": "M3U export preference could not be restored.",
+  "redirectPreferenceRestoreFailed": "Download redirect preferences could not be restored.",
+  "downloadHistoryRestoreFailed": "Download history could not be restored.",
+  "personalLibraryRestoreFailed": "Personal library storage could not be opened.",
+  "credentialsRequiredError": "Username and password are required.",
+  "personalLibraryOpenError": "The personal library could not be loaded.",
+  "preferredAccountSaveError": "Connected, but the account selection could not be saved.",
+  "accountConnectError": "Could not save or connect the account.",
+  "savedCredentialsReadError": "Could not read the saved account credentials.",
+  "accountRemovalCleanupError": "Account removed, but local library cleanup failed.",
+  "accountRemovalError": "Could not finish deleting the saved account.",
+  "catalogLoadError": "The catalog could not be loaded.",
+  "preferredAccountClearError": "Disconnected, but the saved selection could not be cleared.",
+  "connectionTimeoutError": "Connection timed out. Check the server and try again.",
+  "tlsCertificateError": "The server TLS certificate is invalid.",
+  "serverConnectionError": "Could not connect to the server.",
+  "requestCancelledError": "The request was cancelled.",
+  "unexpectedResponseError": "The server returned an unexpected response.",
+  "unexpectedError": "An unexpected error occurred.",
+  "apiRedirectError": "The provider redirected the API request. Verify the server URL.",
+  "invalidAccountResponseError": "The server did not return valid account information.",
+  "missingUserInfoError": "The server did not return user information.",
+  "accountAccessDeniedError": "Account access is denied or inactive.",
+  "accountExpiredError": "The account has expired.",
+  "invalidCategoriesError": "The provider returned an invalid category list.",
+  "invalidCatalogError": "The provider returned an invalid catalog.",
+  "invalidSeriesInfoError": "The provider returned invalid series information.",
+  "invalidMovieInfoError": "The provider returned invalid movie details.",
+  "corruptSavedAccountError": "Saved account information is corrupted.",
+  "missingSavedPasswordError": "No stored password is available for this account.",
+  "urlRequiredError": "Enter an absolute HTTP or HTTPS server URL.",
+  "unsupportedServerPathError": "Server URL contains an unsupported path.",
+  "userAgentLengthError": "User-Agent must contain 1 to 256 characters.",
+  "userAgentAsciiError": "User-Agent must contain printable ASCII characters only.",
+  "serverHttpError": "The server returned HTTP {status}.",
+  "@serverHttpError": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  }
+}

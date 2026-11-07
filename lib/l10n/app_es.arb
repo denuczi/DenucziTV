@@ -1,0 +1,790 @@
+{
+  "@@locale": "es",
+  "appName": "DenucziTV",
+  "library": "BIBLIOTECA",
+  "liveTv": "TV en vivo",
+  "movies": "Películas",
+  "series": "Series",
+  "myLibrary": "Mi biblioteca",
+  "downloads": "Descargas",
+  "settings": "Configuración",
+  "accounts": "Cuentas",
+  "manageAccounts": "Administrar cuentas",
+  "noAccountSelected": "Ninguna cuenta seleccionada",
+  "manageProviders": "Administrar proveedores",
+  "connectedManage": "Conectado · Administrar",
+  "versionLabel": "Versión {version}",
+  "@versionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadComplete": "Descarga completada",
+  "downloadFailed": "Error en la descarga",
+  "searchLiveTv": "Buscar canales...",
+  "searchMovies": "Buscar películas...",
+  "searchSeries": "Buscar series...",
+  "clearCatalogSearch": "Borrar búsqueda del catálogo",
+  "loading": "Cargando…",
+  "channelCount": "{count, plural, =0{0 canales} one{1 canal} other{{count} canales}}",
+  "@channelCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "movieCount": "{count, plural, =0{0 películas} one{1 película} other{{count} películas}}",
+  "@movieCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "seriesCount": "{count, plural, =0{0 series} one{1 serie} other{{count} series}}",
+  "@seriesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "filteredCount": "{visible} de {total}",
+  "@filteredCount": {
+    "placeholders": {
+      "visible": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "reloadCatalog": "Actualizar catálogo",
+  "exportM3u": "Exportar M3U",
+  "exportPlaylist": "¿Exportar lista de reproducción?",
+  "exportWarning": "Los archivos M3U contienen enlaces de reproducción con el usuario y la contraseña del proveedor. Cualquier persona que tenga el archivo podría acceder a la cuenta. Consérvalo de forma privada.",
+  "cancel": "Cancelar",
+  "export": "Exportar",
+  "reconnect": "Volver a conectar",
+  "addProvider": "Agregar proveedor",
+  "connectSavedAccount": "Conectar una cuenta guardada",
+  "yourMediaOnePlace": "Todo tu contenido en un solo lugar.",
+  "chooseProvider": "Selecciona tu proveedor en Cuentas para volver a conectar.",
+  "connectProviderHelp": "Conecta tu proveedor para explorar canales en vivo, películas y series.",
+  "dismiss": "Cerrar",
+  "retry": "Reintentar",
+  "unableLoadCatalog": "No se pudo cargar el catálogo",
+  "tryAgain": "Intentar de nuevo",
+  "noTitlesAvailable": "No hay contenido disponible",
+  "noMatchingTitles": "No se encontraron coincidencias",
+  "emptyCatalogHelp": "El proveedor devolvió un catálogo vacío. Intenta actualizarlo.",
+  "noMatchesHelp": "Prueba otra categoría o término de búsqueda.",
+  "loadMoreTitles": "Cargar más títulos",
+  "backToTop": "Volver arriba",
+  "showingTitles": "Se muestran {shown} de {total} títulos",
+  "@showingTitles": {
+    "placeholders": {
+      "shown": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "continueWatching": "Continuar viendo",
+  "favorites": "Favoritos",
+  "watchHistory": "Historial de reproducción",
+  "libraryForAccount": "Favoritos y actividad de reproducción de {account}",
+  "@libraryForAccount": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "clearHistory": "Borrar historial",
+  "clearWatchHistoryQuestion": "¿Borrar historial de reproducción?",
+  "clearWatchHistoryDetails": "Esto elimina el historial de reproducción y las posiciones guardadas de la cuenta activa. No afecta los favoritos ni los videos descargados.",
+  "nothingToResume": "No hay contenido para continuar",
+  "noFavorites": "Todavía no hay favoritos",
+  "emptyViewingHistory": "Tu historial de reproducción está vacío",
+  "libraryEmptyHelp": "Reproduce contenido o guarda una película o serie para verla aquí.",
+  "connectToUseLibrary": "Conéctate a un proveedor para ver tu biblioteca personal.",
+  "libraryUnavailable": "El almacenamiento de la biblioteca personal no está disponible.",
+  "libraryUpdateFailed": "No se pudo actualizar Mi biblioteca. Inténtalo de nuevo.",
+  "episodeUnavailable": "Este episodio ya no está disponible en el proveedor.",
+  "contentOpenFailed": "No se pudo abrir el contenido. Comprueba tu conexión.",
+  "watched": "Visto",
+  "inProgress": "En progreso",
+  "saved": "Guardado",
+  "watchedAndRemaining": "{watched} vistos · {remaining} restantes",
+  "@watchedAndRemaining": {
+    "placeholders": {
+      "watched": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lastWatched": "Última reproducción: {date}",
+  "@lastWatched": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "openOrResume": "Abrir o continuar",
+  "markAsWatched": "Marcar como visto",
+  "markAsUnwatched": "Marcar como no visto",
+  "removeContinueWatching": "Quitar de Continuar viendo",
+  "removeFavorite": "Quitar de favoritos",
+  "removeHistoryEntry": "Eliminar del historial",
+  "settingsSubtitle": "Personaliza la apariencia, las acciones multimedia y la conexión.",
+  "appearance": "Apariencia",
+  "appearanceHelp": "Una interfaz cómoda que puede seguir el tema del sistema.",
+  "system": "Sistema",
+  "light": "Claro",
+  "dark": "Oscuro",
+  "language": "Idioma",
+  "languageHelp": "Elige el idioma de la interfaz. Esto no traduce el contenido del servicio IPTV.",
+  "systemLanguage": "Idioma del sistema",
+  "english": "English",
+  "spanish": "Español",
+  "languageSaveFailed": "No se pudo guardar la preferencia de idioma.",
+  "mediaActions": "Acciones multimedia",
+  "mediaActionsHelp": "Mantén el catálogo despejado si no necesitas herramientas adicionales.",
+  "downloadButtons": "Botones de descarga",
+  "downloadButtonsHelp": "Mostrar las opciones para descargar videos y temporadas.",
+  "copyStreamLink": "Copiar enlace del stream",
+  "copyStreamLinkHelp": "Mostrar acciones para copiar enlaces. Las URL pueden incluir credenciales.",
+  "exportM3uHelp": "Mostrar la exportación de listas en TV y Películas.",
+  "networkIdentity": "Identidad de red",
+  "networkIdentityHelp": "El mismo User-Agent se utiliza para la API, las imágenes y las nuevas transmisiones o descargas.",
+  "globalUserAgent": "User-Agent global · {mode}",
+  "@globalUserAgent": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "automatic": "Automático",
+  "custom": "Personalizado",
+  "automaticUserAgentHelp": "El modo automático utiliza la versión instalada. Un valor personalizado nunca se sobrescribe al actualizar.",
+  "userAgentNewRequests": "Los cambios afectan las nuevas solicitudes y sesiones de reproducción.",
+  "saving": "Guardando…",
+  "saveUserAgent": "Guardar User-Agent",
+  "restoreDefault": "Restablecer valor predeterminado",
+  "connectionSecurity": "Seguridad de la conexión",
+  "connectionSecurityHelp": "Los enlaces del proveedor y las listas exportadas pueden exponer las credenciales.",
+  "certificateVerification": "Verificación de certificados",
+  "certificateVerificationHelp": "Se comprueban los certificados TLS en las solicitudes a la API del proveedor.",
+  "savedCredentials": "Credenciales guardadas",
+  "savedCredentialsHelp": "Las contraseñas se almacenan en el sistema seguro de credenciales.",
+  "directLinks": "Enlaces directos",
+  "directLinksHelp": "Las URL copiadas pueden contener tu usuario y contraseña. Compártelas con precaución.",
+  "allowInsecureRedirects": "Permitir redirecciones de HTTPS a HTTP en descargas",
+  "allowInsecureRedirectsHelp": "Algunos proveedores redirigen a enlaces HTTP sin cifrado. Si activas esta opción, los tokens o credenciales de la URL podrían quedar expuestos en la red. Solo afecta a las descargas; la verificación de certificados HTTPS sigue activa.",
+  "createdBy": "Creado por Ignacio Sanguina",
+  "visitGitHub": "Visitar GitHub",
+  "settingsCouldNotSave": "No se pudo guardar la configuración",
+  "updatePreferenceFailed": "No se pudo guardar esta preferencia. Inténtalo de nuevo.",
+  "githubOpenFailed": "No se pudo abrir GitHub.",
+  "userAgentSaved": "User-Agent guardado para las nuevas solicitudes y transmisiones.",
+  "userAgentSaveFailed": "No se pudo guardar la preferencia.",
+  "userAgentResetSuccess": "User-Agent restablecido: se actualizará con la versión de la aplicación.",
+  "userAgentResetFailed": "No se pudo restablecer el User-Agent.",
+  "favoriteUpdateFailed": "No se pudo actualizar el favorito.",
+  "addToFavorites": "Agregar a favoritos",
+  "removeFromFavorites": "Quitar de favoritos",
+  "markEpisodeWatched": "Marcar episodio como visto",
+  "markEpisodeUnwatched": "Marcar episodio como no visto",
+  "watchedStatusFailed": "No se pudo actualizar el estado del episodio.",
+  "openMedia": "Abrir {kind}: {title}",
+  "@openMedia": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "live": "EN VIVO",
+  "chooseDownloadFolder": "Elegir carpeta de descargas",
+  "chooseDownloadFolderHelp": "Elige dónde guardar este video y las futuras descargas.",
+  "chooseFolder": "Elegir carpeta",
+  "useThisFolder": "Usar esta carpeta",
+  "downloadLocation": "Carpeta de descargas",
+  "changeFolder": "Cambiar carpeta",
+  "noFolderSelected": "No se seleccionó ninguna carpeta",
+  "transferActivity": "Actividad de descargas",
+  "manageDownloads": "Administra los archivos descargados y elige dónde guardarlos.",
+  "downloadsEmptyHelp": "Tus descargas aparecerán aquí.",
+  "mediaActionsDownloadsHelp": "Activa las acciones multimedia en Configuración para descargar películas o episodios.",
+  "clearDownloadHistoryQuestion": "¿Borrar el historial de descargas?",
+  "clearDownloadHistoryHelp": "¿Eliminar todos los registros completados, fallidos, cancelados e interrumpidos?",
+  "completedFilesKept": "Se conservaron los videos completos y se eliminaron los archivos parciales.",
+  "historyCleared": "Historial borrado",
+  "historyNotSaved": "Es posible que el historial no se haya guardado",
+  "removeHistoryQuestion": "¿Eliminar registro del historial?",
+  "removeEntry": "Eliminar registro",
+  "historyEntryRemoved": "Registro eliminado del historial",
+  "deleteDownloadedQuestion": "¿Eliminar el archivo descargado?",
+  "keepFile": "Conservar archivo",
+  "deleteFile": "Eliminar archivo",
+  "fileDeleted": "Archivo eliminado",
+  "downloadActionFailed": "No se pudo completar la acción",
+  "couldNotUpdateDownloads": "No se pudieron actualizar las descargas",
+  "cancelDownload": "Cancelar descarga",
+  "resume": "Continuar",
+  "savedSuccessfully": "Guardado correctamente",
+  "playInSystemPlayer": "Reproducir con el reproductor del sistema",
+  "copyFilePath": "Copiar ruta del archivo",
+  "filePathCopied": "Ruta del archivo copiada",
+  "openFolder": "Abrir carpeta",
+  "removeHistory": "Eliminar del historial",
+  "trackedStorage": "Almacenamiento registrado",
+  "refreshStorage": "Actualizar almacenamiento",
+  "trackedStorageHelp": "Solo se cuentan archivos registrados en el historial. No se incluyen archivos sin historial ni otros contenidos de la carpeta.",
+  "loadingLibrary": "Cargando tu biblioteca",
+  "loadingMediaLibrary": "Cargando biblioteca multimedia",
+  "loadingMediaLibraryHelp": "Recuperando títulos del proveedor. Los catálogos grandes pueden tardar más.",
+  "chooseCategory": "Elegir categoría",
+  "allCategories": "Todas las categorías",
+  "browseAllCategories": "Explorar todas las categorías",
+  "clearCategorySearch": "Borrar búsqueda de categorías",
+  "closeCategoryPicker": "Cerrar selector de categorías",
+  "nextCategories": "Categorías siguientes",
+  "previousCategories": "Categorías anteriores",
+  "searchCategories": "Buscar categorías",
+  "categoryNotFound": "No se encontraron categorías. Prueba otra búsqueda.",
+  "chooseSeason": "Elegir temporada",
+  "browseAllSeasons": "Explorar todas las temporadas",
+  "closeSeasonPicker": "Cerrar selector de temporadas",
+  "nextSeasons": "Temporadas siguientes",
+  "previousSeasons": "Temporadas anteriores",
+  "seasonsHeading": "Temporadas",
+  "seasonOne": "Temporada {season}",
+  "@seasonOne": {
+    "placeholders": {
+      "season": {
+        "type": "int"
+      }
+    }
+  },
+  "episodesHeading": "Episodios",
+  "noEpisodes": "El proveedor no devolvió episodios.",
+  "playEpisode": "Reproducir episodio",
+  "seriesDetailsFailed": "No se pudieron cargar los detalles de la serie.",
+  "close": "Cerrar",
+  "cast": "Reparto: {cast}",
+  "@cast": {
+    "placeholders": {
+      "cast": {
+        "type": "String"
+      }
+    }
+  },
+  "movieDetails": "Detalles de la película",
+  "movieSynopsisLoading": "Cargando sinopsis de la película",
+  "loadingSynopsis": "Cargando sinopsis…",
+  "movieSynopsisFailed": "No se pudo cargar la sinopsis.",
+  "movieDetailsFailed": "No se pudieron cargar los detalles adicionales de la película.",
+  "noSynopsis": "No hay sinopsis disponible.",
+  "playMovie": "Reproducir película",
+  "copyUrl": "Copiar URL",
+  "mediaActionsTitle": "Acciones multimedia",
+  "copyStreamUrl": "Copiar URL del stream",
+  "copyCredentialUrlQuestion": "¿Copiar una URL con credenciales?",
+  "copyCredentialUrlHelp": "Este enlace puede contener el usuario y la contraseña del proveedor.",
+  "copyLink": "Copiar enlace",
+  "closePlayer": "Cerrar reproductor",
+  "nextEpisode": "Episodio siguiente",
+  "previousEpisode": "Episodio anterior",
+  "endEpisodeList": "Fin de la lista de episodios",
+  "resumePlaybackQuestion": "¿Continuar la reproducción?",
+  "startOver": "Comenzar desde el inicio",
+  "liveStreamFormat": "Formato de transmisión en vivo",
+  "subtitleUnavailable": "Subtítulos no disponibles",
+  "trackUnavailable": "Pista no disponible",
+  "audio": "Audio",
+  "subtitles": "Subtítulos",
+  "videoTracks": "Pistas de video (si están disponibles)",
+  "audioSubtitlesTracks": "Audio, subtítulos y pistas de video",
+  "automaticAudio": "Audio automático",
+  "automaticSubtitles": "Subtítulos automáticos",
+  "automaticTrack": "Selección automática de pistas",
+  "loadSubtitleFile": "Cargar archivo de subtítulos…",
+  "off": "Desactivado",
+  "subtitleFileFailed": "No se pudo abrir el archivo de subtítulos.",
+  "trackSwitchFailed": "No se pudo cambiar la pista seleccionada.",
+  "connectProvider": "Conectar con un proveedor",
+  "connectProviderSubtitle": "Ingresa las credenciales proporcionadas por tu servicio de streaming.",
+  "httpCredentialsWarning": "HTTP transmite las credenciales sin cifrado. Es preferible usar HTTPS.",
+  "connect": "Conectar",
+  "accountType": "Tipo de cuenta",
+  "connections": "Conexiones",
+  "created": "Creada",
+  "expires": "Vence",
+  "provider": "Proveedor",
+  "providerAccount": "Cuenta del proveedor",
+  "server": "Servidor",
+  "serverTimezone": "Zona horaria del servidor",
+  "streamFormats": "Formatos de transmisión",
+  "username": "Usuario",
+  "localTimezoneDates": "Las fechas se muestran en tu zona horaria local.",
+  "addAccount": "Agregar cuenta",
+  "removeAccount": "Eliminar cuenta",
+  "removeSavedAccount": "Eliminar cuenta guardada",
+  "removeSavedAccountQuestion": "¿Eliminar cuenta guardada?",
+  "accountSubtitle": "Administra proveedores y detalles de suscripciones.",
+  "accountsEmpty": "Todavía no se han guardado cuentas de proveedores.",
+  "moreDetails": "Más detalles",
+  "disconnect": "Desconectar",
+  "connected": "Conectado",
+  "expired": "Vencida",
+  "exportChooseFile": "Elige dónde guardar la lista de reproducción…",
+  "exportWritten": "{done} de {total} elementos guardados",
+  "@exportWritten": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "exportFinished": "{count} elementos · {path}",
+  "@exportFinished": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "exportExists": "Ya existe un archivo en esa ubicación. Elige otro nombre.",
+  "exportWriteFailed": "No se pudo guardar la lista. Comprueba el espacio disponible y los permisos de la carpeta.",
+  "exportSaveFailed": "No se pudo guardar la lista. Comprueba el destino e inténtalo de nuevo.",
+  "resumeAt": "¿Continuar desde {position}?",
+  "@resumeAt": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "watchRemaining": "{watched} vistos · {remaining} restantes",
+  "@watchRemaining": {
+    "placeholders": {
+      "watched": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lastWatchedAt": "Última reproducción: {date}",
+  "@lastWatchedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "playbackAccountLibrary": "Favoritos y actividad de reproducción de {account}",
+  "@playbackAccountLibrary": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "episodeCount": "{count, plural, =0{0 episodios} one{1 episodio} other{{count} episodios}}",
+  "@episodeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "seasonCount": "{count, plural, =0{0 temporadas} one{1 temporada} other{{count} temporadas}}",
+  "@seasonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "episodesTotal": "{count, plural, =0{0 episodios en total} one{1 episodio en total} other{{count} episodios en total}}",
+  "@episodesTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "episodesInSeason": "{count, plural, =0{No hay episodios en la temporada {season}} one{1 episodio en la temporada {season}} other{{count} episodios en la temporada {season}}}",
+  "@episodesInSeason": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "season": {
+        "type": "int"
+      }
+    }
+  },
+  "seasonEpisodeLabel": "Temporada {season} · {count, plural, one{1 episodio} other{{count} episodios}}",
+  "@seasonEpisodeLabel": {
+    "placeholders": {
+      "season": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "all": "Todas",
+  "categories": "Categorías",
+  "categoriesCount": "{count, plural, one{1 categoría} other{{count} categorías}}",
+  "@categoriesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearDownloadRecords": "Se eliminaron {count} registros. Se conservaron los videos completos y se descartaron los archivos parciales.",
+  "@clearDownloadRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "partialPreserved": "Se conservaron {size} para continuar",
+  "@partialPreserved": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "savedForFuture": "Se guardará para futuras descargas. Cada temporada tendrá su propia carpeta.",
+  "filesCompleted": "{count, plural, one{1 completado} other{{count} completados}}",
+  "@filesCompleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filesPartial": "{count, plural, one{1 parcial} other{{count} parciales}}",
+  "@filesPartial": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filesMissing": "{count} ausentes o inaccesibles",
+  "@filesMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activeDownloads": "{count} activas o en espera",
+  "@activeDownloads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCredentialWarning": "Este enlace puede contener el usuario y la contraseña del proveedor.",
+  "removeAccountWarning": "¿Eliminar {name}, su contraseña guardada, favoritos e historial de reproducción? Los archivos descargados se conservarán.",
+  "@removeAccountWarning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unknownAccountDate": "No disponible",
+  "downloadHistoryRemoved": "El registro desaparecerá de Descargas.",
+  "downloadDeleteWarning": "Esto elimina de forma permanente el archivo de video y su registro del historial.",
+  "progressComplete": "100 % · Descarga completada",
+  "selectSubtitle": "Subtítulos",
+  "seasonsAvailable": "Temporadas disponibles: {count}",
+  "@seasonsAvailable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filteredCategories": "Filtradas",
+  "downloadRemoveWarning": "El registro desaparecerá de Descargas. Se conservarán los videos completos. Si la transferencia está incompleta, se eliminarán los datos parciales.",
+  "downloadDeleteFullWarning": "Esto elimina de forma permanente el video y su registro del historial. Esta acción no se puede deshacer.",
+  "downloadAndHistoryRemoved": "Se eliminaron la descarga y su registro del historial.",
+  "downloadUpdateHistoryFailed": "No se pudo actualizar el historial de descargas.",
+  "storageCalculationFailed": "No se pudo calcular el espacio utilizado.",
+  "storageOverview": "Almacenamiento de descargas",
+  "downloadCurrentSize": "{size} conservados para continuar",
+  "@downloadCurrentSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmProceed": "Continuar",
+  "filtered": "Filtradas",
+  "categoriesFound": "{count, plural, =0{0 categorías} one{1 categoría} other{{count} categorías}}",
+  "savedAccountsMayBeOutdated": "En las cuentas guardadas sin conexión, las fechas y el estado corresponden a la última conexión correcta y podrían estar desactualizados.",
+  "playlistSaved": "Lista de reproducción guardada",
+  "exportFailed": "Error de exportación",
+  "exportingPlaylist": "Exportando lista de reproducción",
+  "dismissNotification": "Cerrar notificación",
+  "providerRating": "Calificación del proveedor: {rating}",
+  "ratingLabel": "Calificación {rating}",
+  "appearanceSaveFailed": "No se pudo guardar la preferencia de apariencia.",
+  "downloadFolderSaveFailed": "No se pudo guardar esta carpeta. Prueba con otra ubicación.",
+  "downloadFolderHelp": "Elige dónde guardar este video y las próximas descargas. Puedes cambiar la carpeta más adelante en Descargas.",
+  "downloadFolderSelectFailed": "No se pudo seleccionar esta carpeta.",
+  "downloadHistoryClearDetails": "¿Eliminar todos los registros completados, fallidos, cancelados e interrumpidos? Los videos completos permanecerán en tu equipo. Se eliminarán los archivos parciales guardados. Las descargas activas no se verán afectadas.",
+  "downloadHistoryClearFailed": "No se pudo borrar el historial de descargas.",
+  "systemPlayerOpenFailed": "No se pudo iniciar el reproductor de video del sistema.",
+  "fileManagerOpenFailed": "No se pudo abrir la carpeta en el administrador de archivos.",
+  "downloadHistoryUpdateFailed": "No se pudo actualizar el historial de descargas.",
+  "downloadFileDeleteFailed": "No se pudo eliminar el archivo descargado.",
+  "downloadedTotalUnknown": "{received} descargados · Tamaño total desconocido",
+  "downloadedRemaining": "{received} / {total} · {remaining} restantes",
+  "mediaEnginePlaybackFailed": "El motor multimedia no pudo reproducir esta transmisión.",
+  "resumeNotSupported": "El proveedor no permite reanudar este video.",
+  "mediaResourceOpenFailed": "No se pudo abrir el recurso multimedia.",
+  "episodeSwitchFailed": "No se pudo cambiar de episodio.",
+  "connectionFailed": "No se pudo establecer la conexión.",
+  "displayNameOptional": "Nombre para mostrar (opcional)",
+  "seasonDownloaded": "Temporada descargada",
+  "seasonQueueing": "Añadiendo temporada a la cola",
+  "seasonAllQueued": "Todos los episodios están en la cola",
+  "seasonDownload": "Descargar temporada",
+  "seasonRemaining": "Descargar {count} restantes",
+  "serverUrl": "URL del servidor",
+  "invalidServerUrl": "Introduce una URL de servidor HTTP o HTTPS",
+  "usernameRequired": "El nombre de usuario es obligatorio",
+  "password": "Contraseña",
+  "passwordRequired": "La contraseña es obligatoria",
+  "downloadStatusDownloaded": "Descargado",
+  "downloadStatusDownloading": "Descargando",
+  "downloadStatusStopping": "Deteniendo",
+  "downloadStatusQueued": "En cola",
+  "downloadVerb": "Descargar",
+  "downloadVideo": "Descargar video",
+  "connectProviderFirst": "Primero debes conectarte a un proveedor.",
+  "copyUrlSecurityDetails": "Este enlace puede contener el usuario y la contraseña del proveedor. Pégalo únicamente en una aplicación de confianza.",
+  "streamUrlCopiedWarning": "URL de transmisión copiada. Protégela como si fuera una contraseña.",
+  "accountChangedDownload": "La cuenta activa ha cambiado. Vuelve a seleccionar la descarga.",
+  "alreadyQueuedOrDownloaded": "Este contenido ya está en cola o descargado.",
+  "downloadQueuedCount": "{count, plural, =0{No se añadieron descargas} one{1 descarga añadida a la cola. Consulta el progreso en Descargas.} other{{count} descargas añadidas a la cola. Consulta el progreso en Descargas.}}",
+  "mediaActionCompleteFailed": "No se pudo completar esta acción.",
+  "accountChangedSeason": "La cuenta activa ha cambiado. Vuelve a seleccionar la temporada.",
+  "episodesAlreadyQueued": "Todos los episodios seleccionados ya están en cola o descargados.",
+  "episodesQueuedCount": "{count, plural, one{1 episodio añadido a la cola. Consulta el progreso en Descargas.} other{{count} episodios añadidos a la cola. Consulta el progreso en Descargas.}}",
+  "seasonQueueFailed": "No se pudo añadir la temporada seleccionada a la cola.",
+  "actionFailed": "Error en la acción",
+  "actionRequired": "Acción necesaria",
+  "downloadStarted": "Descarga iniciada",
+  "actionCompleted": "Acción completada",
+  "downloadItemStatus": "{status}: {title}",
+  "downloadCompletedTitle": "Descarga completada: {title}",
+  "downloadStoppingTitle": "Deteniendo descarga: {title}",
+  "downloadQueuedTitle": "En cola para descargar: {title}",
+  "downloadTitle": "Descargar {title}",
+  "accountStatusActive": "Activa",
+  "accountStatusUnknown": "Desconocida",
+  "trialAccount": "De prueba",
+  "standardAccount": "Estándar",
+  "networkPreferencesRestoreFailed": "No se pudieron restaurar las preferencias de red.",
+  "pendingCredentialCleanupFailed": "No se pudo completar la limpieza pendiente de credenciales.",
+  "savedAccountsRestoreFailed": "No se pudieron leer las cuentas guardadas.",
+  "preferredAccountRestoreFailed": "No se pudo restaurar la última cuenta seleccionada.",
+  "accountMetadataRestoreFailed": "No se pudieron restaurar los datos de las cuentas.",
+  "appearanceRestoreFailed": "No se pudieron restaurar las preferencias de apariencia.",
+  "languageRestoreFailed": "No se pudieron restaurar las preferencias de idioma.",
+  "downloadControlsRestoreFailed": "No se pudo restaurar la preferencia del botón de descarga.",
+  "copyLinkRestoreFailed": "No se pudo restaurar la preferencia de copiar enlaces.",
+  "exportPreferenceRestoreFailed": "No se pudo restaurar la preferencia de exportación M3U.",
+  "redirectPreferenceRestoreFailed": "No se pudieron restaurar las preferencias de redirección de descargas.",
+  "downloadHistoryRestoreFailed": "No se pudo restaurar el historial de descargas.",
+  "personalLibraryRestoreFailed": "No se pudo abrir el almacenamiento de la biblioteca personal.",
+  "credentialsRequiredError": "El nombre de usuario y la contraseña son obligatorios.",
+  "personalLibraryOpenError": "No se pudo cargar la biblioteca personal.",
+  "preferredAccountSaveError": "Se estableció la conexión, pero no se pudo guardar la cuenta seleccionada.",
+  "accountConnectError": "No se pudo guardar la cuenta ni establecer la conexión.",
+  "savedCredentialsReadError": "No se pudieron leer las credenciales guardadas de la cuenta.",
+  "accountRemovalCleanupError": "Se eliminó la cuenta, pero no se pudo limpiar la biblioteca local.",
+  "accountRemovalError": "No se pudo completar la eliminación de la cuenta guardada.",
+  "catalogLoadError": "No se pudo cargar el catálogo.",
+  "preferredAccountClearError": "Se cerró la conexión, pero no se pudo borrar la selección guardada.",
+  "connectionTimeoutError": "La conexión agotó el tiempo de espera. Comprueba el servidor e inténtalo de nuevo.",
+  "tlsCertificateError": "El certificado TLS del servidor no es válido.",
+  "serverConnectionError": "No se pudo conectar con el servidor.",
+  "requestCancelledError": "Se canceló la solicitud.",
+  "unexpectedResponseError": "El servidor devolvió una respuesta inesperada.",
+  "unexpectedError": "Se produjo un error inesperado.",
+  "apiRedirectError": "El proveedor redirigió la solicitud de la API. Comprueba la dirección del servidor.",
+  "invalidAccountResponseError": "El servidor no devolvió información de cuenta válida.",
+  "missingUserInfoError": "El servidor no devolvió información del usuario.",
+  "accountAccessDeniedError": "El acceso a la cuenta está denegado o inactivo.",
+  "accountExpiredError": "La cuenta ha caducado.",
+  "invalidCategoriesError": "El proveedor devolvió una lista de categorías no válida.",
+  "invalidCatalogError": "El proveedor devolvió un catálogo no válido.",
+  "invalidSeriesInfoError": "El proveedor devolvió información de la serie no válida.",
+  "invalidMovieInfoError": "El proveedor devolvió detalles de la película no válidos.",
+  "corruptSavedAccountError": "La información de la cuenta guardada está dañada.",
+  "missingSavedPasswordError": "No hay una contraseña guardada para esta cuenta.",
+  "urlRequiredError": "Introduce una dirección HTTP o HTTPS absoluta del servidor.",
+  "unsupportedServerPathError": "La dirección del servidor contiene una ruta no compatible.",
+  "userAgentLengthError": "El User-Agent debe contener entre 1 y 256 caracteres.",
+  "userAgentAsciiError": "El User-Agent solo puede contener caracteres ASCII imprimibles.",
+  "serverHttpError": "El servidor devolvió el código HTTP {status}.",
+  "@serverHttpError": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@downloadedRemaining": {
+    "placeholders": {
+      "received": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "@episodesQueuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "@downloadItemStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "@downloadQueuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "@downloadTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "@seasonRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "@downloadedTotalUnknown": {
+    "placeholders": {
+      "received": {
+        "type": "String"
+      }
+    }
+  },
+  "@categoriesFound": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "@providerRating": {
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "@downloadStoppingTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "@downloadQueuedTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "@downloadCompletedTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "@ratingLabel": {
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  }
+}
