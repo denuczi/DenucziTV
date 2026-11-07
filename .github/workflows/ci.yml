@@ -52,11 +52,21 @@ jobs:
       - name: Install native dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libstdc++-12-dev libsecret-1-dev libmpv-dev mpv libsqlite3-0 libsqlite3-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libstdc++-12-dev libsecret-1-dev libmpv-dev mpv libsqlite3-0 libsqlite3-dev dpkg-dev binutils desktop-file-utils
       - name: Resolve dependencies
         run: flutter pub get
       - name: Build Linux
         run: flutter build linux --release
+      - name: Package Debian binary
+        run: bash scripts/package-deb.sh
+      - name: Verify Debian package
+        run: python3 -m unittest discover -s test/packaging -v
+      - name: Upload Debian package and checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: denuczitv-linux-deb
+          path: dist/
+          if-no-files-found: error
 
   windows:
     name: Windows release build

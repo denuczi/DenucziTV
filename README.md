@@ -101,6 +101,11 @@ regenerated, run `scripts/bootstrap.sh` on Linux, or run `flutter create
 committing. Do not commit actual accounts, passwords, session URLs, exported
 playlists, downloaded media, or local SQLite databases.
 
+## Debian package
+
+For a native Debian/Ubuntu package built from the Linux release bundle, see
+[Debian packaging](docs/DEBIAN_PACKAGING.md).
+
 ## Personal-library behavior
 
 - Favorite movies and series from their detail views. Episodes are tracked for viewing, not favorited individually.

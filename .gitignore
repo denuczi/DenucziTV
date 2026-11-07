@@ -3,6 +3,8 @@
 .pub-cache/
 .pub/
 build/
+dist/
+__pycache__/
 coverage/
 .flutter-plugins
 .flutter-plugins-dependencies
