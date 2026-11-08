@@ -7,7 +7,7 @@ Changes are grouped by application version. Binary availability is listed on
 
 No additional changes recorded.
 
-## [0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2)
+## [0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2) — Stable
 
 ### Added
 
@@ -25,6 +25,19 @@ No additional changes recorded.
 Automatic installer execution and application restarts are not part of 0.6.2.
 See [the update guide](docs/UPDATES.md) for version semantics, installer naming,
 postponement, privacy, verification, and the absence of unattended installation.
+
+### Distribution and verification
+
+- Linux amd64 Debian package and Windows x64 setup installer, with SHA256 files.
+- Windows installer built from the existing `v0.6.2` application tag using a
+  manually dispatched GitHub Actions workflow. It includes the app-local Visual
+  C++ runtime, installs per user, and is not Authenticode-signed.
+- The maintainer ran 100 update tests and all 343 tests in the full Flutter suite
+  successfully during release preparation.
+- Windows installer workflow [42524444147](https://github.com/denuczi/DenucziTV/actions/runs/42524444147)
+  passed formatting, analysis, Flutter tests, the native release build, installer
+  compilation, and artifact upload. The maintainer then confirmed installation,
+  application operation, and update checks under a normal Windows user session.
 
 ## [0.6.1](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1) — Pre-release
 

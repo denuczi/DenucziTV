@@ -5,11 +5,12 @@ Flutter Linux **release** bundle. It does not rebuild Flutter, install the packa
 change repository visibility, or publish a GitHub release. Run it as a regular
 user; root access is unnecessary for packaging.
 
-This checkout prepares version 0.6.2 for stable publication. The commands below
-use its package filenames; use the matching version when packaging another
-release. Installers belong in GitHub release assets; keep `dist/` out of source
-commits. The earlier [v0.6.1 pre-release](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1)
-remains available separately.
+To install the app, follow the [Linux installation steps](../README.md#linux-debian--ubuntu).
+This guide is for maintainers building or inspecting a package.
+
+The current stable release is [v0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2).
+The examples use its filenames; substitute the matching version for a future
+release. Installers belong in release assets; keep `dist/` out of source commits.
 
 ## Prerequisites
 

@@ -1,153 +1,153 @@
 # Publishing source and releases
 
-Run publishing commands from a normal local terminal with network access and a
-writable `.git` directory. Binary packages are GitHub release assets; `dist/` is
-ignored by Git and must not be committed.
+This guide is for maintainers. To install DenucziTV, use the
+[download and installation instructions](../README.md#download).
 
-To generate a Windows x64 installer from Linux, use the manually dispatched
-[Windows installer workflow](WINDOWS_PACKAGING.md). It builds an existing tag,
-uploads artifacts for testing, and leaves publication as an explicit manual step.
+Run the commands from the repository root in a normal terminal with network
+access and a writable `.git` directory. Installers are release assets: keep
+`dist/` out of source commits.
 
-This checkout prepares **0.6.2** as a stable release. The earlier pre-release is
-[v0.6.1](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1).
-Its Linux amd64 installer is `denuczitv_0.6.1+1-1_amd64.deb`.
+## Current stable release
 
-## Authentication and source updates
+[Version 0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2) uses these
+installer filenames:
 
-Verify access:
+| Platform | Installer | Checksum |
+| --- | --- | --- |
+| Debian / Ubuntu x64 | `denuczitv_0.6.2+1-1_amd64.deb` | `denuczitv_0.6.2+1-1_amd64.deb.sha256` |
+| Windows x64 | `DenucziTV-Setup-0.6.2-x64.exe` | `DenucziTV-Setup-0.6.2-x64.exe.sha256` |
 
-```sh
+The release and tag already exist. Do not recreate them to add a platform asset
+or update the description. Keep earlier prereleases available as history.
+
+## Authentication and source review
+
+```bash
 gh auth status
 gh repo view denuczi/DenucziTV
-```
-
-If authentication fails in your terminal, use
-`gh auth login --hostname github.com`. An agent environment may have different
-credential access or a read-only `.git` directory even when your terminal works.
-
-Inspect the current branch, remote, and working tree before publishing:
-
-```sh
 git status
 git remote -v
 git diff --check
 ```
 
-Review and commit only the intended source, documentation, version metadata,
-and tests, then push the branch. Keep local configuration, credentials, databases,
-and build output excluded. Keep `pubspec.lock` and the native runners tracked.
-Do not overwrite remote history to resolve a rejected push.
+If authentication fails, use `gh auth login --hostname github.com`.
+Review and commit only the intended source, documentation, version metadata and
+tests. Exclude local credentials, configuration, databases and build output.
+Keep `pubspec.lock` and the native runners tracked. Do not overwrite remote
+history to resolve a rejected push.
 
-## Prepare a new version
+## Prepare a new application release
 
-1. Choose an unused application version and update `pubspec.yaml`, for example
-   `0.6.2+1` after 0.6.1. The packager reads this version directly; an environment
-   variable selecting a `.deb` for tests does not change the package version.
-2. Move the relevant changes into a versioned changelog section. Describe pending
-   publication as preparation until the release is published. Preserve earlier
-   version entries and do not invent release dates or passing test results.
-3. Complete [QA.md](QA.md), including formatting, analysis, and the full test suite.
-   `flutter test --concurrency=1` reduces memory pressure on a two-thread machine.
-4. Commit the reviewed source and version changes. Build a new release bundle
-   from that source and package it using [DEBIAN_PACKAGING.md](DEBIAN_PACKAGING.md).
-   Select the matching new archive explicitly for integration checks when `dist/`
-   contains multiple versions.
-5. Verify the checksum, install or upgrade the package, and check the installed
-   app. Record the actual results and any checks that could not be run. Push the
-   source commit that corresponds to the application being distributed.
+The examples in this section use **0.6.3**, a future version. They are a template,
+not instructions to publish the existing 0.6.2 again.
 
-For the prepared 0.6.2 package, the checksum and installation commands are:
+1. Choose an unused version and set `pubspec.yaml`, for example `0.6.3+1`.
+   The packagers read it directly. Selecting a filename for package tests does
+   not change the application version.
+2. Update the changelog and create the new English release notes file, such as
+   `docs/releases/v0.6.3.md`. Describe user-visible changes, available platforms,
+   installation steps and known limitations. Record actual validation results.
+3. Complete [QA.md](QA.md), including formatting, analysis and the full test suite.
+   Use `flutter test --concurrency=1` to reduce memory pressure on a small machine.
+4. Review and commit the source that will be distributed. Build a fresh Linux
+   release and [Debian package](DEBIAN_PACKAGING.md), then verify its checksum,
+   packaging tests and installed-app behaviour. Do not rename an older binary.
+5. Push the source commit. Create an unused application tag on that exact commit:
 
-```sh
-(cd dist && sha256sum --check denuczitv_0.6.2+1-1_amd64.deb.sha256)
-sudo apt install ./dist/denuczitv_0.6.2+1-1_amd64.deb
+   ```bash
+   git tag -a v0.6.3 -m "DenucziTV 0.6.3" &&
+   git push origin main &&
+   git push origin v0.6.3
+   ```
+
+6. After QA, create a stable release with the platforms already verified:
+
+   ```bash
+   gh release create v0.6.3 \
+     dist/denuczitv_0.6.3+1-1_amd64.deb \
+     dist/denuczitv_0.6.3+1-1_amd64.deb.sha256 \
+     --repo denuczi/DenucziTV \
+     --verify-tag \
+     --title "DenucziTV 0.6.3" \
+     --notes-file docs/releases/v0.6.3.md \
+     --latest \
+     --prerelease=false
+   ```
+
+7. Use the [Windows installer workflow](WINDOWS_PACKAGING.md) with that same tag.
+   Download its artifact, test it on Windows, and attach the verified installer
+   and checksum to the existing release. Update the description when the new
+   platform is available.
+
+When publishing through the website, leave **Set as a pre-release** unchecked
+for a stable version and select **Set as the latest release**. A successful build
+alone does not establish stability; complete the native installation checks.
+
+## Add a Windows installer to an existing release
+
+Build and test the same application tag, following [WINDOWS_PACKAGING.md](WINDOWS_PACKAGING.md).
+The following commands are for 0.6.2, with files downloaded to
+`dist/windows-v0.6.2`. Run them from the repository root. The checksum command
+uses a subshell so the terminal stays in that root directory:
+
+```bash
+(cd dist/windows-v0.6.2 && sha256sum --check DenucziTV-Setup-0.6.2-x64.exe.sha256)
 ```
 
-Substitute the new version's exact filenames for subsequent releases. Rebuild
-when the application version changes so bundle metadata and Debian control
-metadata match. Renaming an older archive does not update its internal version.
+Only if those assets are not already published, upload them:
 
-## Stable update discovery from 0.6.2
-
-The integrated checker offers only releases with `draft: false` and
-`prerelease: false`, stable SemVer tags, and compatible official assets. Publishing
-a prerelease will not notify the Stable channel. Do not change a release flag
-just to test the modal; use [the isolated fixtures and preview](UPDATES.md).
-
-Use explicit package prerelease identifiers for candidates, such as
-`0.6.3-rc.1+1`. Plain `0.6.3+1` and stable tag `v0.6.3` compare equal even if one
-was previously published as a GitHub prerelease. Build numbers do not force an
-update. New official Windows x64 setup installers must follow the naming contract
-in [UPDATES.md](UPDATES.md); the bare Flutter executable is not an installer.
-
-## Create the GitHub release
-
-Open [New release](https://github.com/denuczi/DenucziTV/releases/new).
-
-- Create an unused tag matching the application version, such as `v0.6.2`.
-- Target the pushed source commit that was tested and built.
-- Use an English title and notes explaining user-visible changes, installation,
-  platform requirements, and actual validation results.
-- Attach the new `.deb` and its matching `.deb.sha256`. The `.build-info.json` is
-  optional technical provenance; the dependency log is not needed to install.
-- For 0.6.2 stable, leave **Set as a pre-release** unchecked and select
-  **Set as the latest release**. A completed package build alone does not
-  establish stability: complete tests and installed-app QA first.
-- Publish after verifying the tag, target commit, version, and selected files.
-
-For reference, the 0.6.1 release assets are:
-
-```text
-denuczitv_0.6.1+1-1_amd64.deb
-denuczitv_0.6.1+1-1_amd64.deb.sha256
+```bash
+gh release upload v0.6.2 \
+  dist/windows-v0.6.2/DenucziTV-Setup-0.6.2-x64.exe \
+  dist/windows-v0.6.2/DenucziTV-Setup-0.6.2-x64.exe.sha256 \
+  --repo denuczi/DenucziTV
 ```
 
-Keep older releases available for history. Library database migrations may
-prevent older application versions from opening newer data; see the migration
-notes in [PROTECTED_SINGLE_LINK.md](PROTECTED_SINGLE_LINK.md) before downgrading.
+This preserves the Linux assets. Do not use `--clobber` to replace a published
+installer. A changed application requires a new application version and tag.
+The `.build-info.json` is optional technical provenance, not an installer.
 
-## Publish 0.6.2 stable from the terminal
+To apply the reviewed English release description from the repository:
 
-After tests, a fresh release build, packaging checks, and installed-app QA pass,
-commit the reviewed source and push it to `main`. Create the unused tag on the
-same source commit and publish these two assets:
-
-```sh
-git tag -a v0.6.2 -m "DenucziTV 0.6.2"
-git push origin main && git push origin v0.6.2 &&
-gh release create v0.6.2 \
-  dist/denuczitv_0.6.2+1-1_amd64.deb \
-  dist/denuczitv_0.6.2+1-1_amd64.deb.sha256 \
-  --repo denuczi/DenucziTV \
-  --verify-tag \
-  --title "DenucziTV 0.6.2 — Stable Update Checker" \
-  --notes-file docs/releases/v0.6.2.md \
-  --latest \
-  --prerelease=false
+```bash
+gh release edit v0.6.2 --repo denuczi/DenucziTV --notes-file docs/releases/v0.6.2.md
 ```
 
-Do not reuse or move an existing tag. Keep earlier prereleases as historical
-versions. Confirm `draft: false` and `prerelease: false` after publication:
+This replaces the complete release description with that file. Review it first
+and preserve any additional notes that should remain public.
 
-```sh
+## Verify the published result
+
+```bash
 gh api repos/denuczi/DenucziTV/releases/tags/v0.6.2 \
   --jq '{tag: .tag_name, draft: .draft, prerelease: .prerelease, assets: [.assets[].name]}'
+gh release view v0.6.2 --repo denuczi/DenucziTV --web
 ```
 
-The public repository and stable release must be readable without signing in:
-the application's checker uses unauthenticated requests. Versions before 0.6.2
-need a manual upgrade to obtain the checker. An installed 0.6.2 package does not
-announce the same 0.6.2 release as a new update.
+For a published stable release, `draft` and `prerelease` must both be `false`.
+Check the exact filenames and verify that downloads are accessible without
+signing in. The repository must be public for the unauthenticated update checker.
 
-## Update documentation after publication
+## Stable update policy
 
-- Point the README's main download and installation links to the published tag.
-- Update package filenames and commands in README and Debian packaging examples.
-- Change the changelog entry from preparation to pre-release or stable status as
-  appropriate. Preserve the limits of the recorded validation.
-- Link the current release from the technical guides. Update screenshots only
-  when replacement images exist; identify older screenshots accurately.
+From 0.6.2, the application offers only newer stable releases with compatible
+official installer assets. Prereleases and drafts are excluded. Installation
+remains manual. Never change a real release flag just to test the modal; use
+[the isolated fixtures and preview](UPDATES.md).
 
-Documentation-only updates do not require rebuilding the application or replacing
-published binaries. Application fixes should receive a new version and release,
-with corresponding verification and assets.
+Use explicit package prerelease identifiers for future candidates, such as
+`0.6.3-rc.1+1`. Plain `0.6.3+1` and stable tag `v0.6.3` compare equal even if one
+was previously labelled as a GitHub prerelease. Build numbers do not force an
+application update. Keep the installer naming contract in [UPDATES.md](UPDATES.md).
+
+## Documentation after publication
+
+- Update the README download table and installation filenames for both platforms.
+- Keep the local release notes consistent with the published description.
+- Update the changelog status, packaging examples and actual validation record.
+- Retain historical version entries and identify older screenshots accurately.
+
+Documentation-only changes do not require rebuilding or replacing installers.
+Before downgrading, review the library migration notes in
+[PROTECTED_SINGLE_LINK.md](PROTECTED_SINGLE_LINK.md); older binaries may not read
+newer personal-library databases.

@@ -1,5 +1,8 @@
 # Windows installer from Linux with GitHub Actions
 
+To install the app, follow the [Windows installation steps](../README.md#windows).
+This guide is for maintainers generating an installer.
+
 The manually dispatched `Windows installer` workflow builds a tagged Windows x64
 application on GitHub's Windows Server 2022 runner, packages it with Inno Setup 7,
 and uploads downloadable artifacts. The maintainer can start it and retrieve the
@@ -135,14 +138,22 @@ installer and other assets.
 If native testing requires application code fixes, create a new application
 version and tag rather than silently distributing changed code under v0.6.2.
 
-## Verification limits
+## Verified 0.6.2 build
 
-This infrastructure was prepared on Linux. YAML structure, source-selection and
-permission rules can be checked locally, and the CMake policy can be configured
-with a small independent fixture. PowerShell execution, Inno Setup compilation,
-the Windows build, and native installer QA must be verified by the first workflow
-run and a Windows test machine. Do not report those checks as passed before they
-actually run.
+[Workflow run 42524444147](https://github.com/denuczi/DenucziTV/actions/runs/42524444147)
+completed successfully: formatting, analysis, Flutter tests, Windows compilation,
+Inno Setup 7 installation, packaging, and artifact upload all passed.
+
+The generated build-info records application version `0.6.2+1`, source tag
+`v0.6.2`, application commit `bfa53a16ef557d8c574414649bf0c02c3067c56e`, x64
+architecture, Visual C++ runtime `14.44.35211.0`, and signature status `NotSigned`.
+The maintainer verified the downloaded checksum and reported that installation,
+application operation, and update checks work in a normal Windows user session.
+
+These results apply to that artifact. Each future release still needs the
+workflow checks and installed-app QA described above. The exact Windows desktop
+version was not recorded; do not infer coverage of every supported Windows version
+or of every manual test case from the build result.
 
 ## Official references
 

@@ -10,12 +10,13 @@ request. A passing CI run does not replace playback checks on a real desktop.
 flutter --version
 flutter pub get
 flutter gen-l10n
-dart format --output=none --set-exit-if-changed lib test
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze --fatal-infos --fatal-warnings
 flutter test --concurrency=1 --coverage
 ```
 
-Build on each target operating system:
+Build Linux locally and Windows on a Windows host, or use the
+[Windows installer workflow](WINDOWS_PACKAGING.md) from Linux:
 
 ```bash
 flutter build linux --release
@@ -86,6 +87,8 @@ Run `flutter test --concurrency=1 test/updates` and use the isolated preview in
 - Postpone, restart within seven days, and verify suppression for that version;
   a manual check must still work. Correct the system clock and test timestamp
   recovery. Verify disposal cancels the checker without late widget updates.
+- Run the installed Windows application as a normal user and verify update
+  checks work without requiring administrator privileges.
 - Verify package metadata and browser download behaviour on Linux and Windows;
   DenucziTV must remain running and must never execute the installer.
 

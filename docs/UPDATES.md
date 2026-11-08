@@ -4,7 +4,7 @@ DenucziTV 0.6.2 adds stable-release discovery and assisted download for desktop.
 It leaves the app running and opens an official installer download in the system
 browser. Installation remains the user's choice. It never executes an installer,
 requests administrator access, replaces application files, or restarts the app.
-The published 0.6.1 app predates this feature and needs a manual upgrade first.
+Versions before 0.6.2 predate this feature and need a manual upgrade first.
 
 ## Architecture and audit
 
@@ -114,7 +114,7 @@ and produces a Settings warning that persistence may be unavailable.
 ## Compatible installers and official links
 
 The Linux naming convention is taken from `scripts/package_deb.py` and the
-published 0.6.1 package. Linux downloads require an x64 process ABI and a system
+published Debian packages. Linux downloads require an x64 process ABI and a system
 identifying as Debian/Ubuntu or declaring that family in `/etc/os-release`.
 
 Accepted examples for a fictional stable `v0.6.3` release:
@@ -124,11 +124,10 @@ denuczitv_0.6.3+1-1_amd64.deb
 DenucziTV-Setup-0.6.3-x64.exe
 ```
 
-The Windows name is a **new explicit publishing contract**, not a claim that an
-existing installer was verified. Repository documentation currently describes a
-Flutter Windows runner, not an installer, and live GitHub inspection was blocked
-in the implementation environment. Future official Windows installers must use
+The Windows installer follows the naming contract
 `DenucziTV-Setup-<version>-x64.exe` (an optional numeric `+build` is accepted).
+The 0.6.2 installer was generated from the application tag and tested by the
+maintainer; see [Windows packaging](WINDOWS_PACKAGING.md).
 A bare `denuczi_tv.exe`, ZIP, ARM64 package, mismatched version, or unfamiliar
 filename is not silently treated as a supported installer. Format and architecture
 selection does not guarantee every Debian/Ubuntu version satisfies native library
@@ -199,29 +198,20 @@ The preview is a separate entry point and is not included in the normal app.
 Manual platform QA should also cover the real browser, native package metadata,
 Windows x64, Debian/Ubuntu x64, and suppression during actual playback/downloads.
 
-## Verification record for this implementation
+## Verification record for 0.6.2
 
-- `dart format` checked 156 files with no remaining formatting changes.
-- `flutter gen-l10n` completed, and English/Spanish ARB keys and placeholders
-  were checked for parity.
-- A standalone Dart check exercised the production parser, transport, platform
-  classification, version comparison and asset policy with 55 passing assertions
-  using mocked responses. This does not replace the Flutter regression suite.
-- The final focused `flutter test --concurrency=1 test/updates` attempt could not
-  load any of its four test files: this execution environment forbids the local
-  server socket required by Flutter's test runner (`127.0.0.1:0`, OS error 1).
-  No Flutter test assertions ran, so the suite is **not reported as passing**.
-  The full-suite attempt encountered the same restriction and was stopped.
-- `flutter analyze --no-pub --fatal-infos --fatal-warnings` completed with
-  no issues.
+The maintainer ran **100 update tests and all 343 tests in the full suite**
+successfully during release preparation, and checked the Linux modal preview.
+The recorded implementation analysis and localisation generation also passed.
 
-The maintainer subsequently ran the tests on their development machine:
-**100 update tests and all 343 tests in the full suite passed**, and confirmed
-that the Linux modal preview works after the layout correction. Those results
-precede the final wording changes; run the release checks again on the exact
-source being packaged. Native Windows behaviour, installed Linux package
-metadata and real default-browser launching still require platform QA. No release build, commit, push, or GitHub
-release was performed as part of this implementation.
+[Windows installer workflow 42524444147](https://github.com/denuczi/DenucziTV/actions/runs/42524444147)
+subsequently passed formatting, analysis, Flutter tests, native compilation and
+Inno Setup packaging. The maintainer confirmed that the installed Windows app
+and manual update checks work in a normal user session.
+
+These are recorded results for 0.6.2, not a substitute for testing subsequent
+changes. Future releases must repeat automated checks and native QA, including
+browser launching, active-playback suppression and installation behaviour.
 
 ## Official references
 
