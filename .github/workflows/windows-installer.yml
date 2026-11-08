@@ -1,0 +1,112 @@
+name: Windows installer
+run-name: Windows installer ${{ inputs.release_tag }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing stable version tag to build (for example, v0.6.2)
+        required: true
+        default: v0.6.2
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  installer:
+    name: Build Windows x64 installer
+    runs-on: windows-2022
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      CMAKE_BUILD_PARALLEL_LEVEL: '2'
+    steps:
+      # Packaging tools come from the workflow revision. Application code comes
+      # from the selected existing tag, which need not contain this workflow.
+      - name: Check out packaging tools
+        uses: actions/checkout@v4
+        with:
+          path: tooling
+          persist-credentials: false
+      - name: Validate release tag
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+            throw 'Select an existing stable version tag such as v0.6.2.'
+          }
+          $tokens = $null
+          $parseErrors = $null
+          $script = (Resolve-Path 'tooling\scripts\package-windows.ps1').Path
+          [System.Management.Automation.Language.Parser]::ParseFile($script, [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -gt 0) { throw 'The packaging script contains PowerShell syntax errors.' }
+      - name: Check out tagged application source
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.release_tag }}
+          path: source
+          persist-credentials: false
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          architecture: x64
+          cache: true
+      - name: Resolve dependencies
+        working-directory: source
+        run: flutter pub get
+      - name: Generate localization
+        working-directory: source
+        run: flutter gen-l10n
+      - name: Check formatting
+        working-directory: source
+        run: dart format --output=none --set-exit-if-changed lib test tool
+      - name: Analyze application
+        working-directory: source
+        run: flutter analyze --fatal-infos --fatal-warnings
+      - name: Run tests
+        working-directory: source
+        run: flutter test --concurrency=1
+      - name: Build release bundle
+        working-directory: source
+        run: |
+          # Hosted runners include Java. This app does not use the optional JNI
+          # runtime; disable discovery before CMake's first configuration.
+          $env:CMAKE_TOOLCHAIN_FILE = (Resolve-Path '..\tooling\packaging\windows\flutter-toolchain.cmake').Path
+          flutter build windows --release
+      - name: Install Inno Setup 7
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP 'innosetup-7.1.1-x64.exe'
+          Invoke-WebRequest -Uri 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_1/innosetup-7.1.1-x64.exe' -OutFile $download
+          $signature = Get-AuthenticodeSignature -LiteralPath $download
+          if ($signature.Status -ne 'Valid' -or $null -eq $signature.SignerCertificate -or $signature.SignerCertificate.Subject -notmatch 'Pyrsys B\.V\.') {
+            throw 'The Inno Setup installer signature could not be verified.'
+          }
+          $installDir = Join-Path $env:RUNNER_TEMP 'InnoSetup7'
+          $process = Start-Process -FilePath $download -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=`"$installDir`"" -Wait -PassThru
+          if ($process.ExitCode -notin @(0, 3010)) {
+            throw "Inno Setup installation failed with exit code $($process.ExitCode)."
+          }
+          if (-not (Test-Path (Join-Path $installDir 'ISCC.exe'))) {
+            throw 'The Inno Setup compiler was not installed.'
+          }
+      - name: Package and verify installer
+        run: |
+          .\tooling\scripts\package-windows.ps1 `
+            -ProjectRoot .\source `
+            -ExpectedTag $env:RELEASE_TAG `
+            -InnoCompiler (Join-Path $env:RUNNER_TEMP 'InnoSetup7\ISCC.exe') `
+            -OutputDirectory .\dist
+      - name: Upload installer for manual testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: denuczitv-windows-${{ inputs.release_tag }}-x64
+          path: |
+            dist/DenucziTV-Setup-*.exe
+            dist/DenucziTV-Setup-*.exe.sha256
+            dist/DenucziTV-Setup-*.build-info.json
+          if-no-files-found: error
+          retention-days: 14

@@ -44,6 +44,7 @@ for dependencies, verification, and removal.
 The project includes a Windows desktop runner. Check the selected release's
 Assets for available platforms; the `.deb` package is for Linux. Developers can
 follow the [Windows build instructions](docs/DEVELOPMENT.md#windows).
+Maintainers can also [generate the Windows installer from Linux with GitHub Actions](docs/WINDOWS_PACKAGING.md).
 
 ## Start using the app
 

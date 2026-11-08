@@ -70,14 +70,18 @@ jobs:
 
   windows:
     name: Windows release build
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.47.9'
           channel: stable
           cache: true
       - name: Resolve dependencies
         run: flutter pub get
       - name: Build Windows
-        run: flutter build windows --release
+        shell: pwsh
+        run: |
+          $env:CMAKE_TOOLCHAIN_FILE = (Resolve-Path 'packaging\windows\flutter-toolchain.cmake').Path
+          flutter build windows --release

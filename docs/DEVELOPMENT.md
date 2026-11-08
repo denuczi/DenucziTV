@@ -60,6 +60,10 @@ dependency detection, verification, and distribution compatibility.
 
 ## Windows
 
+Maintainers working from Linux can generate a tagged Windows installer using
+[GitHub Actions](WINDOWS_PACKAGING.md), without a local Windows build environment.
+The native setup below remains useful for Windows development and debugging.
+
 Build on Windows with a compatible Flutter SDK and Microsoft's C++ desktop
 toolchain: Visual Studio or Visual Studio Build Tools, with the desktop C++
 workload, MSVC, CMake tools, and a Windows SDK. Visual Studio Code alone does

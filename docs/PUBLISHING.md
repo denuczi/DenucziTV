@@ -4,6 +4,10 @@ Run publishing commands from a normal local terminal with network access and a
 writable `.git` directory. Binary packages are GitHub release assets; `dist/` is
 ignored by Git and must not be committed.
 
+To generate a Windows x64 installer from Linux, use the manually dispatched
+[Windows installer workflow](WINDOWS_PACKAGING.md). It builds an existing tag,
+uploads artifacts for testing, and leaves publication as an explicit manual step.
+
 This checkout prepares **0.6.2** as a stable release. The earlier pre-release is
 [v0.6.1](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1).
 Its Linux amd64 installer is `denuczitv_0.6.1+1-1_amd64.deb`.
