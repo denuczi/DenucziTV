@@ -31,6 +31,58 @@ AppController createController() {
 }
 
 void main() {
+  testWidgets('account detail labels display independent dates', (
+    tester,
+  ) async {
+    final app = createController();
+    addTearDown(app.dispose);
+    app.activeAccount = const Account(
+      id: 'date-test',
+      label: 'Date test',
+      serverUrl: 'https://provider.example',
+      username: 'test-user',
+    );
+    app.accountStatus = AccountStatus(
+      authorized: true,
+      createdAt: DateTime(2021, 1, 2, 3, 4),
+      expiration: DateTime(2099, 5, 6, 7, 8),
+    );
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppController>.value(
+        value: app,
+        child: const MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: AccountDetailsDialog()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final entry in {
+      'Created': '2021-01-02 03:04',
+      'Expires': '2099-05-06 07:08',
+    }.entries) {
+      final row = find
+          .ancestor(of: find.text(entry.key), matching: find.byType(Row))
+          .first;
+      expect(
+        find.descendant(
+          of: row,
+          matching: find.byWidgetPredicate(
+            (widget) => widget is SelectableText && widget.data == entry.value,
+          ),
+        ),
+        findsOneWidget,
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('account actions cannot open overlapping modal routes', (
     tester,
   ) async {

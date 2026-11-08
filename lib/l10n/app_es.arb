@@ -345,7 +345,7 @@
   "serverTimezone": "Zona horaria del servidor",
   "streamFormats": "Formatos de transmisión",
   "username": "Usuario",
-  "localTimezoneDates": "Las fechas se muestran en tu zona horaria local.",
+  "localTimezoneDates": "Las fechas son informadas por tu proveedor y se muestran en tu zona horaria local.",
   "addAccount": "Agregar cuenta",
   "removeAccount": "Eliminar cuenta",
   "removeSavedAccount": "Eliminar cuenta guardada",

@@ -5,6 +5,76 @@ import 'package:denuczi_tv/core/network/network_client.dart';
 import 'package:denuczi_tv/features/library/data/xtream_api.dart';
 
 void main() {
+  Future<AccountStatus> authenticateWith(Map<String, Object?> info) async {
+    final network = NetworkClient();
+    addTearDown(network.dispose);
+    network.dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) => handler.resolve(
+          Response(
+            requestOptions: options,
+            statusCode: 200,
+            data: {
+              'user_info': {'auth': 1, 'status': 'Active', ...info},
+            },
+          ),
+        ),
+      ),
+    );
+    return XtreamApi(network).authenticate(
+      const AccountCredentials(
+        serverUrl: 'https://provider.example',
+        username: 'test-user',
+        password: 'test-password',
+        label: 'Test provider',
+      ),
+    );
+  }
+
+  test(
+    'creation and expiration remain independent through the cache',
+    () async {
+      for (final createdAt in ['1609459200', 1609459200]) {
+        final status = await authenticateWith({
+          'created_at': createdAt,
+          'exp_date': '4070908800',
+        });
+        expect(status.createdAt, DateTime.utc(2021, 1, 1));
+        expect(status.expiration, DateTime.utc(2099, 1, 1));
+
+        final restored = AccountStatus.fromJson(status.toJson());
+        expect(restored.createdAt, status.createdAt);
+        expect(restored.expiration, status.expiration);
+      }
+    },
+  );
+
+  test(
+    'missing creation dates are not replaced with expiration dates',
+    () async {
+      for (final createdAt in [null, '', 'invalid', '0']) {
+        final status = await authenticateWith({
+          'created_at': createdAt,
+          'exp_date': '4070908800',
+        });
+        expect(status.createdAt, isNull);
+        expect(status.expiration, DateTime.utc(2099, 1, 1));
+      }
+    },
+  );
+
+  test(
+    'identical provider dates are preserved without inventing a date',
+    () async {
+      final status = await authenticateWith({
+        'created_at': '4070908800',
+        'exp_date': '4070908800',
+      });
+      expect(status.createdAt, DateTime.utc(2099, 1, 1));
+      expect(status.expiration, DateTime.utc(2099, 1, 1));
+    },
+  );
+
   test(
     'reads optional account information without exposing passwords',
     () async {

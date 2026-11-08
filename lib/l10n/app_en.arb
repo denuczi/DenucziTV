@@ -345,7 +345,7 @@
   "serverTimezone": "Server timezone",
   "streamFormats": "Stream formats",
   "username": "Username",
-  "localTimezoneDates": "Dates are displayed in your local time zone.",
+  "localTimezoneDates": "Dates are supplied by your provider and displayed in your local time zone.",
   "addAccount": "Add account",
   "removeAccount": "Remove account",
   "removeSavedAccount": "Remove saved account",

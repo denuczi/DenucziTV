@@ -6,10 +6,17 @@ User-visible changes are recorded here. Development snapshots are not releases.
 
 ### Fixed
 
+- Keep the M3U export confirmation compact and scrollable on smaller windows.
+- Clarify that account creation and expiration dates come from the provider and
+  are displayed in the user's local time zone.
+
 - Prevent Android's transitive JNI plugin from adding an unused JVM dependency
   to Linux builds on hosts with a JDK, including GitHub Actions runners.
 
 ### Added
+
+- Installation-first README with pre-release downloads, screenshots, and a
+  separate development guide.
 
 - Debian packaging with native dependency detection, desktop integration,
   checksums, integration checks, and CI artifacts.

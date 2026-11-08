@@ -15,7 +15,8 @@ are welcome under the [MIT License](LICENSE).
 
 ## Development setup
 
-Follow the platform requirements and installation steps in [README.md](README.md).
+Follow the platform requirements and source setup steps in the
+[development guide](docs/DEVELOPMENT.md).
 Fork the repository if you do not have write access, clone your fork, and create
 a branch from `main`:
 

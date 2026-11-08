@@ -134,6 +134,8 @@ class _LibraryPageState extends State<LibraryPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        constraints: const BoxConstraints(maxWidth: 440),
+        scrollable: true,
         title: Text(context.l10n.exportPlaylist),
         content: Text(context.l10n.exportWarning),
         actions: [
