@@ -71,7 +71,7 @@ and wall-clock changes. No application can execute callbacks while the OS has
 suspended its process; revocation is enforced when execution resumes. This is
 local application enforcement using the system clock, not DRM or a trusted
 remote clock. A later valid authorisation can be restored through manual update
-after credentials and the complete catalogue have been verified.
+after credentials and the entry catalogue section have been verified.
 
 ## Identity and HTTP headers
 
@@ -144,11 +144,25 @@ credentials in image paths. It retains descriptive media metadata and progress.
 ## Renewal and session continuity
 
 ProtectedAccountService separates link resolution from XtreamApi. It authenticates
-and fetches categories and entries for Live TV, Movies, and Series before secure
-commit. Invalid entries invalidate a protected candidate instead of silently
-publishing a truncated catalogue. A legitimately empty section is allowed. The
-active catalogue switches only after validation and persistence succeed. Filters,
-search, category selection, and catalogue caches are reset together.
+and validates categories and entries for one entry section before secure commit.
+Registration normally enters Live TV; renewal validates the currently selected
+section, or Live TV for an inactive account. Movies and Series load only when the
+user opens them, using the same section cache as manual accounts. There is no
+background preload of unvisited sections. Cached reconnection also fetches only
+its entry section rather than downloading all catalogues again.
+
+This deliberately replaces the initial all-section validation policy, which
+made protected accounts slower to open than manual accounts. An unvisited
+section may fail later; its error is shown when opened, without presenting old
+entries or marking an unrequested section as an empty catalogue. Invalid entries
+still invalidate a requested protected candidate instead of silently publishing
+a truncated section. A legitimately empty response is allowed. Credentials and
+the staged section switch only after validation and persistence succeed; failed
+staging retains the previous valid connection. Filters, category selection, and
+catalogue caches reset together. If navigation changes while renewal is pending,
+the selected section is fetched using the new scoped credentials after activation.
+Only fetched sections reconcile personal-library availability. Every new
+authorisation keeps the existing generation-isolation and expiry rules.
 
 A per-account in-flight future coalesces renewals. Normal refresh is due after
 24 hours and checked at startup/resume and during maintenance. Failed automatic
@@ -248,6 +262,37 @@ flutter test --concurrency=1 \
 
 This confirms the selected download feedback and resume regressions. It does not
 establish that the entire test suite or the protected-account widget tests pass.
+
+### Full suite verification
+
+In a later local release-preparation run, the developer reported that formatting
+and fatal-info/fatal-warning analysis passed and the complete Flutter suite
+finished with **233 tests passed**. Linux release compilation and Debian packaging
+also succeeded, but still used application version `0.5.3+1`. The subsequent
+packaging integration command selected a non-existent `0.6.0+1-1` archive and
+failed during extraction. The project version was then corrected to `0.6.0+1`;
+the matching release bundle and Debian package must be regenerated before those
+package integration checks can validate the new version.
+
+### On-demand catalogue loading verification
+
+The on-demand loading change adds regressions for entry-section-only requests,
+reconnection, cache reuse, visible-section renewal, deferred section failures,
+failed-candidate rollback, and navigation during renewal. Formatting and
+fatal-info/fatal-warning analysis pass. The targeted Flutter test run could not
+load either test file because the environment denies the test runner's local
+socket. The earlier 233-test passing result predates this optimisation; rerun the
+connection tests and full suite on the developer's machine before packaging it.
+
+The first developer run of these tests reported 26 passes and three failures.
+The test API double omitted `sourceScope` on catalogue entries, unlike the real
+XtreamApi implementation. The fixture now preserves the credential scope for
+all sections, retaining every original assertion. A separate pure-Dart execution
+of the production API passed nine mocked catalogue requests across all three
+sections, manual credentials, and two protected generations, including normal
+User-Agent checks. A real-API regression also covers this contract in
+`test/data/xtream_api_test.dart`. The corrected Flutter suite still needs a local
+rerun; analysis passes, but this environment continues to deny runner sockets.
 
 ## Official references
 

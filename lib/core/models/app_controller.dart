@@ -478,11 +478,12 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     accountStatus = prepared.status;
     accountStatuses[account.id] = prepared.status;
     kind = selected;
-    categories = prepared.catalogs[selected]!.categories;
-    entries = prepared.catalogs[selected]!.entries;
+    final selectedCatalog = prepared.catalogs[selected];
+    categories = selectedCatalog?.categories ?? [];
+    entries = selectedCatalog?.entries ?? [];
     categoryId = null;
     search = '';
-    loading = false;
+    loading = selectedCatalog == null;
     error = null;
     _invalidateVisibleEntries();
     _rememberProtected(account, prepared.secret);
@@ -494,17 +495,26 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
         sourceScope: prepared.secret.sourceScope,
         protected: true,
       );
-      for (final kind in [LibraryKind.movies, LibraryKind.series]) {
+      for (final catalog in prepared.catalogs.entries) {
+        if (catalog.key == LibraryKind.live) continue;
         await personalLibrary?.reconcileCatalog(
           account.id,
-          kind,
-          prepared.catalogs[kind]!.entries.map((entry) => entry.id),
+          catalog.key,
+          catalog.value.entries.map((entry) => entry.id),
           sourceScope: prepared.secret.sourceScope,
         );
       }
     } catch (_) {
       error = 'The personal library could not be loaded.';
       notifyListeners();
+    }
+    // Navigation can change while the candidate is being validated. Never
+    // substitute an old section or assume an unrequested catalogue is empty.
+    if (!_disposed &&
+        identical(_credentials, prepared.secret.credentials) &&
+        kind == selected &&
+        selectedCatalog == null) {
+      await selectKind(selected);
     }
     return true;
   }
@@ -552,7 +562,10 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
         await _withdrawExpired(account);
         return;
       }
-      final prepared = await protectedAccounts.connect(account);
+      final prepared = await protectedAccounts.connect(
+        account,
+        initialKind: activeAccount?.id == account.id ? kind : LibraryKind.live,
+      );
       if (_disposed || version != _connectionVersion) return;
       if (!await _adoptProtected(prepared)) return;
       protectedSyncStates[account.id] = ProtectedSyncState.updated;
@@ -589,6 +602,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
       final prepared = await protectedAccounts.renew(
         account,
         automatic: automatic,
+        initialKind: activate ? kind : LibraryKind.live,
       );
       if (_disposed || !savedAccounts.any((item) => item.id == account.id)) {
         return;

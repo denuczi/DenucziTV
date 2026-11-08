@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:denuczi_tv/core/errors/app_exception.dart';
 import 'package:denuczi_tv/core/models/account.dart';
+import 'package:denuczi_tv/core/models/protected_access_grant.dart';
 import 'package:denuczi_tv/core/network/network_client.dart';
 import 'package:denuczi_tv/core/network/user_agent.dart';
 import 'package:denuczi_tv/features/library/data/xtream_api.dart';
@@ -154,6 +155,52 @@ void main() {
       expect(results.length, 1);
       expect(results.single.title, 'Channel A');
       client.dispose();
+    },
+  );
+
+  test(
+    'on-demand catalogues preserve the credential generation for every section',
+    () async {
+      final client = NetworkClient(userAgent: 'CatalogContract/1');
+      addTearDown(client.dispose);
+      client.dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            expect(options.headers['user-agent'], 'CatalogContract/1');
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: [
+                  {'stream_id': 100, 'series_id': 100, 'name': 'Test content'},
+                ],
+              ),
+            );
+          },
+        ),
+      );
+      final api = XtreamApi(client);
+      for (final scope in ['', 'first-generation', 'second-generation']) {
+        final grant = scope.isEmpty
+            ? null
+            : ProtectedAccessGrant(accountId: 'test');
+        if (grant != null) addTearDown(grant.dispose);
+        final connection = AccountCredentials(
+          serverUrl: credentials.serverUrl,
+          username: credentials.username,
+          password: credentials.password,
+          label: credentials.label,
+          protected: scope.isNotEmpty,
+          sourceScope: scope,
+          accessGrant: grant,
+        );
+        for (final kind in LibraryKind.values) {
+          final entries = await api.catalog(connection, kind);
+          expect(entries.single.id, '100');
+          expect(entries.single.kind, kind);
+          expect(entries.single.sourceScope, scope);
+        }
+      }
     },
   );
 }

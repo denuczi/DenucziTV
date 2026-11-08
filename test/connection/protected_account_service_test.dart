@@ -59,8 +59,13 @@ void main() {
     network.dispose();
   });
 
-  Future<PreparedProtectedAccount> register() =>
-      service.register('Protected test', 'https://link.example/permanent');
+  Future<PreparedProtectedAccount> register({
+    LibraryKind initialKind = LibraryKind.live,
+  }) => service.register(
+    'Protected test',
+    'https://link.example/permanent',
+    initialKind: initialKind,
+  );
 
   test(
     'installation UUID is generated once and survives store restart',
@@ -118,14 +123,17 @@ void main() {
   test(
     'renewal keeps the account and identity but isolates reused media IDs',
     () async {
-      final previous = await register();
+      final previous = await register(initialKind: LibraryKind.movies);
       final originalUrl = api.streamUrl(
         previous.secret.credentials!,
         previous.catalogs[LibraryKind.movies]!.entries.single,
       );
       time = time.add(const Duration(hours: 24));
       destination = 'http://different.example:8080/get.php?password=new-secret&username=other';
-      final renewed = await service.renew(previous.account);
+      final renewed = await service.renew(
+        previous.account,
+        initialKind: LibraryKind.movies,
+      );
       expect(renewed.account.id, previous.account.id);
       expect(renewed.account.isProtected, isTrue);
       expect(identificationHeaders.toSet(), hasLength(1));
@@ -162,29 +170,79 @@ void main() {
     expect(previous.secret.credentials!.accessGrant!.usable, isTrue);
   });
 
+  test('failed entry-section validation preserves the previous committed credentials', () async {
+    final previous = await register(initialKind: LibraryKind.series);
+    time = time.add(const Duration(hours: 24));
+    destination = 'https://other.example/get.php?username=other&password=other';
+    api.failKind = LibraryKind.series.name;
+    await expectLater(
+      service.renew(previous.account, initialKind: LibraryKind.series),
+      throwsA(isA<AppException>()),
+    );
+    final saved = await store.readProtected(previous.account);
+    expect(
+      saved.credentials!.serverUrl,
+      previous.secret.credentials!.serverUrl,
+    );
+    expect(saved.sourceScope, previous.secret.sourceScope);
+    expect(saved.lastSuccess, previous.secret.lastSuccess);
+    expect(service.isDue(saved), isFalse);
+    expect(previous.secret.credentials!.accessGrant!.usable, isTrue);
+  });
+
   test(
-    'failed catalogue validation preserves the previous committed credentials',
+    'registration validates only Live TV and does not preload other sections',
     () async {
-      final previous = await register();
-      time = time.add(const Duration(hours: 24));
-      destination =
-          'https://other.example/get.php?username=other&password=other';
       api.failKind = LibraryKind.series.name;
-      await expectLater(
-        service.renew(previous.account),
-        throwsA(isA<AppException>()),
-      );
-      final saved = await store.readProtected(previous.account);
-      expect(
-        saved.credentials!.serverUrl,
-        previous.secret.credentials!.serverUrl,
-      );
-      expect(saved.sourceScope, previous.secret.sourceScope);
-      expect(saved.lastSuccess, previous.secret.lastSuccess);
-      expect(service.isDue(saved), isFalse);
-      expect(previous.secret.credentials!.accessGrant!.usable, isTrue);
+      final prepared = await register();
+      expect(api.authenticationRequests, 1);
+      expect(api.categoryRequests, [LibraryKind.live]);
+      expect(api.catalogRequests, [LibraryKind.live]);
+      expect(prepared.catalogs.keys, [LibraryKind.live]);
+      expect(prepared.secret.credentials!.accessGrant!.usable, isTrue);
+      expect((await store.list()).single.id, prepared.account.id);
     },
   );
+
+  test('cached reconnection loads its entry section without resolving the link again', () async {
+    final previous = await register();
+    api.categoryRequests.clear();
+    api.catalogRequests.clear();
+    final prepared = await service.connect(previous.account);
+    expect(probes, 1);
+    expect(api.categoryRequests, [LibraryKind.live]);
+    expect(api.catalogRequests, [LibraryKind.live]);
+    expect(prepared.catalogs.keys, [LibraryKind.live]);
+    expect(prepared.secret.sourceScope, previous.secret.sourceScope);
+  });
+
+  test('renewal validates the requested section without waiting for unvisited sections', () async {
+    final previous = await register();
+    time = time.add(const Duration(hours: 24));
+    api.categoryRequests.clear();
+    api.catalogRequests.clear();
+    api.failKind = LibraryKind.series.name;
+    final prepared = await service.renew(
+      previous.account,
+      initialKind: LibraryKind.movies,
+    );
+    expect(api.categoryRequests, [LibraryKind.movies]);
+    expect(api.catalogRequests, [LibraryKind.movies]);
+    expect(prepared.catalogs.keys, [LibraryKind.movies]);
+    expect(prepared.secret.sourceScope, isNot(previous.secret.sourceScope));
+    expect(previous.secret.credentials!.accessGrant!.usable, isTrue);
+    expect(
+      previous.secret.credentials!.accessGrant!.allowsNewSessions,
+      isFalse,
+    );
+  });
+
+  test('invalid entry catalogue prevents account creation', () async {
+    api.failKind = LibraryKind.live.name;
+    await expectLater(register(), throwsA(isA<AppException>()));
+    expect(await store.list(), isEmpty);
+    expect(api.catalogRequests, [LibraryKind.live]);
+  });
 
   test('concurrent renewals share one complete resolution', () async {
     final previous = await register();

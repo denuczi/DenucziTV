@@ -27,7 +27,7 @@ class PreparedProtectedAccount {
   final Map<LibraryKind, ProtectedCatalog> catalogs;
 }
 
-/// Stages complete connections before an atomic secure-store replacement.
+/// Stages an authenticated connection and its entry section before secure commit.
 /// No identifier or protected URL is placed in the shared HTTP client.
 class ProtectedAccountService {
   ProtectedAccountService(
@@ -92,8 +92,9 @@ class ProtectedAccountService {
 
   Future<PreparedProtectedAccount> register(
     String label,
-    String originalUrl,
-  ) async {
+    String originalUrl, {
+    LibraryKind initialKind = LibraryKind.live,
+  }) async {
     if (label.trim().isEmpty) {
       throw const AppException('A protected account name is required.');
     }
@@ -105,7 +106,11 @@ class ProtectedAccountService {
       username: '',
       connectionType: AccountConnectionType.protectedSingleLink,
     );
-    final prepared = await _resolve(account, originalUrl);
+    final prepared = await _resolve(
+      account,
+      originalUrl,
+      initialKind: initialKind,
+    );
     try {
       await store.saveProtected(
         account,
@@ -123,10 +128,15 @@ class ProtectedAccountService {
   Future<PreparedProtectedAccount> renew(
     Account account, {
     bool automatic = false,
+    LibraryKind initialKind = LibraryKind.live,
   }) {
     final existing = _flights[account.id];
     if (existing != null) return existing;
-    final future = _renew(account, automatic: automatic);
+    final future = _renew(
+      account,
+      automatic: automatic,
+      initialKind: initialKind,
+    );
     _flights[account.id] = future;
     future.then<void>(
       (_) {
@@ -142,6 +152,7 @@ class ProtectedAccountService {
   Future<PreparedProtectedAccount> _renew(
     Account account, {
     required bool automatic,
+    required LibraryKind initialKind,
   }) async {
     final version = _versions[account.id] ?? 0;
     final previous = await store.readProtected(account);
@@ -161,7 +172,11 @@ class ProtectedAccountService {
     );
     late PreparedProtectedAccount prepared;
     try {
-      prepared = await _resolve(account, previous.originalUrl);
+      prepared = await _resolve(
+        account,
+        previous.originalUrl,
+        initialKind: initialKind,
+      );
     } on ProtectedLinkExpired catch (error) {
       revokeAccess(account.id);
       final expired = ProtectedAccountSecret(
@@ -202,12 +217,17 @@ class ProtectedAccountService {
     if (grant != null) _grants[prepared.account.id]?.remove(grant);
   }
 
-  Future<PreparedProtectedAccount> connect(Account account) async {
+  Future<PreparedProtectedAccount> connect(
+    Account account, {
+    LibraryKind initialKind = LibraryKind.live,
+  }) async {
     final saved = await store.readProtected(account);
     if (saved.expiredAt(now())) {
       throw const AppException('The protected link has expired.');
     }
-    if (isDue(saved)) return renew(account, automatic: true);
+    if (isDue(saved)) {
+      return renew(account, automatic: true, initialKind: initialKind);
+    }
     final credentials = saved.credentials;
     if (credentials == null) {
       throw const AppException(
@@ -215,7 +235,7 @@ class ProtectedAccountService {
       );
     }
     try {
-      return await _validate(account, saved);
+      return await _validate(account, saved, initialKind: initialKind);
     } on AppException catch (error) {
       if (const {
         'Account access is denied or inactive.',
@@ -223,13 +243,17 @@ class ProtectedAccountService {
         'The server returned HTTP 401.',
         'The server returned HTTP 403.',
       }.contains(error.message)) {
-        return renew(account, automatic: true);
+        return renew(account, automatic: true, initialKind: initialKind);
       }
       rethrow;
     }
   }
 
-  Future<PreparedProtectedAccount> _resolve(Account account, String url) async {
+  Future<PreparedProtectedAccount> _resolve(
+    Account account,
+    String url, {
+    required LibraryKind initialKind,
+  }) async {
     final installation = await store.installationIdentity();
     final resolved = await resolver.resolve(
       originalUrl: url,
@@ -263,13 +287,14 @@ class ProtectedAccountService {
         linkExpiresAt: resolved.expiresAt,
       ),
     );
-    return _validate(account, secret);
+    return _validate(account, secret, initialKind: initialKind);
   }
 
   Future<PreparedProtectedAccount> _validate(
     Account account,
-    ProtectedAccountSecret secret,
-  ) async {
+    ProtectedAccountSecret secret, {
+    required LibraryKind initialKind,
+  }) async {
     final saved = secret.credentials!;
     final grant = ProtectedAccessGrant(
       accountId: account.id,
@@ -289,21 +314,20 @@ class ProtectedAccountService {
     );
     try {
       final status = await api.authenticate(credentials);
-      final catalogs = <LibraryKind, ProtectedCatalog>{};
-      // Every section must succeed, including a legitimately empty catalogue.
-      // Authentication success alone is not enough to publish a new connection.
-      for (final kind in LibraryKind.values) {
-        final results = await Future.wait<Object>([
-          api.categories(credentials, kind),
-          api.catalog(credentials, kind),
-        ]);
-        catalogs[kind] = (
+      // Validate only the entry section before publishing a connection. Other
+      // sections use the same scoped credentials and load on user navigation.
+      final results = await Future.wait<Object>([
+        api.categories(credentials, initialKind),
+        api.catalog(credentials, initialKind),
+      ]);
+      final catalogs = <LibraryKind, ProtectedCatalog>{
+        initialKind: (
           categories: results[0] as List<MediaCategory>,
           entries: (results[1] as List<MediaEntry>)
               .map((entry) => entry.withSourceScope(secret.sourceScope))
               .toList(growable: false),
-        );
-      }
+        ),
+      };
       if (secret.expiredAt(now())) {
         throw ProtectedLinkExpired(secret.expiresAt!);
       }

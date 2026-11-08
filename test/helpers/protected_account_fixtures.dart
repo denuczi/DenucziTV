@@ -28,11 +28,15 @@ class MemoryProtectedSecrets implements AccountSecrets {
 
 class CatalogTestApi extends XtreamApi {
   CatalogTestApi(super.network);
+  final categoryRequests = <LibraryKind>[];
+  final catalogRequests = <LibraryKind>[];
+  int authenticationRequests = 0;
   String? failKind;
   bool rejectAuthentication = false;
   Completer<void>? block;
   @override
   Future<AccountStatus> authenticate(AccountCredentials credentials) async {
+    authenticationRequests++;
     await block?.future;
     if (rejectAuthentication) {
       throw const AppException('Account access is denied or inactive.');
@@ -45,16 +49,28 @@ class CatalogTestApi extends XtreamApi {
     AccountCredentials credentials,
     LibraryKind kind, {
     CancelToken? cancelToken,
-  }) async => [MediaCategory(id: credentials.username, name: 'Test category')];
+  }) async {
+    categoryRequests.add(kind);
+    return [MediaCategory(id: credentials.username, name: 'Test category')];
+  }
+
   @override
   Future<List<MediaEntry>> catalog(
     AccountCredentials credentials,
     LibraryKind kind, {
     CancelToken? cancelToken,
   }) async {
+    catalogRequests.add(kind);
     if (failKind == kind.name) {
       throw const AppException('The provider returned an invalid catalog.');
     }
-    return [MediaEntry(id: '100', title: credentials.username, kind: kind)];
+    return [
+      MediaEntry(
+        id: '100',
+        title: credentials.username,
+        kind: kind,
+        sourceScope: credentials.sourceScope,
+      ),
+    ];
   }
 }
