@@ -220,79 +220,44 @@ partial files, system suspend/resume, and English/Spanish layouts in both themes
 Only after automated checks pass, `flutter run -d linux` can verify the desktop UI.
 No release build is needed for these checks.
 
-### Verification in the implementation environment
+### Verification status for 0.6.1
 
-Flutter analysis completed without issues. The full Flutter test command was
-attempted but could not start tests because the restricted environment denies
-local socket binding required by flutter_tester (`127.0.0.1`, OS error 1). The
-attempt also exhausted the limited temporary filesystem while compiling test
-listeners and was interrupted after repeated infrastructure failures. Temporary
-listeners from that attempt were removed. These are infrastructure failures,
-**not passing test results**.
-A separate pure-Dart runtime harness passed 118 assertions exercising production
-redirect parsing, header isolation, UUID generation, scoped URL policy, and
-revocation without sockets. An independent Python sqlite3 check also verified
-the production table SQL, legacy data preservation, composite uniqueness, reused
-ID isolation, and interrupted-migration rollback. These checks do not replace
-the Flutter suite, the sqflite integration test, or desktop platform QA.
+The maintainer has published the [v0.6.1 pre-release](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1).
+The following results distinguish reported local checks from the restricted
+implementation environment:
 
-### Follow-up regression corrections
+| Check | Result and scope |
+| --- | --- |
+| Formatting and fatal-info/fatal-warning analysis | Passed after the on-demand loading changes and test-fixture correction |
+| Full Flutter suite | The maintainer reported 233 passing tests before the on-demand loading changes; a final full-suite result for the later changes has not been recorded here |
+| Download feedback and resume regressions | The maintainer reported 10 passing targeted tests |
+| On-demand loading regressions | The first local run reported 26 passes and three failures caused by missing source scopes in the test API double; the fixture was corrected to match production without removing assertions |
+| Production catalogue scope contract | A separate pure-Dart harness passed nine mocked API requests across Live TV, Movies, and Series with manual credentials and two protected generations |
+| Resolver and access policy | A separate pure-Dart harness passed 118 runtime assertions using production code |
+| SQLite migration SQL | An independent Python sqlite3 check verified legacy data preservation, composite uniqueness, reused-ID isolation, and rollback after interruption |
+| Linux 0.6.1 release build | Completed on the maintainer's machine |
+| Debian 0.6.1 package | All 13 packaging integration checks passed on the maintainer's machine |
+| Lintian | Not installed during the reported packaging run |
+| Native platform scenarios | Linux/Windows secret-store recovery, native player expiry, and suspension remain part of the manual QA checklist above |
 
-A subsequent run on the developer's machine reported 220 passing tests and three
-failures: two pending maintenance timers and one controller-expiry timeout. The
-two widget tests now give Provider ownership of their controllers, so disposal
-cancels timers before Flutter checks teardown invariants. The expiry widget test
-creates its fixture inside the fake-async zone, rather than awaiting a storage
-queue created in the outer setup zone. It also checks that access remains valid
-one microsecond before the deadline and is revoked at the deadline. A standalone
-Dart/fake_async reproduction confirmed the cross-zone queue stall and the fixture
-creation fix. The corrected Flutter tests still require a rerun outside this
-environment's socket restrictions.
+Flutter test execution in the implementation environment cannot start because
+local socket binding required by flutter_tester is denied (`127.0.0.1`, OS error
+1). The isolated Dart and SQL checks do not replace the complete Flutter suite or
+native platform QA. Packaging checks validate the archive and native dependency
+integration; they do not establish application-level test coverage.
 
-### Download feedback verification
-
-The developer subsequently ran the following targeted command locally and
-reported **10 tests passed**:
+For the corrected on-demand loading tests, run:
 
 ```sh
 flutter test --concurrency=1 \
-  test/ui/download_feedback_test.dart \
-  test/downloads/resumable_download_test.dart
+  test/connection/protected_account_service_test.dart \
+  test/connection/protected_account_controller_test.dart \
+  test/data/xtream_api_test.dart
 ```
 
-This confirms the selected download feedback and resume regressions. It does not
-establish that the entire test suite or the protected-account widget tests pass.
-
-### Full suite verification
-
-In a later local release-preparation run, the developer reported that formatting
-and fatal-info/fatal-warning analysis passed and the complete Flutter suite
-finished with **233 tests passed**. Linux release compilation and Debian packaging
-also succeeded, but still used application version `0.5.3+1`. The subsequent
-packaging integration command selected a non-existent `0.6.0+1-1` archive and
-failed during extraction. The project version was then corrected to `0.6.0+1`;
-the matching release bundle and Debian package must be regenerated before those
-package integration checks can validate the new version.
-
-### On-demand catalogue loading verification
-
-The on-demand loading change adds regressions for entry-section-only requests,
-reconnection, cache reuse, visible-section renewal, deferred section failures,
-failed-candidate rollback, and navigation during renewal. Formatting and
-fatal-info/fatal-warning analysis pass. The targeted Flutter test run could not
-load either test file because the environment denies the test runner's local
-socket. The earlier 233-test passing result predates this optimisation; rerun the
-connection tests and full suite on the developer's machine before packaging it.
-
-The first developer run of these tests reported 26 passes and three failures.
-The test API double omitted `sourceScope` on catalogue entries, unlike the real
-XtreamApi implementation. The fixture now preserves the credential scope for
-all sections, retaining every original assertion. A separate pure-Dart execution
-of the production API passed nine mocked catalogue requests across all three
-sections, manual credentials, and two protected generations, including normal
-User-Agent checks. A real-API regression also covers this contract in
-`test/data/xtream_api_test.dart`. The corrected Flutter suite still needs a local
-rerun; analysis passes, but this environment continues to deny runner sockets.
+The test API double must preserve `sourceScope` just as the real XtreamApi does.
+Otherwise newly requested sections look unrelated to the active credentials and
+correctly fail the controller's source checks. Those checks must remain enabled.
 
 ## Official references
 

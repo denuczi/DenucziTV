@@ -2,14 +2,14 @@
 
 An open-source IPTV player for Linux and Windows, using your own Xtream-compatible provider account.
 
-**[Download a pre-release](https://github.com/denuczi/DenucziTV/releases)**
+**[Download the v0.6.1 pre-release](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1)**
 
-Published **Linux `.deb` installers** are listed under each release's **Assets**.
-You do not need Flutter or a compiler to install one. Choose the `.deb` file;
+The **Linux `.deb` installer** and its SHA256 file are available under the
+release's **Assets**. You do not need Flutter or a compiler to install one. Choose the `.deb` file;
 GitHub's **Source code** ZIP and TAR archives are for developers.
 
-The current source and package version is **0.6.1**. The repository may contain
-changes ahead of the published installers; check Releases for available downloads.
+The published version is **0.6.1**. For earlier versions, see
+[all releases](https://github.com/denuczi/DenucziTV/releases).
 
 This is a pre-release under active development. DenucziTV does not include
 channels, movies, subscriptions, or provider accounts.
@@ -18,8 +18,8 @@ channels, movies, subscriptions, or provider accounts.
 
 ### Linux: Debian package
 
-1. Open [Releases](https://github.com/denuczi/DenucziTV/releases), choose the
-   newest published Linux pre-release, and expand **Assets**.
+1. Open the [v0.6.1 pre-release](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1)
+   and expand **Assets**.
 2. Download its `.deb` and matching `.deb.sha256` file for an x86-64 Linux system.
    The 0.6.1 package is named `denuczitv_0.6.1+1-1_amd64.deb`.
 3. Open a terminal in the folder containing the downloaded file and run:

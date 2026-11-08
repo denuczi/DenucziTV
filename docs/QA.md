@@ -12,7 +12,7 @@ flutter pub get
 flutter gen-l10n
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze --fatal-infos --fatal-warnings
-flutter test --coverage
+flutter test --concurrency=1 --coverage
 ```
 
 Build on each target operating system:
@@ -47,6 +47,30 @@ Use only authorized content and synthetic credentials in shared evidence.
   errors. Confirm that removing history does not delete downloaded files.
 - Check exported playlists and copied links locally. They may contain credentials
   and must not be attached to public issues.
+
+## Protected Single Link checks
+
+Use fake credentials and controlled endpoints for shared evidence. Do not record
+permanent links, provider secrets, or installation identifiers in logs or reports.
+
+- Keep a manual and a protected account saved together. Verify copying/export
+  works for the manual account and is unavailable with an explanation for the
+  protected account. Downloads remain available for both.
+- Connect through HTTP/HTTPS redirects. Confirm only the initial permanent-link
+  request carries identification and the final get.php URL is parsed, not fetched.
+- Connect with an empty section cache. Verify only the entry section loads, other
+  sections load on navigation, and returning to a cached section avoids refetching.
+- Renew while playing and downloading. Keep working old sessions on their original
+  sources; new operations use the new generation. Reused IDs must not reopen
+  unrelated content or inherit another generation's history or progress.
+- Simulate a failed visible-section validation. Preserve the previous connection
+  and catalog while its link remains valid. A failing unvisited section reports
+  its own error when opened without exposing old catalog entries.
+- Reach a fixed dtv_expires deadline during playback and a transfer. Verify both
+  stop, new access is blocked, and history, favorites, progress, completed files,
+  and recoverable partial files remain. Repeat after restart and suspension.
+- Supply a later valid authorization through the same permanent link and verify
+  recovery only after credentials and the entry section have been validated.
 
 ## Release record
 

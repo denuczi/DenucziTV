@@ -7,7 +7,7 @@ Changes are grouped by application version. Binary availability is listed on
 
 No additional changes recorded.
 
-## 0.6.1 — Pre-release preparation
+## [0.6.1](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1) — Pre-release
 
 ### Fixed
 

@@ -5,6 +5,12 @@ Flutter Linux **release** bundle. It does not rebuild Flutter, install the packa
 change repository visibility, or publish a GitHub release. Run it as a regular
 user; root access is unnecessary for packaging.
 
+The published [v0.6.1 pre-release](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1)
+provides `denuczitv_0.6.1+1-1_amd64.deb` and its `.deb.sha256` file.
+Installers belong in GitHub release assets; keep `dist/` out of source commits.
+The commands below use 0.6.1 filenames; use the matching version when packaging
+another release.
+
 ## Prerequisites
 
 Use Debian or Ubuntu with Python 3.11 or newer and these tools:
@@ -24,7 +30,7 @@ First verify and build the application as described in [QA.md](QA.md):
 
 ```bash
 flutter analyze --fatal-infos --fatal-warnings
-flutter test
+flutter test --concurrency=1
 flutter build linux --release
 ```
 
@@ -34,16 +40,17 @@ From the repository root:
 
 ```bash
 bash scripts/package-deb.sh
-python3 -m unittest discover -s test/packaging -v
+DENUCZITV_DEB=dist/denuczitv_0.6.1+1-1_amd64.deb \
+  python3 -m unittest discover -s test/packaging -v
 ```
 
-For `version: 0.5.3+1`, the default amd64 output is:
+For `version: 0.6.1+1`, the default amd64 output is:
 
 ```text
-dist/denuczitv_0.5.3+1-1_amd64.deb
-dist/denuczitv_0.5.3+1-1_amd64.deb.sha256
-dist/denuczitv_0.5.3+1-1_amd64.build-info.json
-dist/denuczitv_0.5.3+1-1_amd64.dependencies.log
+dist/denuczitv_0.6.1+1-1_amd64.deb
+dist/denuczitv_0.6.1+1-1_amd64.deb.sha256
+dist/denuczitv_0.6.1+1-1_amd64.build-info.json
+dist/denuczitv_0.6.1+1-1_amd64.dependencies.log
 ```
 
 The last `-1` is the Debian packaging revision. Increment it when redistributing
@@ -58,7 +65,7 @@ The bundle architecture must match the host (amd64 or arm64); cross-packaging is
 not supported. To verify a specific archive when multiple versions exist:
 
 ```bash
-DENUCZITV_DEB=dist/denuczitv_0.5.3+1-1_amd64.deb \
+DENUCZITV_DEB=dist/denuczitv_0.6.1+1-1_amd64.deb \
   python3 -m unittest discover -s test/packaging -v
 ```
 
@@ -162,15 +169,15 @@ build distribution, and source revision/dirty status.
 Inspect the package and simulate installation first:
 
 ```bash
-dpkg-deb --info dist/denuczitv_0.5.3+1-1_amd64.deb
-apt-get --simulate install ./dist/denuczitv_0.5.3+1-1_amd64.deb
-(cd dist && sha256sum --check denuczitv_0.5.3+1-1_amd64.deb.sha256)
+dpkg-deb --info dist/denuczitv_0.6.1+1-1_amd64.deb
+apt-get --simulate install ./dist/denuczitv_0.6.1+1-1_amd64.deb
+(cd dist && sha256sum --check denuczitv_0.6.1+1-1_amd64.deb.sha256)
 ```
 
 When ready, install through APT so dependencies are resolved:
 
 ```bash
-sudo apt install ./dist/denuczitv_0.5.3+1-1_amd64.deb
+sudo apt install ./dist/denuczitv_0.6.1+1-1_amd64.deb
 denuczitv
 ```
 
