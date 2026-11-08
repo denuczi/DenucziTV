@@ -72,6 +72,23 @@ permanent links, provider secrets, or installation identifiers in logs or report
 - Supply a later valid authorization through the same permanent link and verify
   recovery only after credentials and the entry section have been validated.
 
+## Stable update checker checks (0.6.2)
+
+Run `flutter test --concurrency=1 test/updates` and use the isolated preview in
+[UPDATES.md](UPDATES.md). Never publish fictional stable releases for testing.
+
+- Check that prereleases/drafts and source archives are excluded; an empty stable
+  channel is informative, and network failure is never labelled up to date.
+- Check English/Spanish, both themes, a narrow window, keyboard focus, Escape,
+  close/barrier dismissal, launch failure, and missing compatible installers.
+- Start with a due check, then enter playback, download, or authentication before
+  it completes. No automatic modal may interrupt or reappear afterwards.
+- Postpone, restart within seven days, and verify suppression for that version;
+  a manual check must still work. Correct the system clock and test timestamp
+  recovery. Verify disposal cancels the checker without late widget updates.
+- Verify package metadata and browser download behaviour on Linux and Windows;
+  DenucziTV must remain running and must never execute the installer.
+
 ## Release record
 
 Use the following fields when recording results:

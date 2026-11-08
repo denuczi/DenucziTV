@@ -12,6 +12,10 @@ import 'package:window_manager/window_manager.dart';
 
 import 'core/models/app_controller.dart';
 import 'core/models/app_identity.dart';
+import 'features/updates/application/update_controller.dart';
+import 'features/updates/data/github_release_api.dart';
+import 'features/updates/data/update_preferences.dart';
+import 'features/updates/presentation/startup_update_listener.dart';
 import 'features/personal_library/application/personal_library_controller.dart';
 import 'features/personal_library/data/sqlite_library_repository.dart';
 import 'core/theme/app_theme.dart';
@@ -50,18 +54,34 @@ Future<void> main() async {
 
   await controller.initialize();
   runApp(
-    ChangeNotifierProvider<AppController>.value(
-      value: controller,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AppController>.value(value: controller),
+        ChangeNotifierProvider<UpdateController>(
+          create: (_) => UpdateController(
+            api: GitHubReleaseApi(),
+            preferences: UpdatePreferences(preferences),
+          ),
+        ),
+      ],
       child: const DenucziTVApp(),
     ),
   );
 }
 
-class DenucziTVApp extends StatelessWidget {
+class DenucziTVApp extends StatefulWidget {
   const DenucziTVApp({super.key});
 
   @override
+  State<DenucziTVApp> createState() => _DenucziTVAppState();
+}
+
+class _DenucziTVAppState extends State<DenucziTVApp> {
+  final _updateRoutes = UpdateRouteObserver();
+
+  @override
   Widget build(BuildContext context) {
+    final updates = context.watch<UpdateController?>();
     return MaterialApp(
       title: AppIdentity.name,
       debugShowCheckedModeBanner: false,
@@ -78,7 +98,14 @@ class DenucziTVApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
-      home: const DesktopShell(),
+      navigatorObservers: [if (updates != null) _updateRoutes],
+      home: updates == null
+          ? const DesktopShell()
+          : StartupUpdateListener(
+              updates: updates,
+              routes: _updateRoutes,
+              child: const DesktopShell(),
+            ),
     );
   }
 }

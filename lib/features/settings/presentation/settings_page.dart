@@ -10,6 +10,7 @@ import '../../../core/models/app_controller.dart';
 import '../../../core/network/user_agent.dart';
 import '../../../shared/notifications/app_notice.dart';
 import '../../../shared/widgets/brand_mark.dart';
+import '../../updates/presentation/software_update_controls.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -453,6 +454,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 18),
+                _Section(
+                  icon: Icons.system_update_alt_rounded,
+                  title: context.l10n.softwareUpdates,
+                  subtitle: context.l10n.softwareUpdatesHelp,
+                  child: const SoftwareUpdateControls(),
                 ),
                 const SizedBox(height: 26),
                 const Divider(),

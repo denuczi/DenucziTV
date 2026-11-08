@@ -2,34 +2,33 @@
 
 An open-source IPTV player for Linux and Windows, using your own Xtream-compatible provider account.
 
-**[Download the v0.6.1 pre-release](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1)**
+**[Download the latest stable release](https://github.com/denuczi/DenucziTV/releases/latest)**
 
 The **Linux `.deb` installer** and its SHA256 file are available under the
 release's **Assets**. You do not need Flutter or a compiler to install one. Choose the `.deb` file;
 GitHub's **Source code** ZIP and TAR archives are for developers.
 
-The published version is **0.6.1**. For earlier versions, see
+**Version 0.6.2.** For available packages and earlier versions, see
 [all releases](https://github.com/denuczi/DenucziTV/releases).
 
-This is a pre-release under active development. DenucziTV does not include
-channels, movies, subscriptions, or provider accounts.
+DenucziTV does not include channels, movies, subscriptions, or provider accounts.
 
 ## Install
 
 ### Linux: Debian package
 
-1. Open the [v0.6.1 pre-release](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1)
+1. Open the [latest stable release](https://github.com/denuczi/DenucziTV/releases/latest)
    and expand **Assets**.
 2. Download its `.deb` and matching `.deb.sha256` file for an x86-64 Linux system.
-   The 0.6.1 package is named `denuczitv_0.6.1+1-1_amd64.deb`.
+   The 0.6.2 package is named `denuczitv_0.6.2+1-1_amd64.deb`.
 3. Open a terminal in the folder containing the downloaded file and run:
 
    ```bash
-   sha256sum -c denuczitv_0.6.1+1-1_amd64.deb.sha256 &&
-   sudo apt install ./denuczitv_0.6.1+1-1_amd64.deb
+   sha256sum -c denuczitv_0.6.2+1-1_amd64.deb.sha256 &&
+   sudo apt install ./denuczitv_0.6.2+1-1_amd64.deb
    ```
 
-   These commands use the 0.6.1 filenames. If you downloaded another version,
+   These commands use the 0.6.2 filenames. If you downloaded another version,
    substitute the filenames from that release.
 
 4. Launch **DenucziTV** from your application menu, or run `denuczitv`.
@@ -63,6 +62,9 @@ and copied stream URLs can contain account credentials; keep them private.
 ## Features
 
 - Multiple saved provider accounts with account details and reconnection.
+- Stable-release update checks, optional reminders, and installer downloads.
+  Installation remains manual. Available from 0.6.2; earlier versions need a
+  manual upgrade. See [software updates](docs/UPDATES.md).
 - Protected Single Link connections with automatic credential renewal and
   effective link expiry; see the [connection guide](docs/PROTECTED_SINGLE_LINK.md).
 - Live TV, movies, series, category filters, and catalog search.
@@ -112,6 +114,7 @@ content shown.
 | Understand favorites, history, and playback progress | [Personal library](docs/PERSONAL_LIBRARY.md) |
 | Understand protected connections, renewal, expiry, and data migration | [Protected Single Link](docs/PROTECTED_SINGLE_LINK.md) |
 | Build or inspect a Debian package | [Debian packaging](docs/DEBIAN_PACKAGING.md) |
+| Understand stable update checks and assisted downloads | [Software updates](docs/UPDATES.md) |
 | Run release checks | [Quality assurance](docs/QA.md) |
 | Report a vulnerability or review credential handling | [Security policy](SECURITY.md) |
 | Read the change history | [Changelog](CHANGELOG.md) |

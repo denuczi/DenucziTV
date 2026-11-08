@@ -848,5 +848,51 @@
   "downloadMediaUnavailable": "El archivo multimedia ya no está disponible.",
   "downloadRangeRejected": "El proveedor rechazó el rango de bytes solicitado.",
   "downloadInterruptedOnClose": "La descarga se interrumpió al cerrar la aplicación. Selecciona el contenido en el catálogo para volver a intentarlo.",
-  "downloadPartialFileAccessFailed": "No se puede acceder al archivo parcial. Comprueba el espacio en disco y los permisos de la carpeta."
+  "downloadPartialFileAccessFailed": "No se puede acceder al archivo parcial. Comprueba el espacio en disco y los permisos de la carpeta.",
+  "softwareUpdates": "Actualizaciones",
+  "softwareUpdatesHelp": "Mantén DenucziTV actualizado con las versiones estables.",
+  "updatesInstalledVersion": "Versión instalada",
+  "updatesLatestStable": "Última versión estable",
+  "updatesAvailableVersion": "Versión estable disponible",
+  "updatesLastChecked": "Última comprobación correcta",
+  "updatesUnknownVersion": "Versión no disponible",
+  "updatesCheck": "Buscar actualizaciones",
+  "updatesChecking": "Buscando actualizaciones estables…",
+  "updatesIdle": "Comprueba si hay una nueva versión estable disponible.",
+  "updatesAvailable": "Hay una nueva versión estable disponible.",
+  "updatesUpToDate": "Tienes la última versión.",
+  "updatesNoStable": "Tienes la última versión.",
+  "updatesPackageUnavailable": "No hay un instalador compatible con este sistema. Puedes consultar las novedades oficiales.",
+  "updatesOffline": "No se pudieron buscar actualizaciones. Comprueba tu conexión a Internet y vuelve a intentarlo.",
+  "updatesTimeout": "La búsqueda de actualizaciones agotó el tiempo de espera. Vuelve a intentarlo más tarde.",
+  "updatesRateLimited": "El servicio de actualizaciones está ocupado temporalmente. Vuelve a intentarlo más tarde.",
+  "updatesServerError": "No se pudieron buscar actualizaciones. Vuelve a intentarlo más tarde.",
+  "updatesInvalidResponse": "No se pudo verificar la información de la actualización. Vuelve a intentarlo más tarde.",
+  "updatesMetadataError": "No se pudo leer la versión instalada. Reinicia la aplicación y vuelve a intentarlo.",
+  "updatesCancelled": "Se canceló la búsqueda de actualizaciones. Puedes volver a intentarlo.",
+  "updatesPreferenceWarning": "No se pudieron guardar o recuperar las preferencias de actualización. El aplazamiento podría no conservarse al reiniciar.",
+  "updatesTitle": "Hay una nueva versión disponible",
+  "updatesBody": "DenucziTV {version} ya está disponible. Puedes descargarla ahora o seguir usando la versión actual.",
+  "@updatesBody": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesDownload": "Descargar actualización",
+  "updatesMaybeLater": "Quizás más tarde",
+  "updatesViewNotes": "Ver novedades",
+  "updatesNotes": "Novedades",
+  "updatesNoNotes": "No se proporcionaron notas de la versión.",
+  "updatesOpenFailed": "No se pudo verificar o abrir el enlace oficial. Comprueba tu conexión y el navegador predeterminado, y vuelve a intentarlo.",
+  "updatesPostponeClose": "Cerrar",
+  "updatesBodyWithoutPackage": "DenucziTV {version} está disponible como versión estable. No se ha publicado un instalador compatible con este sistema.",
+  "@updatesBodyWithoutPackage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
 }

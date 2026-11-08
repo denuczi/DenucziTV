@@ -7,6 +7,25 @@ Changes are grouped by application version. Binary availability is listed on
 
 No additional changes recorded.
 
+## [0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2)
+
+### Added
+
+- Stable-only GitHub update discovery with semantic version comparison and a
+  separate public HTTP client, without transmitting IPTV account data.
+- Non-blocking startup checks with a persisted 24-hour interval and at most one
+  unsolicited modal per session, suppressed after user/critical-flow interaction.
+- Seven-day version-specific postponement through Maybe later or dismissal;
+  manual checks remain available above the existing Settings credits.
+- English/Spanish update dialog with bounded plain-text notes and official,
+  platform-compatible assisted downloads for Debian/Ubuntu x64 and Windows x64.
+  Missing packages offer release details without substituting other artifacts.
+- Mocked update regression tests and an isolated desktop modal preview.
+
+Automatic installer execution and application restarts are not part of 0.6.2.
+See [the update guide](docs/UPDATES.md) for version semantics, installer naming,
+postponement, privacy, verification, and the absence of unattended installation.
+
 ## [0.6.1](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.1) — Pre-release
 
 ### Fixed

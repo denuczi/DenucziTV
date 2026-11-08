@@ -848,5 +848,51 @@
   "downloadMediaUnavailable": "The media file is no longer available.",
   "downloadRangeRejected": "The provider rejected the requested byte range.",
   "downloadInterruptedOnClose": "Interrupted when the application closed. Select the content in the catalogue to try again.",
-  "downloadPartialFileAccessFailed": "Cannot access the partial file. Check disk space and folder permissions."
+  "downloadPartialFileAccessFailed": "Cannot access the partial file. Check disk space and folder permissions.",
+  "softwareUpdates": "Software updates",
+  "softwareUpdatesHelp": "Keep DenucziTV up to date with stable releases.",
+  "updatesInstalledVersion": "Installed version",
+  "updatesLatestStable": "Latest stable version",
+  "updatesAvailableVersion": "Available stable version",
+  "updatesLastChecked": "Last successful check",
+  "updatesUnknownVersion": "Version unavailable",
+  "updatesCheck": "Check for updates",
+  "updatesChecking": "Checking for stable updates…",
+  "updatesIdle": "Check whether a newer stable release is available.",
+  "updatesAvailable": "A newer stable version is available.",
+  "updatesUpToDate": "You have the latest version.",
+  "updatesNoStable": "You have the latest version.",
+  "updatesPackageUnavailable": "No compatible installer is available for this system. You can view the official release notes.",
+  "updatesOffline": "Could not check for updates. Check your internet connection and try again.",
+  "updatesTimeout": "The update check timed out. Please try again later.",
+  "updatesRateLimited": "The update service is temporarily busy. Please try again later.",
+  "updatesServerError": "Could not check for updates. Please try again later.",
+  "updatesInvalidResponse": "The update information could not be verified. Please try again later.",
+  "updatesMetadataError": "The installed version could not be read. Restart the application and try again.",
+  "updatesCancelled": "The update check was cancelled. You can try again.",
+  "updatesPreferenceWarning": "Update preferences could not be saved or restored. Postponement may not persist after restarting.",
+  "updatesTitle": "A new version is available",
+  "updatesBody": "DenucziTV {version} is available. You can download it now or keep using your current version.",
+  "@updatesBody": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesDownload": "Download update",
+  "updatesMaybeLater": "Maybe later",
+  "updatesViewNotes": "View release notes",
+  "updatesNotes": "Release notes",
+  "updatesNoNotes": "No release notes were provided.",
+  "updatesOpenFailed": "Could not verify or open the official link. Check your connection and default browser, then try again.",
+  "updatesPostponeClose": "Close",
+  "updatesBodyWithoutPackage": "DenucziTV {version} is available as a stable release. A compatible installer has not been published for this system.",
+  "@updatesBodyWithoutPackage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
 }
