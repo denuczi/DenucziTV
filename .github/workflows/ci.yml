@@ -3,7 +3,13 @@ name: Flutter Desktop CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'demo/**'
+  # Keep pull-request checks consistent, including for protected branches.
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read

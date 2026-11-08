@@ -6,6 +6,20 @@ request. A passing CI run does not replace playback checks on a real desktop.
 
 ## Automated checks
 
+Pushes to `main` skip Flutter Desktop CI when every changed file is Markdown,
+under `docs/`, or under `demo/`. A push containing any other file still runs the
+full workflow, even when documentation changes are included. Pull requests
+continue to run all checks so required checks are reported consistently.
+
+To run the full CI manually on `main`:
+
+```bash
+gh workflow run ci.yml --repo denuczi/DenucziTV --ref main
+```
+
+The Windows installer workflow is separate and remains manually dispatched.
+For local verification, run:
+
 ```bash
 flutter --version
 flutter pub get
