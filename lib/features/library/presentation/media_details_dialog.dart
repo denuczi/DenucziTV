@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n_ext.dart';
+import '../../../shared/widgets/content_unavailable_dialog.dart';
 
 import 'package:provider/provider.dart';
 
@@ -39,6 +40,9 @@ class _MediaDetailsDialogState extends State<MediaDetailsDialog> {
       return loader();
     }
     final app = context.read<AppController>();
+    if (widget.entry.sourceScope.isNotEmpty && !app.canUseMedia(widget.entry)) {
+      return Future.error(StateError('Content unavailable'));
+    }
     final credentials = app.credentials;
     return credentials == null
         ? Future.error(StateError('Account is not connected.'))
@@ -79,6 +83,10 @@ class _MediaDetailsDialogState extends State<MediaDetailsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final app = context.watch<AppController>();
+    if (widget.entry.sourceScope.isNotEmpty && !app.canUseMedia(widget.entry)) {
+      return const ContentUnavailableDialog();
+    }
     final scheme = Theme.of(context).colorScheme;
     final width = (MediaQuery.sizeOf(context).width - 32)
         .clamp(0.0, 720.0)
@@ -264,7 +272,7 @@ class _MediaDetailsDialogState extends State<MediaDetailsDialog> {
                   spacing: 10,
                   runSpacing: 8,
                   children: [
-                    if (context.watch<AppController>().showCopyLinkControls)
+                    if (context.watch<AppController>().copyLinksAvailable)
                       OutlinedButton.icon(
                         style: _actionButtonStyle,
                         onPressed: () => performMediaAction(

@@ -1,21 +1,30 @@
+import 'protected_access_grant.dart';
+
+enum AccountConnectionType { xtream, protectedSingleLink }
+
 class Account {
   const Account({
     required this.id,
     required this.label,
     required this.serverUrl,
     required this.username,
+    this.connectionType = AccountConnectionType.xtream,
   });
 
   final String id;
   final String label;
   final String serverUrl;
   final String username;
+  final AccountConnectionType connectionType;
+  bool get isProtected =>
+      connectionType == AccountConnectionType.protectedSingleLink;
 
   Map<String, String> toJson() => {
     'id': id,
     'label': label,
-    'serverUrl': serverUrl,
-    'username': username,
+    'serverUrl': isProtected ? '' : serverUrl,
+    'username': isProtected ? '' : username,
+    if (isProtected) 'connectionType': connectionType.name,
   };
 
   factory Account.fromJson(Map<String, dynamic> json) => Account(
@@ -23,6 +32,9 @@ class Account {
     label: json['label'] as String,
     serverUrl: json['serverUrl'] as String,
     username: json['username'] as String,
+    connectionType: json['connectionType'] == 'protectedSingleLink'
+        ? AccountConnectionType.protectedSingleLink
+        : AccountConnectionType.xtream,
   );
 }
 
@@ -32,12 +44,26 @@ class AccountCredentials {
     required this.username,
     required this.password,
     required this.label,
+    this.protected = false,
+    this.sourceScope = '',
+    this.linkExpiresAt,
+    this.accessGrant,
   });
 
   final String serverUrl;
   final String username;
   final String password;
   final String label;
+  final bool protected;
+  final String sourceScope;
+  final DateTime? linkExpiresAt;
+  final ProtectedAccessGrant? accessGrant;
+
+  bool get linkExpired =>
+      protected &&
+      (!(accessGrant?.usable ?? true) ||
+          (linkExpiresAt != null &&
+              !linkExpiresAt!.isAfter(DateTime.now().toUtc())));
 }
 
 class AccountStatus {

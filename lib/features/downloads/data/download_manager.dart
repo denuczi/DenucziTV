@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/models/account.dart';
+import '../../../core/models/protected_access_grant.dart';
 import '../../../core/network/network_client.dart';
 import '../../../core/storage/settings_store.dart';
 import '../../../core/storage/safe_file_publisher.dart';
@@ -38,6 +39,8 @@ class DownloadManager extends ChangeNotifier {
   static const maxHistoryItems = 300;
   static const maxQueuedItems = 100;
 
+  void Function(String accountId)? onCredentialsRejected;
+
   final NetworkClient _network;
   final SettingsStore _settings;
   final SafeFilePublisher _publisher;
@@ -45,6 +48,8 @@ class DownloadManager extends ChangeNotifier {
   final List<_PendingTransfer> _queue = [];
   final Map<String, CancelToken> _tokens = {};
   final Map<String, Uri> _retrySources = {};
+  final Map<String, ProtectedAccessGrant> _accessGrants = {};
+  final Map<String, StreamSubscription<void>> _accessSubscriptions = {};
   final Set<String> _reservedDestinations = {};
   final Set<String> _claimingMediaKeys = {};
   final Set<String> _finalizing = {};
@@ -68,7 +73,22 @@ class DownloadManager extends ChangeNotifier {
   static String mediaKeyFor(String accountId, MediaEntry media) {
     return '${accountId.length}:$accountId:${media.kind.name}:'
         '${media.id.length}:${media.id}:'
-        '${media.seasonNumber ?? ''}:${media.episodeNumber ?? ''}';
+        '${media.seasonNumber ?? ''}:${media.episodeNumber ?? ''}'
+        '${media.sourceScope.isEmpty ? '' : ':${media.sourceScope}'}';
+  }
+
+  /// Link expiry revokes queued/retry access, but never deletes downloaded bytes.
+  Future<void> revokeAccount(String accountId) async {
+    final prefix = '${accountId.length}:$accountId:';
+    for (final task in List<DownloadTask>.of(_tasks)) {
+      if (task.mediaKey?.startsWith(prefix) ?? false) {
+        if (task.status == DownloadStatus.queued ||
+            task.status == DownloadStatus.downloading) {
+          cancel(task.id);
+        }
+        _retrySources.remove(task.id);
+      }
+    }
   }
 
   /// Returns the latest active or completed transfer for this media item.
@@ -204,6 +224,11 @@ class DownloadManager extends ChangeNotifier {
     String? subfolder,
     String accountId = 'unscoped',
   }) async {
+    if (credentials.protected &&
+        (credentials.linkExpired ||
+            credentials.accessGrant?.allowsNewSessions != true)) {
+      throw const AppException('The protected link has expired.');
+    }
     final root = _directory;
     if (root == null) {
       throw const AppException(
@@ -396,7 +421,23 @@ class DownloadManager extends ChangeNotifier {
       }
       rethrow;
     }
+    if (credentials.protected &&
+        (credentials.linkExpired ||
+            credentials.accessGrant?.allowsNewSessions != true)) {
+      for (final item in staged) {
+        _reservedDestinations.remove(_normalize(item.task.destination));
+      }
+      throw const AppException('The protected link has expired.');
+    }
     for (final item in staged) {
+      if (credentials.accessGrant case final grant?) {
+        _accessGrants[item.task.id] = grant;
+        unawaited(_accessSubscriptions.remove(item.task.id)?.cancel());
+        _accessSubscriptions[item.task.id] = grant.revocations.listen((_) {
+          cancel(item.task.id);
+          _retrySources.remove(item.task.id);
+        });
+      }
       if (item.reuse) {
         final index = _tasks.indexWhere((task) => task.id == item.task.id);
         if (index < 0) {
@@ -439,6 +480,11 @@ class DownloadManager extends ChangeNotifier {
   String _normalize(String path) =>
       Platform.isWindows ? path.toLowerCase() : path;
 
+  void _forgetAuthorization(String id) {
+    _accessGrants.remove(id);
+    unawaited(_accessSubscriptions.remove(id)?.cancel());
+  }
+
   void _pruneHistory() {
     while (_tasks.length > maxHistoryItems) {
       // Retain records backed by partial video data until the user chooses to
@@ -453,6 +499,7 @@ class DownloadManager extends ChangeNotifier {
       }
       final removed = _tasks.removeAt(index);
       _retrySources.remove(removed.id);
+      _forgetAuthorization(removed.id);
       _reservedDestinations.remove(_normalize(removed.destination));
     }
   }
@@ -514,6 +561,7 @@ class DownloadManager extends ChangeNotifier {
       final removed = _tasks[index];
       await _deletePartial(removed);
       _tasks.removeWhere((entry) => entry.id == id);
+      _forgetAuthorization(id);
       _retrySources.remove(id);
       _reservedDestinations.remove(_normalize(removed.destination));
       _emit();
@@ -550,6 +598,7 @@ class DownloadManager extends ChangeNotifier {
           continue;
         }
         _tasks.removeWhere((entry) => entry.id == task.id);
+        _forgetAuthorization(task.id);
         _retrySources.remove(task.id);
         _reservedDestinations.remove(_normalize(task.destination));
         cleared++;
@@ -615,6 +664,7 @@ class DownloadManager extends ChangeNotifier {
       if (currentIndex != -1) {
         _tasks.removeAt(currentIndex);
       }
+      _forgetAuthorization(id);
       _retrySources.remove(id);
       _reservedDestinations.remove(_normalize(destination));
       _emit();
@@ -626,6 +676,10 @@ class DownloadManager extends ChangeNotifier {
   }
 
   Future<void> retry(String id) async {
+    if (_accessGrants[id]?.usable == false) {
+      _retrySources.remove(id);
+      return;
+    }
     if (!_retryingIds.add(id)) {
       return;
     }
@@ -719,6 +773,11 @@ class DownloadManager extends ChangeNotifier {
       while (_queue.isNotEmpty && !_disposed) {
         final next = _queue.removeAt(0);
         final task = _tasks.firstWhere((entry) => entry.id == next.id);
+        if (_accessGrants[next.id]?.usable == false) {
+          cancel(next.id);
+          _retrySources.remove(next.id);
+          continue;
+        }
         if (task.status != DownloadStatus.queued) {
           continue;
         }
@@ -754,14 +813,18 @@ class DownloadManager extends ChangeNotifier {
     Object? lastError;
     _set(id, status: DownloadStatus.downloading, message: null);
 
-    for (var attempt = 0; attempt < 3 && !token.isCancelled; attempt++) {
+    for (
+      var attempt = 0;
+      attempt < 3 && !token.isCancelled && _accessGrants[id]?.usable != false;
+      attempt++
+    ) {
       RandomAccessFile? output;
       try {
         if (attempt > 0) {
           _set(id, message: 'Reconnecting to resume saved bytes...');
           await Future<void>.delayed(Duration(seconds: attempt * 2));
         }
-        if (token.isCancelled) {
+        if (token.isCancelled || _accessGrants[id]?.usable == false) {
           break;
         }
         if (await File(target).exists()) {
@@ -886,6 +949,8 @@ class DownloadManager extends ChangeNotifier {
           id,
           bytes: offset,
           total: total,
+          // The validated response has resumed; the reconnect notice is stale.
+          message: null,
           etag: tag ?? saved.etag,
           lastModified: modified ?? saved.lastModified,
         );
@@ -899,7 +964,7 @@ class DownloadManager extends ChangeNotifier {
         var lastPersist = DateTime.now();
         final sniffBuffer = <int>[];
         await for (final bytes in body.stream) {
-          if (token.isCancelled) {
+          if (token.isCancelled || _accessGrants[id]?.usable == false) {
             throw const AppException(
               'Download cancelled. Partial data was kept.',
             );
@@ -947,7 +1012,7 @@ class DownloadManager extends ChangeNotifier {
             (total != null && received != total)) {
           throw const _IncompleteTransfer();
         }
-        if (token.isCancelled) {
+        if (token.isCancelled || _accessGrants[id]?.usable == false) {
           throw const AppException(
             'Download cancelled. Partial data was kept.',
           );
@@ -974,6 +1039,12 @@ class DownloadManager extends ChangeNotifier {
         _retrySources.remove(id);
         return;
       } on DioException catch (error) {
+        final grant = _accessGrants[id];
+        if (grant != null &&
+            (error.response?.statusCode == 401 ||
+                error.response?.statusCode == 403)) {
+          onCredentialsRejected?.call(grant.accountId);
+        }
         lastError = error;
         if (CancelToken.isCancel(error) || !_retryable(error)) {
           break;
@@ -1021,11 +1092,13 @@ class DownloadManager extends ChangeNotifier {
         }
       }
     }
-    if (token.isCancelled) {
+    if (token.isCancelled || _accessGrants[id]?.usable == false) {
       _set(
         id,
         status: DownloadStatus.cancelled,
-        message: 'Cancelled. The downloaded portion has been kept.',
+        message: _accessGrants[id]?.usable == false
+            ? 'The protected link has expired.'
+            : 'Cancelled. The downloaded portion has been kept.',
       );
     } else {
       _set(
@@ -1236,6 +1309,11 @@ class DownloadManager extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    for (final subscription in _accessSubscriptions.values) {
+      unawaited(subscription.cancel());
+    }
+    _accessSubscriptions.clear();
+    _accessGrants.clear();
     _queue.clear();
     _retrySources.clear();
     _reservedDestinations.clear();

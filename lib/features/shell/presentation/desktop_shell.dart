@@ -30,12 +30,17 @@ class DesktopShell extends StatefulWidget {
 class _DesktopShellState extends State<DesktopShell> {
   _Workspace _workspace = _Workspace.library;
   late DownloadManager _downloads;
+  late AppController _app;
+  int _catalogNavigationRequest = 0;
   final Map<String, DownloadStatus> _terminalNotified = {};
 
   @override
   void initState() {
     super.initState();
-    _downloads = context.read<AppController>().downloads;
+    _app = context.read<AppController>();
+    _catalogNavigationRequest = _app.catalogNavigationRequest;
+    _app.addListener(_onCatalogNavigation);
+    _downloads = _app.downloads;
     for (final task in _downloads.tasks) {
       if (task.status == DownloadStatus.completed ||
           task.status == DownloadStatus.failed) {
@@ -43,6 +48,13 @@ class _DesktopShellState extends State<DesktopShell> {
       }
     }
     _downloads.addListener(_onDownloadChanged);
+  }
+
+  void _onCatalogNavigation() {
+    if (mounted && _catalogNavigationRequest != _app.catalogNavigationRequest) {
+      _catalogNavigationRequest = _app.catalogNavigationRequest;
+      setState(() => _workspace = _Workspace.library);
+    }
   }
 
   void _onDownloadChanged() {
@@ -89,6 +101,7 @@ class _DesktopShellState extends State<DesktopShell> {
 
   @override
   void dispose() {
+    _app.removeListener(_onCatalogNavigation);
     _downloads.removeListener(_onDownloadChanged);
     super.dispose();
   }

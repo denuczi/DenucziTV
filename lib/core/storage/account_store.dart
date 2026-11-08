@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../errors/app_exception.dart';
 import '../models/account.dart';
+import '../models/protected_account.dart';
 
 /// Abstraction that allows credential operations to be simulated in tests.
 abstract interface class AccountSecrets {
@@ -49,6 +50,135 @@ class AccountStore {
   final SharedPreferencesAsync _preferences;
   final AccountSecrets _secrets;
   Future<void> _mutations = Future<void>.value();
+  Future<String>? _installationIdentity;
+
+  /// Private resolver identity. Never pass this to the shared NetworkClient.
+  Future<String> installationIdentity() {
+    final pending = _installationIdentity;
+    if (pending != null) return pending;
+    final operation = _createInstallationIdentity();
+    _installationIdentity = operation;
+    unawaited(
+      operation.then<void>(
+        (_) {},
+        onError: (Object error, StackTrace stack) {
+          if (identical(_installationIdentity, operation)) {
+            _installationIdentity = null;
+          }
+        },
+      ),
+    );
+    return operation;
+  }
+
+  Future<String> _createInstallationIdentity() => _serialize(() async {
+    const key = 'installation.protected_link_uuid.v1';
+    final existing = await _secrets.read(key);
+    if (existing != null) {
+      if (!RegExp(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+      ).hasMatch(existing)) {
+        throw const AppException('Protected account storage is unavailable.');
+      }
+      return existing;
+    }
+    final identity = randomUuid();
+    await _secrets.write(key, identity);
+    return identity;
+  });
+
+  Future<ProtectedAccountSecret> readProtected(Account account) async {
+    try {
+      final value = await _secrets.read(_protectedKey(account.id));
+      if (value == null) throw const FormatException('Missing protected state');
+      return ProtectedAccountSecret.decode(value, account.label);
+    } catch (_) {
+      throw const AppException('Protected account storage is unavailable.');
+    }
+  }
+
+  Future<void> saveProtected(
+    Account account,
+    ProtectedAccountSecret state, {
+    bool create = false,
+    bool updateMetadata = false,
+    bool Function()? stillValid,
+  }) => _serialize(() async {
+    if (!account.isProtected || account.label.trim().isEmpty) {
+      throw const AppException('A protected account name is required.');
+    }
+    final existing = await list();
+    if (!create &&
+        !existing.any((value) => value.id == account.id && value.isProtected)) {
+      throw const AppException('The protected account is no longer available.');
+    }
+    final key = _protectedKey(account.id);
+    final previous = await _secrets.read(key);
+    if (stillValid != null && !stillValid()) {
+      throw const AppException('The protected account check was cancelled.');
+    }
+    await _secrets.write(key, state.encode());
+    try {
+      if (create || updateMetadata) {
+        await _preferences.setString(
+          _accountsKey,
+          jsonEncode([
+            ...existing
+                .where((value) => value.id != account.id)
+                .map((value) => value.toJson()),
+            account.toJson(),
+          ]),
+        );
+      }
+    } catch (_) {
+      if (previous == null) {
+        await _secrets.delete(key);
+      } else {
+        await _secrets.write(key, previous);
+      }
+      throw const AppException('Protected account storage is unavailable.');
+    }
+  });
+
+  Future<void> renameProtected(
+    Account account,
+    String label,
+  ) => _serialize(() async {
+    if (!account.isProtected || label.trim().isEmpty) {
+      throw const AppException('A protected account name is required.');
+    }
+    final existing = await list();
+    if (!existing.any((item) => item.id == account.id && item.isProtected)) {
+      throw const AppException('The protected account is no longer available.');
+    }
+    final renamed = Account(
+      id: account.id,
+      label: label.trim(),
+      serverUrl: '',
+      username: '',
+      connectionType: AccountConnectionType.protectedSingleLink,
+    );
+    await _preferences.setString(
+      _accountsKey,
+      jsonEncode([
+        for (final item in existing)
+          (item.id == account.id ? renamed : item).toJson(),
+      ]),
+    );
+  });
+
+  /// Reads and clears one authorization in the same storage mutation queue.
+  /// A renewal committed before this operation must never be overwritten.
+  Future<ProtectedAccountSecret> expireProtected(
+    Account account,
+    DateTime time,
+  ) => _serialize(() async {
+    final current = await readProtected(account);
+    if (!current.expiredAt(time) || current.credentials == null) return current;
+    final cleared = current.withoutConnection();
+    await _secrets.write(_protectedKey(account.id), cleared.encode());
+    return cleared;
+  });
 
   Future<T> _serialize<T>(Future<T> Function() operation) {
     final result = Completer<T>();
@@ -183,6 +313,7 @@ class AccountStore {
       }
       try {
         await _secrets.delete(_passwordKey(id));
+        await _secrets.delete(_protectedKey(id));
       } catch (_) {
         remaining.add(id);
       }
@@ -220,6 +351,7 @@ class AccountStore {
     }
     try {
       await _secrets.delete(_passwordKey(accountId));
+      await _secrets.delete(_protectedKey(accountId));
       await _preferences.setStringList(
         _pendingDeletionKey,
         (await _readPending()).where((id) => id != accountId).toList(),
@@ -231,4 +363,5 @@ class AccountStore {
   });
 
   String _passwordKey(String id) => 'account.$id.password';
+  String _protectedKey(String id) => 'account.$id.protected.v1';
 }

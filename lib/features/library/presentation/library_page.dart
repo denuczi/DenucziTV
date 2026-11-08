@@ -101,7 +101,9 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Future<void> _openMedia(MediaEntry entry) async {
-    final sourceAccountId = context.read<AppController>().activeAccount?.id;
+    final app = context.read<AppController>();
+    if (!app.canUseMedia(entry)) return;
+    final sourceAccountId = app.activeAccount?.id;
     if (entry.kind == LibraryKind.series) {
       await showDialog<void>(
         context: context,
@@ -117,7 +119,8 @@ class _LibraryPageState extends State<LibraryPage> {
         return;
       }
     }
-    if (context.read<AppController>().activeAccount?.id != sourceAccountId) {
+    if (context.read<AppController>().activeAccount?.id != sourceAccountId ||
+        !app.canUseMedia(entry)) {
       return;
     }
     await showDialog<void>(
@@ -128,7 +131,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
   Future<void> _export(AppController app) async {
     final credentials = app.credentials;
-    if (credentials == null || _exporting) {
+    if (credentials == null || _exporting || !app.canShareLinks) {
       return;
     }
     final confirmed = await showDialog<bool>(
@@ -150,7 +153,10 @@ class _LibraryPageState extends State<LibraryPage> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) {
+    if (confirmed != true ||
+        !mounted ||
+        !app.canShareLinks ||
+        app.credentials != credentials) {
       return;
     }
     _notificationTimer?.cancel();
@@ -329,7 +335,8 @@ class _LibraryPageState extends State<LibraryPage> {
                     loading: app.loading,
                     onRefresh: app.refresh,
                     exportAvailable:
-                        app.showExportM3u && app.kind != LibraryKind.series,
+                        app.exportM3uAvailable &&
+                        app.kind != LibraryKind.series,
                     exporting: _exporting,
                     onExport: () => _export(app),
                   ),

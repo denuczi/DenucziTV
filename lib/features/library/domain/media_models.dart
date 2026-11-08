@@ -55,6 +55,7 @@ class MediaEntry {
     this.seasonNumber,
     this.episodeNumber,
     this.seriesId,
+    this.sourceScope = '',
   });
 
   final String id;
@@ -71,6 +72,24 @@ class MediaEntry {
   /// Parent series ID for an episode; never use the episode title as identity.
   final String? seriesId;
 
+  /// An opaque connection generation, never a provider URL or credential.
+  final String sourceScope;
+
+  MediaEntry withSourceScope(String scope) => MediaEntry(
+    id: id,
+    title: title,
+    kind: kind,
+    categoryId: categoryId,
+    imageUrl: imageUrl,
+    containerExtension: containerExtension,
+    rating: rating,
+    plot: plot,
+    seasonNumber: seasonNumber,
+    episodeNumber: episodeNumber,
+    seriesId: seriesId,
+    sourceScope: scope,
+  );
+
   MediaEntry withSeries(String parentId) => MediaEntry(
     id: id,
     title: title,
@@ -83,6 +102,7 @@ class MediaEntry {
     seasonNumber: seasonNumber,
     episodeNumber: episodeNumber,
     seriesId: parentId,
+    sourceScope: sourceScope,
   );
 
   factory MediaEntry.fromJson(Map<String, dynamic> json, LibraryKind kind) {

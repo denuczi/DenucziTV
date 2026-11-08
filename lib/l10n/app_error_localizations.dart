@@ -8,6 +8,72 @@ import 'l10n_ext.dart';
 String localizeAppError(BuildContext context, String message) {
   final l10n = context.l10n;
   final translations = <String, String>{
+    "Cancelled": l10n.downloadStatusCancelled,
+    "Reconnecting to resume saved bytes...": l10n.downloadReconnecting,
+    "Resuming saved partial transfer...": l10n.downloadResumingPartial,
+    "Resuming saved download...": l10n.downloadResuming,
+    "Finalizing download...": l10n.downloadFinalizing,
+    "The server interrupted the connection.": l10n.downloadServerInterrupted,
+    "The network connection was interrupted.": l10n.downloadNetworkInterrupted,
+    "The server ended the transfer early.": l10n.downloadTransferEndedEarly,
+    "The download timed out.": l10n.downloadTimedOut,
+    "Cancelled. The downloaded portion has been kept.":
+        l10n.downloadCancelledPartialKept,
+    "Download cancelled. Partial data was kept.":
+        l10n.downloadCancelledPartialDataKept,
+    "The download failed unexpectedly.": l10n.downloadUnexpectedFailure,
+    "The download could not be completed.": l10n.downloadCouldNotComplete,
+    "Network error. Check the connection and try again.":
+        l10n.downloadNetworkError,
+    "The provider refused access. Verify the account and subscription.":
+        l10n.downloadProviderDenied,
+    "The media file is no longer available.": l10n.downloadMediaUnavailable,
+    "The provider rejected the requested byte range.":
+        l10n.downloadRangeRejected,
+    "Interrupted when the application closed. Start a new download from the catalog.":
+        l10n.downloadInterruptedOnClose,
+    "Cannot access the partial file. Check disk space and folder permissions.":
+        l10n.downloadPartialFileAccessFailed,
+    "Saved successfully": l10n.savedSuccessfully,
+    "Download cancelled.": l10n.downloadStatusCancelled,
+    "Enter a valid protected HTTP or HTTPS link.": l10n.protectedInvalidUrl,
+    "The protected link returned an invalid Xtream destination.":
+        l10n.protectedInvalidTarget,
+    "Enter a permanent protected link, not an Xtream destination.":
+        l10n.protectedPermanentRequired,
+    "The protected link returned an invalid expiration.":
+        l10n.protectedInvalidExpiration,
+    "The protected link contains a redirect loop.": l10n.protectedRedirectLoop,
+    "The protected link exceeded four redirects.":
+        l10n.protectedTooManyRedirects,
+    "The protected link returned an invalid redirect.":
+        l10n.protectedInvalidRedirect,
+    "The protected link is unavailable or did not redirect.":
+        l10n.protectedUnavailable,
+    "The protected link was not found.": l10n.protectedNotFound,
+    "Access to the protected link was denied.": l10n.protectedDenied,
+    "The protected link check timed out.": l10n.protectedTimeout,
+    "Could not contact the protected link securely.":
+        l10n.protectedContactFailed,
+    "Protected account storage is unavailable.": l10n.protectedStorageFailed,
+    "A protected account name is required.": l10n.accountNameRequired,
+    "The protected account is no longer available.":
+        l10n.protectedAccountUnavailable,
+    "The protected account check was cancelled.": l10n.protectedCancelled,
+    "Please wait before checking the protected link again.": l10n.protectedWait,
+    "The protected link has expired.": l10n.protectedExpired,
+    "The protected link has expired. Secure credential cleanup will be retried.":
+        l10n.protectedExpiredCleanup,
+    "Protected accounts do not allow sharing links or playlists.":
+        l10n.protectedSharingDenied,
+    "Protected accounts must use their permanent link.":
+        l10n.protectedPermanentRequired,
+    "The protected link must be checked before connecting.":
+        l10n.protectedCheckRequired,
+    "The protected account could not be checked.": l10n.protectedCheckFailed,
+    "This content is unavailable in the current account source.":
+        l10n.contentUnavailable,
+
     'Network preferences could not be restored.':
         l10n.networkPreferencesRestoreFailed,
     'Pending credential cleanup could not be completed.':

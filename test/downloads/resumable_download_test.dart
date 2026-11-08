@@ -256,6 +256,10 @@ void main() {
     });
     await manager.initialize();
     await manager.setDirectory(folder.path);
+    final transitions = <DownloadTask>[];
+    manager.addListener(() {
+      if (manager.tasks.isNotEmpty) transitions.add(manager.tasks.single);
+    });
     await manager.enqueue(
       credentials: AccountCredentials(
         serverUrl: 'http://127.0.0.1:${server.port}',
@@ -269,5 +273,20 @@ void main() {
     );
     expect(await waitForDownload(manager), DownloadStatus.completed);
     expect(requests, 2);
+    expect(
+      transitions.any(
+        (task) => task.message == 'Reconnecting to resume saved bytes...',
+      ),
+      isTrue,
+    );
+    expect(
+      transitions.any(
+        (task) =>
+            task.status == DownloadStatus.downloading &&
+            task.bytesReceived > 0 &&
+            task.message == null,
+      ),
+      isTrue,
+    );
   });
 }

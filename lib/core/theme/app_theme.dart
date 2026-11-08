@@ -20,6 +20,11 @@ abstract final class AppPalette {
   static const success = Color(0xFF48C69B);
   static const outline = Color(0xFF38383D);
 
+  static Color information(Brightness brightness) =>
+      brightness == Brightness.dark
+      ? const Color(0xFF79B8FF)
+      : const Color(0xFF1D5EA8);
+
   static LinearGradient sidebarGradient(Brightness brightness) =>
       brightness == Brightness.dark
       ? const LinearGradient(

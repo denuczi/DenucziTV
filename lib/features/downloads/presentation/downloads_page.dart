@@ -2,6 +2,8 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n_ext.dart';
+import '../../../l10n/app_error_localizations.dart';
+import '../../../core/theme/app_theme.dart';
 
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -595,7 +597,7 @@ class _TransferTile extends StatelessWidget {
       DownloadStatus.failed => scheme.error,
       DownloadStatus.cancelled ||
       DownloadStatus.interrupted => scheme.onSurfaceVariant,
-      _ => scheme.primary,
+      _ => AppPalette.information(theme.brightness),
     };
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -639,7 +641,20 @@ class _TransferTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          task.status.name.toUpperCase(),
+                          switch (task.status) {
+                            DownloadStatus.queued =>
+                              context.l10n.downloadStatusQueued,
+                            DownloadStatus.downloading =>
+                              context.l10n.downloadStatusDownloading,
+                            DownloadStatus.completed =>
+                              context.l10n.downloadStatusDownloaded,
+                            DownloadStatus.failed =>
+                              context.l10n.downloadStatusFailed,
+                            DownloadStatus.cancelled =>
+                              context.l10n.downloadStatusCancelled,
+                            DownloadStatus.interrupted =>
+                              context.l10n.downloadStatusInterrupted,
+                          }.toUpperCase(),
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: statusColor,
                             fontWeight: FontWeight.w700,
@@ -672,7 +687,11 @@ class _TransferTile extends StatelessWidget {
               ),
               if (running || queued) ...[
                 const SizedBox(height: 15),
-                LinearProgressIndicator(value: task.progress, minHeight: 5),
+                LinearProgressIndicator(
+                  value: task.progress,
+                  minHeight: 5,
+                  color: statusColor,
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -680,7 +699,7 @@ class _TransferTile extends StatelessWidget {
                       Text(
                         '$percent%',
                         style: theme.textTheme.labelMedium?.copyWith(
-                          color: scheme.primary,
+                          color: statusColor,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -724,7 +743,7 @@ class _TransferTile extends StatelessWidget {
                       ),
                       child: Text(
                         task.message?.isNotEmpty == true
-                            ? task.message!
+                            ? localizeAppError(context, task.message!)
                             : context.l10n.savedSuccessfully,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: failed ? scheme.error : scheme.onSurface,

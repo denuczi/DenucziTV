@@ -33,12 +33,11 @@ void main() {
       accounts: AccountStore(preferences, const FlutterSecureStorage()),
       settings: SettingsStore(preferences),
     );
-    addTearDown(controller.dispose);
     await controller.initialize();
 
     await tester.pumpWidget(
-      ChangeNotifierProvider<AppController>.value(
-        value: controller,
+      ChangeNotifierProvider<AppController>(
+        create: (_) => controller,
         child: MaterialApp(theme: AppTheme.dark, home: const DesktopShell()),
       ),
     );

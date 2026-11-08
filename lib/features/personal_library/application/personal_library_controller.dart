@@ -12,6 +12,8 @@ class PersonalLibraryController extends ChangeNotifier {
   PersonalLibraryController(this._repository);
   final LibraryRepository _repository;
   String? _accountId;
+  String? _sourceScope = '';
+  bool _protected = false;
   int _revision = 0;
   bool _closed = false;
   Future<void> _writes = Future<void>.value();
@@ -23,8 +25,14 @@ class PersonalLibraryController extends ChangeNotifier {
 
   Future<void> initialize() => _repository.initialize();
 
-  Future<void> selectAccount(String? accountId) async {
+  Future<void> selectAccount(
+    String? accountId, {
+    String? sourceScope = '',
+    bool protected = false,
+  }) async {
     _accountId = accountId;
+    _sourceScope = sourceScope;
+    _protected = protected;
     final revision = ++_revision;
     favorites = const [];
     history = const [];
@@ -38,11 +46,20 @@ class PersonalLibraryController extends ChangeNotifier {
 
   Future<void> _loadFor(String id, int revision) async {
     try {
-      final savedFavorites = await _repository.favorites(id);
-      final savedHistory = await _repository.history(id);
+      final savedFavorites = await _repository.favorites(
+        id,
+        includeUnavailable: _protected,
+      );
+      final savedHistory = await _repository.history(
+        id,
+        includeUnavailable: _protected,
+      );
       if (!_closed && _revision == revision && _accountId == id) {
-        favorites = savedFavorites;
-        history = savedHistory;
+        LibraryItem scoped(LibraryItem item) => item.withAvailability(
+          item.available && item.sourceScope == _sourceScope,
+        );
+        favorites = savedFavorites.map(scoped).toList(growable: false);
+        history = savedHistory.map(scoped).toList(growable: false);
         error = null;
         notifyListeners();
       }
@@ -62,7 +79,10 @@ class PersonalLibraryController extends ChangeNotifier {
   }
 
   bool isFavorite(MediaEntry media) => favorites.any(
-    (item) => item.kind == media.kind && item.mediaId == media.id,
+    (item) =>
+        item.kind == media.kind &&
+        item.mediaId == media.id &&
+        item.sourceScope == media.sourceScope,
   );
 
   Future<T> _write<T>(Future<T> Function() work) {
@@ -76,7 +96,7 @@ class PersonalLibraryController extends ChangeNotifier {
 
   Future<void> toggleFavorite(MediaEntry media) async {
     final id = _accountId;
-    if (id == null) {
+    if (id == null || media.sourceScope != _sourceScope) {
       return;
     }
     final enabled = !isFavorite(media);
@@ -91,8 +111,18 @@ class PersonalLibraryController extends ChangeNotifier {
     }
   }
 
+  Future<void> removeFavorite(LibraryItem item) async {
+    await _write(() => _repository.setFavorite(item, false));
+    if (_accountId == item.accountId) await refresh();
+  }
+
   Future<LibraryItem?> progressFor(String accountId, MediaEntry media) =>
-      _repository.progress(accountId, media.kind, media.id);
+      _repository.progress(
+        accountId,
+        media.kind,
+        media.id,
+        sourceScope: media.sourceScope,
+      );
 
   Future<void> saveProgress({
     required String accountId,
@@ -165,9 +195,17 @@ class PersonalLibraryController extends ChangeNotifier {
   Future<void> reconcileCatalog(
     String accountId,
     LibraryKind kind,
-    Iterable<String> ids,
-  ) async {
-    await _write(() => _repository.reconcileAvailable(accountId, kind, ids));
+    Iterable<String> ids, {
+    String sourceScope = '',
+  }) async {
+    await _write(
+      () => _repository.reconcileAvailable(
+        accountId,
+        kind,
+        ids,
+        sourceScope: sourceScope,
+      ),
+    );
     if (_accountId == accountId) {
       await refresh();
     }

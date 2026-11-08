@@ -44,6 +44,24 @@ void main() {
       'No se pudieron restaurar las preferencias de red. No se pudieron restaurar las preferencias de idioma.',
     );
     expect(
+      localizeAppError(
+        localizedContext,
+        'Reconnecting to resume saved bytes...',
+      ),
+      'Reconectando para reanudar la descarga. El reintento es automático.',
+    );
+    expect(
+      localizeAppError(
+        localizedContext,
+        'The server interrupted the connection.',
+      ),
+      'El servidor interrumpió la conexión. Puedes volver a intentarlo; se conserva lo descargado.',
+    );
+    expect(
+      localizeAppError(localizedContext, 'Saved successfully'),
+      'Guardado correctamente',
+    );
+    expect(
       localizeAppError(localizedContext, 'Provider-specific message'),
       'Provider-specific message',
     );

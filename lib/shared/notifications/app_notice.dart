@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n_ext.dart';
+import '../../l10n/app_error_localizations.dart';
+import '../../core/theme/app_theme.dart';
 
 enum NoticeLevel { info, success, warning, error }
 
@@ -45,7 +47,10 @@ class AppNotice {
             Icons.warning_amber_rounded,
           ),
           NoticeLevel.error => (scheme.error, Icons.error_outline_rounded),
-          NoticeLevel.info => (scheme.primary, Icons.info_outline_rounded),
+          NoticeLevel.info => (
+            AppPalette.information(theme.brightness),
+            Icons.info_outline_rounded,
+          ),
         };
         final availableWidth = MediaQuery.sizeOf(overlayContext).width;
         return Positioned(
@@ -89,7 +94,7 @@ class AppNotice {
                               if (message != null && message.isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Text(
-                                  message,
+                                  localizeAppError(overlayContext, message),
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                   style: theme.textTheme.bodySmall?.copyWith(

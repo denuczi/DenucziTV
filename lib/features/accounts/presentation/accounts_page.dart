@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/models/account.dart';
+import '../../../core/models/protected_account.dart';
+import '../../connection/presentation/protected_account_labels.dart';
 import '../../../core/models/app_controller.dart';
 import '../../../l10n/app_error_localizations.dart';
 import '../../../l10n/l10n_ext.dart';
@@ -65,6 +67,47 @@ class _AccountsPageState extends State<AccountsPage> {
       }
     },
   );
+
+  Future<void> _rename(Account account, AppController app) =>
+      _dialogGuard.run(() async {
+        final input = TextEditingController(text: account.label);
+        try {
+          final label = await showDialog<String>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              constraints: const BoxConstraints(maxWidth: 440),
+              title: Text(dialogContext.l10n.renameAccount),
+              content: TextField(
+                controller: input,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: dialogContext.l10n.accountName,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(dialogContext.l10n.cancel),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    if (input.text.trim().isNotEmpty) {
+                      Navigator.pop(dialogContext, input.text.trim());
+                    }
+                  },
+                  child: Text(dialogContext.l10n.renameAccount),
+                ),
+              ],
+            ),
+          );
+          if (label != null) await app.renameProtectedAccount(account, label);
+        } catch (_) {
+          app.error = 'Protected account storage is unavailable.';
+          app.notifyListeners();
+        } finally {
+          input.dispose();
+        }
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -130,8 +173,10 @@ class _AccountsPageState extends State<AccountsPage> {
                   isBusy: app.connecting,
                   onConnect: () => app.connectSaved(account),
                   onRemove: () => _remove(account, app),
-                  onDetails: () =>
-                      _openDialog((_) => const AccountDetailsDialog()),
+                  onDetails: () => _openDialog(
+                    (_) => AccountDetailsDialog(account: account),
+                  ),
+                  onRename: () => _rename(account, app),
                   onDisconnect: () async {
                     await app.disconnect();
                   },
@@ -161,6 +206,7 @@ class _AccountTile extends StatelessWidget {
     required this.onRemove,
     required this.onDetails,
     required this.onDisconnect,
+    required this.onRename,
   });
 
   final Account account;
@@ -171,12 +217,19 @@ class _AccountTile extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onDetails;
   final VoidCallback onDisconnect;
+  final VoidCallback onRename;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final provider = Uri.tryParse(account.serverUrl)?.host ?? account.serverUrl;
-    final expired = status?.expiration?.isBefore(DateTime.now()) ?? false;
+    final app = context.watch<AppController>();
+    final provider = account.isProtected
+        ? context.l10n.protectedLinkConfigured
+        : (Uri.tryParse(account.serverUrl)?.host ?? account.serverUrl);
+    final protectedExpiry = app.protectedExpirations[account.id];
+    final expired = account.isProtected
+        ? app.expiredProtectedAccounts.contains(account.id)
+        : (status?.expiration?.isBefore(DateTime.now()) ?? false);
     final expiryLabel = expired ? context.l10n.expired : context.l10n.expires;
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
@@ -216,7 +269,9 @@ class _AccountTile extends StatelessWidget {
                   ),
                   if (isActive)
                     Chip(
-                      label: Text(context.l10n.connected),
+                      label: Text(
+                        expired ? context.l10n.expired : context.l10n.connected,
+                      ),
                       avatar: const Icon(
                         Icons.circle,
                         size: 10,
@@ -230,23 +285,51 @@ class _AccountTile extends StatelessWidget {
                 spacing: 22,
                 runSpacing: 14,
                 children: [
-                  _Fact(context.l10n.username, account.username),
-                  _Fact(
-                    context.l10n.created,
-                    status?.createdAt == null
-                        ? context.l10n.unknownAccountDate
-                        : AccountsPage.date(status!.createdAt!),
-                  ),
-                  _Fact(
-                    expiryLabel,
-                    status?.expiration == null
-                        ? context.l10n.unknownAccountDate
-                        : AccountsPage.date(status!.expiration!),
-                  ),
-                  _Fact(
-                    context.l10n.connections,
-                    '${status?.activeConnections?.toString() ?? '—'} / ${status?.maxConnections?.toString() ?? '—'}',
-                  ),
+                  if (account.isProtected) ...[
+                    _Fact(
+                      context.l10n.connectionMethod,
+                      context.l10n.protectedSingleLink,
+                    ),
+                    _Fact(
+                      context.l10n.lastSynchronization,
+                      app.protectedLastUpdated[account.id] == null
+                          ? context.l10n.unknownAccountDate
+                          : AccountsPage.date(
+                              app.protectedLastUpdated[account.id]!,
+                            ),
+                    ),
+                    _Fact(
+                      expiryLabel,
+                      protectedExpiry == null
+                          ? context.l10n.protectedExpiryUnknown
+                          : AccountsPage.date(protectedExpiry),
+                    ),
+                    _Fact(
+                      context.l10n.accountType,
+                      protectedSyncLabel(
+                        context,
+                        app.protectedSyncStates[account.id],
+                      ),
+                    ),
+                  ] else ...[
+                    _Fact(context.l10n.username, account.username),
+                    _Fact(
+                      context.l10n.created,
+                      status?.createdAt == null
+                          ? context.l10n.unknownAccountDate
+                          : AccountsPage.date(status!.createdAt!),
+                    ),
+                    _Fact(
+                      expiryLabel,
+                      status?.expiration == null
+                          ? context.l10n.unknownAccountDate
+                          : AccountsPage.date(status!.expiration!),
+                    ),
+                    _Fact(
+                      context.l10n.connections,
+                      '${status?.activeConnections?.toString() ?? '—'} / ${status?.maxConnections?.toString() ?? '—'}',
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 18),
@@ -258,6 +341,26 @@ class _AccountTile extends StatelessWidget {
                   spacing: 10,
                   runSpacing: 10,
                   children: [
+                    if (account.isProtected) ...[
+                      TextButton.icon(
+                        onPressed: onRename,
+                        icon: const Icon(Icons.edit_outlined),
+                        label: Text(context.l10n.renameAccount),
+                      ),
+                      OutlinedButton(
+                        onPressed:
+                            app.protectedSyncStates[account.id] ==
+                                ProtectedSyncState.checking
+                            ? null
+                            : () => app.refreshProtectedAccount(account),
+                        child: Text(context.l10n.updateCredentials),
+                      ),
+                      if (!isActive)
+                        OutlinedButton(
+                          onPressed: onDetails,
+                          child: Text(context.l10n.moreDetails),
+                        ),
+                    ],
                     if (isActive) ...[
                       OutlinedButton.icon(
                         onPressed: onDetails,

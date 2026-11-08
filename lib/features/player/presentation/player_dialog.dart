@@ -41,11 +41,16 @@ class PlayerDialog extends StatefulWidget {
 
 class _PlayerDialogState extends State<PlayerDialog> {
   late final Player _player;
+  late final AppController _app;
+  bool _playbackFailed = false;
   late final VideoController _video;
   late final AccountCredentials? _credentials;
   late final XtreamApi _api;
   late final NetworkClient _network;
   StreamSubscription<String>? _errors;
+  StreamSubscription<void>? _accessRevocations;
+  bool _sessionRevoked = false;
+  bool _sourceUnavailable = false;
   StreamSubscription<Playlist>? _playlistUpdates;
   StreamSubscription<bool>? _completionUpdates;
   StreamSubscription<Duration>? _positionUpdates;
@@ -58,6 +63,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
   Duration _lastSavedPosition = Duration.zero;
   int? _pendingManualIndex;
   bool _opening = true;
+  bool _nativeDisposed = false;
   bool _completed = false;
   String? _failure;
   String _liveFormat = 'm3u8';
@@ -75,6 +81,8 @@ class _PlayerDialogState extends State<PlayerDialog> {
   void initState() {
     super.initState();
     final app = context.read<AppController>();
+    _app = app;
+    _app.addListener(_onAccountChanged);
     _credentials = app.credentials;
     _api = app.api;
     _network = app.network;
@@ -85,7 +93,26 @@ class _PlayerDialogState extends State<PlayerDialog> {
         : 0;
     _player = Player();
     _video = VideoController(_player);
-    _errors = _player.stream.error.listen((_) {
+    _accessRevocations = _credentials?.accessGrant?.revocations.listen(
+      (_) => _revokeSession(),
+    );
+    _errors = _player.stream.error.listen((message) {
+      _playbackFailed = true;
+      if (!mounted) return;
+      if (_credentials?.protected == true) {
+        if (RegExp(r'\b(?:401|403)\b').hasMatch(message) &&
+            _playbackAccountId != null) {
+          unawaited(app.recoverProtectedCredentials(_playbackAccountId!));
+        }
+        if (_credentials!.linkExpired) {
+          _revokeSession();
+          return;
+        }
+        if (app.credentials?.sourceScope != _credentials.sourceScope) {
+          _stopUnavailable();
+          return;
+        }
+      }
       if (mounted) {
         setState(() {
           _opening = false;
@@ -136,12 +163,78 @@ class _PlayerDialogState extends State<PlayerDialog> {
       if (!mounted) {
         return;
       }
+      if (_sessionRevoked || _sourceUnavailable) return;
       if (completed && _currentMedia.kind != LibraryKind.live) {
         _recordProgress(_currentMedia, completed: true);
       }
       setState(() => _completed = completed && !_hasNext);
     });
-    unawaited(_open());
+    if (widget.media.sourceScope.isNotEmpty && !app.canUseMedia(widget.media)) {
+      _stopUnavailable();
+    } else {
+      unawaited(_open());
+    }
+  }
+
+  void _onAccountChanged() {
+    if (_credentials?.protected != true) return;
+    if (_credentials!.linkExpired) {
+      _revokeSession();
+      return;
+    }
+    if (_playbackFailed &&
+        _app.credentials?.sourceScope != _credentials.sourceScope) {
+      _stopUnavailable();
+    }
+  }
+
+  void _revokeSession() {
+    if (_sessionRevoked) {
+      unawaited(_stopNativeSession());
+      return;
+    }
+    _sessionRevoked = true;
+    _recordProgress(_currentMedia);
+    unawaited(_stopNativeSession());
+    if (mounted) {
+      setState(() {
+        _opening = false;
+        _failure = context.l10n.protectedExpired;
+      });
+    }
+  }
+
+  void _stopUnavailable() {
+    if (_sourceUnavailable) return;
+    _sourceUnavailable = true;
+    _recordProgress(_currentMedia);
+    unawaited(_stopNativeSession());
+    if (mounted) {
+      setState(() {
+        _opening = false;
+        _failure = context.l10n.updatedSourceExplanation;
+      });
+    }
+  }
+
+  Future<void> _stopNativeSession() async {
+    if (_nativeDisposed) return;
+    try {
+      await _player.stop();
+    } catch (_) {
+      // Revocation must fail closed even if the backend cannot unload normally.
+      await _disposeNativePlayer();
+    }
+  }
+
+  Future<void> _disposeNativePlayer() async {
+    if (_nativeDisposed) return;
+    _nativeDisposed = true;
+    try {
+      await _player.dispose();
+    } catch (_) {
+      // Native errors may contain provider URLs; never forward them.
+    }
   }
 
   void _recordProgress(MediaEntry media, {bool completed = false}) {
@@ -239,6 +332,17 @@ class _PlayerDialogState extends State<PlayerDialog> {
 
   Future<void> _open() async {
     final credentials = _credentials;
+    if (credentials?.protected == true) {
+      if (credentials!.linkExpired || _sessionRevoked) {
+        _revokeSession();
+        return;
+      }
+      if (context.read<AppController>().credentials?.sourceScope !=
+          credentials.sourceScope) {
+        _stopUnavailable();
+        return;
+      }
+    }
     if (credentials == null) {
       if (mounted) {
         setState(() {
@@ -252,10 +356,16 @@ class _PlayerDialogState extends State<PlayerDialog> {
       _opening = true;
       _completed = false;
       _failure = null;
+      _playbackFailed = false;
     });
     try {
       final resumeAt = await _resumePosition();
       if (!mounted) {
+        return;
+      }
+      if (credentials.protected &&
+          _app.credentials?.sourceScope != credentials.sourceScope) {
+        _stopUnavailable();
         return;
       }
       final items = _items
@@ -269,7 +379,20 @@ class _PlayerDialogState extends State<PlayerDialog> {
           })
           .toList(growable: false);
       await _player.setPlaylistMode(PlaylistMode.none);
+      if (credentials.linkExpired || _sessionRevoked) {
+        _revokeSession();
+        return;
+      }
+      if (credentials.protected &&
+          _app.credentials?.sourceScope != credentials.sourceScope) {
+        _stopUnavailable();
+        return;
+      }
       await _player.open(Playlist(items, index: _currentIndex));
+      if (credentials.linkExpired || _sessionRevoked) {
+        _revokeSession();
+        return;
+      }
       if (resumeAt != null && mounted) {
         try {
           await _player.seek(resumeAt);
@@ -281,7 +404,13 @@ class _PlayerDialogState extends State<PlayerDialog> {
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _failure = context.l10n.mediaResourceOpenFailed);
+        if (credentials.linkExpired) {
+          _revokeSession();
+        } else {
+          _playbackFailed = true;
+          setState(() => _failure = context.l10n.mediaResourceOpenFailed);
+          _onAccountChanged();
+        }
       }
     } finally {
       if (mounted) {
@@ -291,7 +420,11 @@ class _PlayerDialogState extends State<PlayerDialog> {
   }
 
   Future<void> _goTo(int index) async {
-    if (index < 0 || index >= _items.length) {
+    if (_sessionRevoked ||
+        _sourceUnavailable ||
+        (_credentials?.linkExpired ?? false) ||
+        index < 0 ||
+        index >= _items.length) {
       return;
     }
     _recordProgress(_currentMedia);
@@ -315,6 +448,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
 
   Future<void> _releasePlayer() async {
     try {
+      await _accessRevocations?.cancel();
       await _errors?.cancel();
       await _playlistUpdates?.cancel();
       await _completionUpdates?.cancel();
@@ -324,7 +458,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
     } finally {
       // A subscription cancellation failure must not leak native resources.
       try {
-        await _player.dispose();
+        await _disposeNativePlayer();
       } catch (_) {
         // The UI is already disposed. Do not emit a widget error or reveal a
         // provider URL from a native player exception.
@@ -334,6 +468,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
 
   @override
   void dispose() {
+    _app.removeListener(_onAccountChanged);
     _recordProgress(_currentMedia);
     unawaited(_releasePlayer().catchError((Object _) {}));
     super.dispose();
@@ -382,7 +517,10 @@ class _PlayerDialogState extends State<PlayerDialog> {
             if (_isSeriesQueue) ...[
               IconButton(
                 tooltip: context.l10n.previousEpisode,
-                onPressed: _hasPrevious ? () => _goTo(_currentIndex - 1) : null,
+                onPressed:
+                    _hasPrevious && !_sessionRevoked && !_sourceUnavailable
+                    ? () => _goTo(_currentIndex - 1)
+                    : null,
                 icon: const Icon(
                   Icons.skip_previous_rounded,
                   color: Colors.white,
@@ -391,11 +529,15 @@ class _PlayerDialogState extends State<PlayerDialog> {
               IconButton(
                 key: const Key('nextEpisode'),
                 tooltip: context.l10n.nextEpisode,
-                onPressed: _hasNext ? () => _goTo(_currentIndex + 1) : null,
+                onPressed: _hasNext && !_sessionRevoked && !_sourceUnavailable
+                    ? () => _goTo(_currentIndex + 1)
+                    : null,
                 icon: const Icon(Icons.skip_next_rounded, color: Colors.white),
               ),
             ],
-            if (current.kind == LibraryKind.live)
+            if (current.kind == LibraryKind.live &&
+                !_sessionRevoked &&
+                !_sourceUnavailable)
               PopupMenuButton<String>(
                 tooltip: context.l10n.liveStreamFormat,
                 onSelected: (value) {
@@ -414,7 +556,8 @@ class _PlayerDialogState extends State<PlayerDialog> {
                   ),
                 ),
               ),
-            PlaybackTrackMenu(player: _player),
+            if (!_sessionRevoked && !_sourceUnavailable)
+              PlaybackTrackMenu(player: _player),
             IconButton(
               tooltip: context.l10n.closePlayer,
               onPressed: () => Navigator.of(context).pop(),
@@ -426,7 +569,8 @@ class _PlayerDialogState extends State<PlayerDialog> {
       video: Stack(
         fit: StackFit.expand,
         children: [
-          Video(controller: _video, fit: BoxFit.contain, fill: Colors.black),
+          if (!_sessionRevoked && !_sourceUnavailable)
+            Video(controller: _video, fit: BoxFit.contain, fill: Colors.black),
           if (_opening)
             Center(
               child: CircularProgressIndicator(
@@ -467,11 +611,26 @@ class _PlayerDialogState extends State<PlayerDialog> {
                       _failure!,
                       style: const TextStyle(color: Colors.white),
                     ),
-                    TextButton.icon(
-                      onPressed: _open,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(context.l10n.retry),
-                    ),
+                    if (_sessionRevoked || _sourceUnavailable)
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(context.l10n.closePlayer),
+                      ),
+                    if (_sourceUnavailable)
+                      TextButton(
+                        onPressed: () {
+                          context.read<AppController>().exploreUpdatedCatalog();
+                          Navigator.of(context)
+                              .popUntil((route) => route.isFirst);
+                        },
+                        child: Text(context.l10n.exploreCatalog),
+                      ),
+                    if (!_sessionRevoked && !_sourceUnavailable)
+                      TextButton.icon(
+                        onPressed: _open,
+                        icon: const Icon(Icons.refresh),
+                        label: Text(context.l10n.retry),
+                      ),
                   ],
                 ),
               ),

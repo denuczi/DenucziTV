@@ -25,6 +25,11 @@ class PlaylistExporter {
     required LibraryKind kind,
     void Function(int written, int total)? onProgress,
   }) async {
+    if (credentials.protected) {
+      throw const FormatException(
+        'Protected accounts do not allow sharing links or playlists.',
+      );
+    }
     if (kind == LibraryKind.series) {
       throw const FormatException('Select Live TV or Movies to export M3U.');
     }
@@ -58,6 +63,11 @@ class PlaylistExporter {
     required LibraryKind kind,
     void Function(int written, int total)? onProgress,
   }) async {
+    if (credentials.protected) {
+      throw const FormatException(
+        'Protected accounts do not allow sharing links or playlists.',
+      );
+    }
     if (kind == LibraryKind.series) {
       throw const FormatException('Select Live TV or Movies to export M3U.');
     }

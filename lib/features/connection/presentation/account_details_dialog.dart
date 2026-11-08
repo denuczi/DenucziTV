@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/models/app_controller.dart';
+import '../../../core/models/account.dart';
+import '../../../core/models/protected_account.dart';
 import '../../../l10n/l10n_ext.dart';
+import 'protected_account_labels.dart';
 
 /// Shows account metadata without ever exposing authentication secrets.
 class AccountDetailsDialog extends StatelessWidget {
-  const AccountDetailsDialog({super.key});
+  const AccountDetailsDialog({super.key, this.account});
+  final Account? account;
 
   String _date(DateTime value) {
     final local = value.toLocal();
@@ -18,11 +22,70 @@ class AccountDetailsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppController>();
-    final account = app.activeAccount;
+    final account = this.account ?? app.activeAccount;
     final status = app.accountStatus;
     final scheme = Theme.of(context).colorScheme;
     if (account == null) {
       return const SizedBox.shrink();
+    }
+    if (account.isProtected) {
+      final expiration = app.protectedExpirations[account.id];
+      final updated = app.protectedLastUpdated[account.id];
+      final checking =
+          app.protectedSyncStates[account.id] == ProtectedSyncState.checking;
+      return AlertDialog(
+        constraints: const BoxConstraints(maxWidth: 480),
+        scrollable: true,
+        title: Text(context.l10n.protectedSingleLink),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                account.label,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              Text(context.l10n.protectedLinkConfigured),
+              _DetailRow(
+                label: context.l10n.accountType,
+                value: protectedSyncLabel(
+                  context,
+                  app.protectedSyncStates[account.id],
+                ),
+              ),
+              _DetailRow(
+                label: context.l10n.lastSynchronization,
+                value: updated == null
+                    ? context.l10n.unknownAccountDate
+                    : _date(updated),
+              ),
+              _DetailRow(
+                label: context.l10n.expires,
+                value: expiration == null
+                    ? context.l10n.protectedExpiryUnknown
+                    : _date(expiration),
+              ),
+              if (app.expiredProtectedAccounts.contains(account.id))
+                Text(context.l10n.protectedExpired),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.l10n.close),
+          ),
+          FilledButton(
+            onPressed: checking
+                ? null
+                : () => app.refreshProtectedAccount(account),
+            child: Text(context.l10n.updateCredentials),
+          ),
+        ],
+      );
     }
     final provider = Uri.tryParse(account.serverUrl)?.host ?? account.serverUrl;
     final streamFormats = status?.allowedFormats ?? const <String>[];

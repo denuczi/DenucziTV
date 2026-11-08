@@ -41,6 +41,7 @@ class LibraryItem {
     this.hiddenFromContinue = false,
     this.available = true,
     this.updatedAtMs = 0,
+    this.sourceScope = '',
   });
 
   final String accountId;
@@ -59,6 +60,27 @@ class LibraryItem {
   final bool hiddenFromContinue;
   final bool available;
   final int updatedAtMs;
+  final String sourceScope;
+
+  LibraryItem withAvailability(bool value) => LibraryItem(
+    accountId: accountId,
+    mediaId: mediaId,
+    kind: kind,
+    title: title,
+    imageUrl: imageUrl,
+    seriesId: seriesId,
+    seriesTitle: seriesTitle,
+    season: season,
+    episode: episode,
+    containerExtension: containerExtension,
+    positionMs: positionMs,
+    durationMs: durationMs,
+    completed: completed,
+    hiddenFromContinue: hiddenFromContinue,
+    available: value,
+    updatedAtMs: updatedAtMs,
+    sourceScope: sourceScope,
+  );
 
   bool get isEpisode => kind == LibraryKind.series && seriesId != null;
   double? get progress => durationMs > 0
@@ -74,6 +96,7 @@ class LibraryItem {
     episodeNumber: episode,
     containerExtension: containerExtension,
     seriesId: seriesId,
+    sourceScope: sourceScope,
   );
 
   factory LibraryItem.fromMedia({
@@ -83,9 +106,10 @@ class LibraryItem {
   }) => LibraryItem(
     accountId: accountId,
     mediaId: media.id,
+    sourceScope: media.sourceScope,
     kind: media.kind,
     title: media.title,
-    imageUrl: safeArtworkUrl(media.imageUrl),
+    imageUrl: media.sourceScope.isEmpty ? safeArtworkUrl(media.imageUrl) : null,
     seriesId: media.seriesId,
     seriesTitle: seriesTitle,
     season: media.seasonNumber,

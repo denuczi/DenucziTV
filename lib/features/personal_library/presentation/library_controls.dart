@@ -20,7 +20,11 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
   bool _busy = false;
 
   Future<void> _toggle() async {
-    final library = context.read<AppController>().personalLibrary;
+    final app = context.read<AppController>();
+    if (widget.media.sourceScope.isNotEmpty && !app.canUseMedia(widget.media)) {
+      return;
+    }
+    final library = app.personalLibrary;
     if (library == null || _busy) {
       return;
     }
@@ -98,6 +102,7 @@ class _EpisodeWatchedButtonState extends State<EpisodeWatchedButton> {
           (entry) =>
               entry.kind == LibraryKind.series &&
               entry.mediaId == widget.episode.id &&
+              entry.sourceScope == widget.episode.sourceScope &&
               entry.completed,
         );
         return IconButton(

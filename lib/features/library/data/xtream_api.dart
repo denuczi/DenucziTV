@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 
 import '../../../core/errors/app_exception.dart';
@@ -21,6 +23,16 @@ class XtreamApi {
     Map<String, String> arguments = const {},
     CancelToken? cancelToken,
   }) async {
+    if (credentials.protected &&
+        (credentials.linkExpired || credentials.accessGrant == null)) {
+      throw const AppException('The protected link has expired.');
+    }
+    if (credentials.protected &&
+        credentials.accessGrant?.allowsNewSessions != true) {
+      throw const AppException(
+        'This content is unavailable in the current account source.',
+      );
+    }
     final base = ServerAddress.parse(credentials.serverUrl);
     final url = ServerAddress.api(base, {
       'username': credentials.username,
@@ -28,10 +40,15 @@ class XtreamApi {
       'action': ?action,
       ...arguments,
     });
+    final requestCancellation =
+        cancelToken ?? (credentials.protected ? CancelToken() : null);
+    final accessRevocation = credentials.accessGrant?.revocations.listen(
+      (_) => requestCancellation?.cancel(),
+    );
     try {
       final response = await _network.dio.getUri<Object?>(
         url,
-        cancelToken: cancelToken,
+        cancelToken: requestCancellation,
         options: Options(responseType: ResponseType.json),
       );
       if ((response.statusCode ?? 500) >= 300) {
@@ -39,9 +56,16 @@ class XtreamApi {
           'The provider redirected the API request. Verify the server URL.',
         );
       }
+      if (credentials.protected &&
+          (credentials.linkExpired ||
+              credentials.accessGrant?.allowsNewSessions != true)) {
+        throw const AppException('The protected link has expired.');
+      }
       return response.data;
     } catch (error) {
       throw AppException.fromNetwork(error);
+    } finally {
+      await accessRevocation?.cancel();
     }
   }
 
@@ -115,13 +139,19 @@ class XtreamApi {
         'The provider returned an invalid category list.',
       );
     }
-    return raw
+    final categories = raw
         .whereType<Map>()
         .map(
           (value) => MediaCategory.fromJson(Map<String, dynamic>.from(value)),
         )
         .where((category) => category.id.isNotEmpty)
         .toList(growable: false);
+    if (credentials.protected && categories.length != raw.length) {
+      throw const AppException(
+        'The provider returned an invalid category list.',
+      );
+    }
+    return categories;
   }
 
   Future<List<MediaEntry>> catalog(
@@ -140,6 +170,9 @@ class XtreamApi {
     final entries = <MediaEntry>[];
     for (final value in raw) {
       if (value is! Map) {
+        if (credentials.protected) {
+          throw const AppException('The provider returned an invalid catalog.');
+        }
         continue;
       }
       try {
@@ -147,10 +180,17 @@ class XtreamApi {
           MediaEntry.fromJson(Map<String, dynamic>.from(value), kind),
         );
       } on FormatException {
+        if (credentials.protected) {
+          throw const AppException('The provider returned an invalid catalog.');
+        }
         continue;
       }
     }
-    return entries;
+    return credentials.sourceScope.isEmpty
+        ? entries
+        : entries
+              .map((entry) => entry.withSourceScope(credentials.sourceScope))
+              .toList(growable: false);
   }
 
   Future<SeriesDetails> seriesDetails(
@@ -167,7 +207,19 @@ class XtreamApi {
         'The provider returned invalid series information.',
       );
     }
-    return SeriesDetails.fromJson(Map<String, dynamic>.from(raw));
+    final details = SeriesDetails.fromJson(Map<String, dynamic>.from(raw));
+    if (credentials.sourceScope.isEmpty) return details;
+    return SeriesDetails(
+      metadata: details.metadata,
+      episodesBySeason: {
+        for (final entry in details.episodesBySeason.entries)
+          entry.key: entry.value
+              .map(
+                (episode) => episode.withSourceScope(credentials.sourceScope),
+              )
+              .toList(growable: false),
+      },
+    );
   }
 
   Future<MediaDetails> movieDetails(
@@ -190,6 +242,21 @@ class XtreamApi {
     MediaEntry media, {
     String liveFormat = 'm3u8',
   }) {
+    if (credentials.protected &&
+        (credentials.linkExpired || credentials.accessGrant == null)) {
+      throw const AppException('The protected link has expired.');
+    }
+    if (credentials.protected &&
+        credentials.accessGrant?.allowsNewSessions != true) {
+      throw const AppException(
+        'This content is unavailable in the current account source.',
+      );
+    }
+    if (credentials.sourceScope != media.sourceScope) {
+      throw const AppException(
+        'This content is unavailable in the current account source.',
+      );
+    }
     final kind = switch (media.kind) {
       LibraryKind.live => 'live',
       LibraryKind.movies => 'movie',
@@ -203,5 +270,14 @@ class XtreamApi {
       streamId: media.id,
       extension: media.playbackExtension(liveFormat: liveFormat),
     );
+  }
+
+  Uri shareableStreamUrl(AccountCredentials credentials, MediaEntry media) {
+    if (credentials.protected) {
+      throw const AppException(
+        'Protected accounts do not allow sharing links or playlists.',
+      );
+    }
+    return streamUrl(credentials, media);
   }
 }

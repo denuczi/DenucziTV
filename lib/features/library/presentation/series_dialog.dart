@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n_ext.dart';
+import '../../../shared/widgets/content_unavailable_dialog.dart';
 
 import 'package:provider/provider.dart';
 
@@ -80,6 +81,10 @@ class _SeriesDialogState extends State<SeriesDialog> {
   }
 
   Future<void> _playEpisode(SeriesDetails details, MediaEntry episode) async {
+    if (widget.series.sourceScope.isNotEmpty &&
+        !context.read<AppController>().canUseMedia(widget.series)) {
+      return;
+    }
     // Continue across season boundaries in chronological season/episode order.
     // This route remains mounted behind the player so the selected season and
     // scroll position survive when the playback window is closed.
@@ -109,6 +114,11 @@ class _SeriesDialogState extends State<SeriesDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final app = context.watch<AppController>();
+    if (widget.series.sourceScope.isNotEmpty &&
+        !app.canUseMedia(widget.series)) {
+      return const ContentUnavailableDialog();
+    }
     final viewport = MediaQuery.sizeOf(context);
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
@@ -546,7 +556,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
                                           ),
                                           if (context
                                               .watch<AppController>()
-                                              .showCopyLinkControls)
+                                              .copyLinksAvailable)
                                             MediaActionMenu(media: episode),
                                           if (context
                                               .watch<AppController>()

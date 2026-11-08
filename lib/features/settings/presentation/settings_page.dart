@@ -226,7 +226,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 _Section(
                   icon: Icons.tune_outlined,
                   title: context.l10n.mediaActions,
-                  subtitle: context.l10n.mediaActionsHelp,
+                  subtitle: app.canShareLinks
+                      ? context.l10n.mediaActionsHelp
+                      : context.l10n.mediaActionsProtectedHelp,
                   child: Column(
                     children: [
                       SwitchListTile.adaptive(
@@ -248,13 +250,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         contentPadding: EdgeInsets.zero,
                         title: Text(context.l10n.copyStreamLink),
                         subtitle: Text(context.l10n.copyStreamLinkHelp),
-                        value: app.showCopyLinkControls,
-                        onChanged: (enabled) async {
-                          await _updatePreference(
-                            app.updateCopyLinkControls,
-                            enabled,
-                          );
-                        },
+                        value: app.copyLinksAvailable,
+                        onChanged: app.canShareLinks
+                            ? (enabled) => _updatePreference(
+                                app.updateCopyLinkControls,
+                                enabled,
+                              )
+                            : null,
                       ),
                       const Divider(height: 12),
                       SwitchListTile.adaptive(
@@ -262,10 +264,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         contentPadding: EdgeInsets.zero,
                         title: Text(context.l10n.exportM3u),
                         subtitle: Text(context.l10n.exportM3uHelp),
-                        value: app.showExportM3u,
-                        onChanged: (enabled) async {
-                          await _updatePreference(app.updateExportM3u, enabled);
-                        },
+                        value: app.exportM3uAvailable,
+                        onChanged: app.canShareLinks
+                            ? (enabled) => _updatePreference(
+                                app.updateExportM3u,
+                                enabled,
+                              )
+                            : null,
                       ),
                     ],
                   ),

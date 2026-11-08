@@ -72,7 +72,7 @@ class MediaActionMenu extends StatelessWidget {
             }
           },
           itemBuilder: (_) => [
-            if (app.showCopyLinkControls)
+            if (app.copyLinksAvailable)
               PopupMenuItem(
                 value: MediaAction.copyLink,
                 child: ListTile(
@@ -121,7 +121,7 @@ Future<void> performMediaAction(
   final credentials = app.credentials;
   final selectedAccountId = app.activeAccount?.id;
   final accountId = selectedAccountId ?? 'unscoped';
-  if (credentials == null) {
+  if (credentials == null || !app.canUseMedia(media)) {
     _notify(
       context,
       context.l10n.connectProviderFirst,
@@ -131,7 +131,7 @@ Future<void> performMediaAction(
   }
   try {
     if (action == MediaAction.copyLink) {
-      final url = app.api.streamUrl(credentials, media);
+      final url = app.api.shareableStreamUrl(credentials, media);
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -149,7 +149,10 @@ Future<void> performMediaAction(
           ],
         ),
       );
-      if (confirmed != true || !context.mounted) {
+      if (confirmed != true ||
+          !context.mounted ||
+          !app.canShareLinks ||
+          app.credentials != credentials) {
         return;
       }
       await Clipboard.setData(ClipboardData(text: url.toString()));
@@ -161,7 +164,8 @@ Future<void> performMediaAction(
           !context.mounted) {
         return;
       }
-      if (app.activeAccount?.id != selectedAccountId) {
+      if (app.activeAccount?.id != selectedAccountId ||
+          app.credentials != credentials) {
         throw AppException(context.l10n.accountChangedDownload);
       }
       final count = await app.downloads.enqueue(
@@ -213,7 +217,8 @@ Future<void> downloadSeason(
         !context.mounted) {
       return;
     }
-    if (app.activeAccount?.id != selectedAccountId) {
+    if (app.activeAccount?.id != selectedAccountId ||
+        app.credentials != credentials) {
       throw AppException(context.l10n.accountChangedSeason);
     }
     final count = await app.downloads.enqueue(

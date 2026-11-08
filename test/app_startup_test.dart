@@ -33,15 +33,14 @@ void main() {
       accounts: AccountStore(preferences, const FlutterSecureStorage()),
       settings: SettingsStore(preferences),
     );
-    addTearDown(controller.dispose);
     await controller.initialize();
 
     expect(controller.initialized, isTrue);
     expect(network.userAgent, 'StartupTest/1.0');
 
     await tester.pumpWidget(
-      ChangeNotifierProvider<AppController>.value(
-        value: controller,
+      ChangeNotifierProvider<AppController>(
+        create: (_) => controller,
         child: const DenucziTVApp(),
       ),
     );

@@ -40,7 +40,9 @@ included in the Linux pre-release described above. Developers can follow the
 
 ## Start using the app
 
-1. Add your provider's server address, username, and password.
+1. Add your provider's server address, username, and password. In the development
+   version, you can alternatively select **Protected Single Link** and enter a
+   name and your provider's permanent link. The v0.5.3 release predates this feature.
 2. Browse **Live TV**, **Movies**, or **Series**, depending on your subscription.
 3. Use **Settings** to choose the appearance and language, and enable optional
    download, link-copying, or M3U export controls.
@@ -51,12 +53,15 @@ and copied stream URLs can contain account credentials; keep them private.
 ## Features
 
 - Multiple saved provider accounts with account details and reconnection.
+- Protected Single Link connections with automatic credential renewal and
+  effective link expiry (development version; see the [connection guide](docs/PROTECTED_SINGLE_LINK.md)).
 - Live TV, movies, series, category filters, and catalog search.
 - Video playback with audio and subtitle selection when the stream supports it.
 - Downloads with retry and resume when the provider supports HTTP Range requests.
 - Favorites, Continue Watching, and Watch History, stored locally per account.
 - Light, dark, and system appearance; English and Spanish interfaces.
-- Optional M3U export, stream-link copying, and a configurable User-Agent.
+- Optional M3U export and stream-link copying for manual Xtream accounts.
+- A configurable User-Agent for provider, playback, and download requests.
 
 Playback, available tracks, and seeking depend on the provider and native media
 libraries. Live TV does not support watch-history resume. Favorites and history
@@ -86,6 +91,7 @@ DenucziTV does not supply the content shown.
 | Set up the project, build from source, or understand the architecture | [Development guide](docs/DEVELOPMENT.md) |
 | Submit a change or report a bug | [Contributing](CONTRIBUTING.md) |
 | Understand favorites, history, and playback progress | [Personal library](docs/PERSONAL_LIBRARY.md) |
+| Understand protected connections, renewal, expiry, and data migration | [Protected Single Link](docs/PROTECTED_SINGLE_LINK.md) |
 | Build or inspect a Debian package | [Debian packaging](docs/DEBIAN_PACKAGING.md) |
 | Run release checks | [Quality assurance](docs/QA.md) |
 | Report a vulnerability or review credential handling | [Security policy](SECURITY.md) |

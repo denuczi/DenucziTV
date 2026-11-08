@@ -38,27 +38,56 @@ class SqliteLibraryRepository implements LibraryRepository {
     _db = await (factory ?? databaseFactoryFfi).openDatabase(
       path,
       options: OpenDatabaseOptions(
-        version: 1,
+        version: 2,
         onConfigure: (db) async {
           await db.execute('PRAGMA foreign_keys = ON');
           await db.execute('PRAGMA busy_timeout = 3000');
         },
-        onCreate: (db, version) async {
-          await db.execute('''
+        onCreate: (db, version) => _createTables(db),
+        onUpgrade: (db, oldVersion, newVersion) async {
+          if (oldVersion < 2) {
+            for (final table in ['favorites', 'watch_activity']) {
+              await db.execute('ALTER TABLE $table RENAME TO ${table}_v1');
+            }
+            await db.execute('DROP INDEX IF EXISTS watch_recent');
+            await db.execute('DROP INDEX IF EXISTS favorites_by_account');
+            await _createTables(db);
+            for (final table in ['favorites', 'watch_activity']) {
+              final fields = await db.rawQuery(
+                'PRAGMA table_info(${table}_v1)',
+              );
+              final columns = fields
+                  .map((field) => field['name'] as String)
+                  .join(',');
+              await db.execute(
+                "INSERT INTO $table ($columns,source_scope) SELECT $columns,'' FROM ${table}_v1",
+              );
+              await db.execute('DROP TABLE ${table}_v1');
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _createTables(Database db) async {
+    await db.execute('''
             CREATE TABLE favorites (
               account_id TEXT NOT NULL,
+              source_scope TEXT NOT NULL DEFAULT '',
               kind TEXT NOT NULL,
               media_id TEXT NOT NULL,
               title TEXT NOT NULL,
               image_url TEXT,
               created_at INTEGER NOT NULL,
               available INTEGER NOT NULL DEFAULT 1,
-              PRIMARY KEY (account_id, kind, media_id)
+              PRIMARY KEY (account_id, source_scope, kind, media_id)
             )
           ''');
-          await db.execute('''
+    await db.execute('''
             CREATE TABLE watch_activity (
               account_id TEXT NOT NULL,
+              source_scope TEXT NOT NULL DEFAULT '',
               kind TEXT NOT NULL,
               media_id TEXT NOT NULL,
               title TEXT NOT NULL,
@@ -74,17 +103,14 @@ class SqliteLibraryRepository implements LibraryRepository {
               hidden_from_continue INTEGER NOT NULL DEFAULT 0,
               available INTEGER NOT NULL DEFAULT 1,
               updated_at INTEGER NOT NULL,
-              PRIMARY KEY (account_id, kind, media_id)
+              PRIMARY KEY (account_id, source_scope, kind, media_id)
             )
           ''');
-          await db.execute(
-            'CREATE INDEX watch_recent ON watch_activity(account_id, updated_at DESC)',
-          );
-          await db.execute(
-            'CREATE INDEX favorites_by_account ON favorites(account_id, created_at DESC)',
-          );
-        },
-      ),
+    await db.execute(
+      'CREATE INDEX watch_recent ON watch_activity(account_id, updated_at DESC)',
+    );
+    await db.execute(
+      'CREATE INDEX favorites_by_account ON favorites(account_id, created_at DESC)',
     );
   }
 
@@ -111,6 +137,7 @@ class SqliteLibraryRepository implements LibraryRepository {
   LibraryItem _fromWatch(Map<String, Object?> row) => LibraryItem(
     accountId: row['account_id']! as String,
     mediaId: row['media_id']! as String,
+    sourceScope: row['source_scope']! as String,
     kind: _kind(row['kind']! as String),
     title: row['title']! as String,
     imageUrl: row['image_url'] as String?,
@@ -131,13 +158,15 @@ class SqliteLibraryRepository implements LibraryRepository {
   Future<bool> isFavorite(
     String accountId,
     LibraryKind kind,
-    String mediaId,
-  ) async {
+    String mediaId, {
+    String sourceScope = '',
+  }) async {
     final rows = await _database.query(
       'favorites',
       columns: ['media_id'],
-      where: 'account_id = ? AND kind = ? AND media_id = ?',
-      whereArgs: [accountId, kind.name, mediaId],
+      where:
+          'account_id = ? AND kind = ? AND media_id = ? AND source_scope = ?',
+      whereArgs: [accountId, kind.name, mediaId, sourceScope],
       limit: 1,
     );
     return rows.isNotEmpty;
@@ -151,6 +180,7 @@ class SqliteLibraryRepository implements LibraryRepository {
     if (enabled) {
       await _database.insert('favorites', {
         'account_id': item.accountId,
+        'source_scope': item.sourceScope,
         'kind': item.kind.name,
         'media_id': item.mediaId,
         'title': item.title,
@@ -161,17 +191,28 @@ class SqliteLibraryRepository implements LibraryRepository {
     } else {
       await _database.delete(
         'favorites',
-        where: 'account_id = ? AND kind = ? AND media_id = ?',
-        whereArgs: [item.accountId, item.kind.name, item.mediaId],
+        where:
+            'account_id = ? AND kind = ? AND media_id = ? AND source_scope = ?',
+        whereArgs: [
+          item.accountId,
+          item.kind.name,
+          item.mediaId,
+          item.sourceScope,
+        ],
       );
     }
   }
 
   @override
-  Future<List<LibraryItem>> favorites(String accountId) async {
+  Future<List<LibraryItem>> favorites(
+    String accountId, {
+    bool includeUnavailable = false,
+  }) async {
     final rows = await _database.query(
       'favorites',
-      where: 'account_id = ? AND available = 1',
+      where: includeUnavailable
+          ? 'account_id = ?'
+          : 'account_id = ? AND available = 1',
       whereArgs: [accountId],
       orderBy: 'created_at DESC',
       limit: 5000,
@@ -181,6 +222,8 @@ class SqliteLibraryRepository implements LibraryRepository {
         LibraryItem(
           accountId: accountId,
           mediaId: row['media_id']! as String,
+          sourceScope: row['source_scope']! as String,
+          available: _int(row['available']) == 1,
           kind: _kind(row['kind']! as String),
           title: row['title']! as String,
           imageUrl: row['image_url'] as String?,
@@ -192,12 +235,14 @@ class SqliteLibraryRepository implements LibraryRepository {
   Future<LibraryItem?> progress(
     String accountId,
     LibraryKind kind,
-    String mediaId,
-  ) async {
+    String mediaId, {
+    String sourceScope = '',
+  }) async {
     final rows = await _database.query(
       'watch_activity',
-      where: 'account_id = ? AND kind = ? AND media_id = ?',
-      whereArgs: [accountId, kind.name, mediaId],
+      where:
+          'account_id = ? AND kind = ? AND media_id = ? AND source_scope = ?',
+      whereArgs: [accountId, kind.name, mediaId, sourceScope],
       limit: 1,
     );
     return rows.isEmpty ? null : _fromWatch(rows.first);
@@ -220,13 +265,20 @@ class SqliteLibraryRepository implements LibraryRepository {
     await _database.transaction((txn) async {
       final existing = await txn.query(
         'watch_activity',
-        where: 'account_id = ? AND kind = ? AND media_id = ?',
-        whereArgs: [item.accountId, item.kind.name, item.mediaId],
+        where:
+            'account_id = ? AND kind = ? AND media_id = ? AND source_scope = ?',
+        whereArgs: [
+          item.accountId,
+          item.kind.name,
+          item.mediaId,
+          item.sourceScope,
+        ],
         limit: 1,
       );
       final previous = existing.isEmpty ? null : existing.first;
       await txn.insert('watch_activity', {
         'account_id': item.accountId,
+        'source_scope': item.sourceScope,
         'kind': item.kind.name,
         'media_id': item.mediaId,
         'title': item.title,
@@ -248,7 +300,12 @@ class SqliteLibraryRepository implements LibraryRepository {
 
   @override
   Future<void> markWatched(LibraryItem item, bool watched) async {
-    final existing = await progress(item.accountId, item.kind, item.mediaId);
+    final existing = await progress(
+      item.accountId,
+      item.kind,
+      item.mediaId,
+      sourceScope: item.sourceScope,
+    );
     if (existing == null) {
       await saveProgress(
         item,
@@ -264,17 +321,28 @@ class SqliteLibraryRepository implements LibraryRepository {
           'hidden_from_continue': watched ? 1 : 0,
           'updated_at': DateTime.now().millisecondsSinceEpoch,
         },
-        where: 'account_id = ? AND kind = ? AND media_id = ?',
-        whereArgs: [item.accountId, item.kind.name, item.mediaId],
+        where:
+            'account_id = ? AND kind = ? AND media_id = ? AND source_scope = ?',
+        whereArgs: [
+          item.accountId,
+          item.kind.name,
+          item.mediaId,
+          item.sourceScope,
+        ],
       );
     }
   }
 
   @override
-  Future<List<LibraryItem>> history(String accountId) async {
+  Future<List<LibraryItem>> history(
+    String accountId, {
+    bool includeUnavailable = false,
+  }) async {
     final rows = await _database.query(
       'watch_activity',
-      where: 'account_id = ? AND available = 1',
+      where: includeUnavailable
+          ? 'account_id = ?'
+          : 'account_id = ? AND available = 1',
       whereArgs: [accountId],
       orderBy: 'updated_at DESC',
       limit: 5000,
@@ -286,8 +354,14 @@ class SqliteLibraryRepository implements LibraryRepository {
   Future<void> removeHistory(LibraryItem item) async {
     await _database.delete(
       'watch_activity',
-      where: 'account_id = ? AND kind = ? AND media_id = ?',
-      whereArgs: [item.accountId, item.kind.name, item.mediaId],
+      where:
+          'account_id = ? AND kind = ? AND media_id = ? AND source_scope = ?',
+      whereArgs: [
+        item.accountId,
+        item.kind.name,
+        item.mediaId,
+        item.sourceScope,
+      ],
     );
   }
 
@@ -296,8 +370,14 @@ class SqliteLibraryRepository implements LibraryRepository {
     await _database.update(
       'watch_activity',
       {'hidden_from_continue': 1},
-      where: 'account_id = ? AND kind = ? AND media_id = ?',
-      whereArgs: [item.accountId, item.kind.name, item.mediaId],
+      where:
+          'account_id = ? AND kind = ? AND media_id = ? AND source_scope = ?',
+      whereArgs: [
+        item.accountId,
+        item.kind.name,
+        item.mediaId,
+        item.sourceScope,
+      ],
     );
   }
 
@@ -330,8 +410,9 @@ class SqliteLibraryRepository implements LibraryRepository {
   Future<void> reconcileAvailable(
     String accountId,
     LibraryKind kind,
-    Iterable<String> ids,
-  ) async {
+    Iterable<String> ids, {
+    String sourceScope = '',
+  }) async {
     if (kind == LibraryKind.live) {
       return;
     }
@@ -340,14 +421,14 @@ class SqliteLibraryRepository implements LibraryRepository {
     final tracked = await _database.query(
       'watch_activity',
       columns: ['media_id', 'series_id'],
-      where: 'account_id = ? AND kind = ?',
-      whereArgs: [accountId, kind.name],
+      where: 'account_id = ? AND kind = ? AND source_scope = ?',
+      whereArgs: [accountId, kind.name, sourceScope],
     );
     final favorites = await _database.query(
       'favorites',
       columns: ['media_id'],
-      where: 'account_id = ? AND kind = ?',
-      whereArgs: [accountId, kind.name],
+      where: 'account_id = ? AND kind = ? AND source_scope = ?',
+      whereArgs: [accountId, kind.name, sourceScope],
     );
     final desired = <String>{
       ...tracked.map((row) => (row['series_id'] ?? row['media_id']) as String),
@@ -369,15 +450,14 @@ class SqliteLibraryRepository implements LibraryRepository {
         await txn.update(
           'favorites',
           {'available': available},
-          where: 'account_id = ? AND kind = ? AND media_id = ?',
-          whereArgs: [accountId, kind.name, id],
+          where: 'account_id = ? AND kind = ? AND media_id = ? AND source_scope = ?',
+          whereArgs: [accountId, kind.name, id, sourceScope],
         );
         await txn.update(
           'watch_activity',
           {'available': available},
-          where:
-              'account_id = ? AND kind = ? AND (media_id = ? OR series_id = ?)',
-          whereArgs: [accountId, kind.name, id, id],
+          where: 'account_id = ? AND kind = ? AND (media_id = ? OR series_id = ?) AND source_scope = ?',
+          whereArgs: [accountId, kind.name, id, id, sourceScope],
         );
       }
     });

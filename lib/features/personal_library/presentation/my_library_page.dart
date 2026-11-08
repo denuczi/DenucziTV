@@ -54,15 +54,23 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
 
   Future<void> _openItem(LibraryItem item) async {
     final app = context.read<AppController>();
+    if (!item.available || !app.canUseMedia(item.toMediaEntry())) {
+      _notify(context.l10n.contentUnavailable);
+      return;
+    }
     final credentials = app.credentials;
-    if (credentials == null || app.activeAccount?.id != item.accountId) {
+    if (credentials == null ||
+        app.activeAccount?.id != item.accountId ||
+        !app.canUseMedia(item.toMediaEntry())) {
       return;
     }
     try {
       if (item.isEpisode) {
         final seriesId = item.seriesId!;
         final details = await app.api.seriesDetails(credentials, seriesId);
-        if (!mounted || app.activeAccount?.id != item.accountId) {
+        if (!mounted ||
+            app.activeAccount?.id != item.accountId ||
+            !app.canUseMedia(item.toMediaEntry())) {
           return;
         }
         final queue = [
@@ -96,7 +104,8 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
         );
         if (play == true &&
             mounted &&
-            app.activeAccount?.id == item.accountId) {
+            app.activeAccount?.id == item.accountId &&
+            app.canUseMedia(item.toMediaEntry())) {
           await showDialog<void>(
             context: context,
             builder: (_) => PlayerDialog(media: entry),
@@ -305,9 +314,7 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
                                 onPlay: () => _open(item),
                                 onDelete: () => _perform(
                                   () => _view == _View.favorites
-                                      ? library.toggleFavorite(
-                                          item.toMediaEntry(),
-                                        )
+                                      ? library.removeFavorite(item)
                                       : library.removeHistory(item),
                                 ),
                                 onHide: () => _perform(
@@ -373,7 +380,9 @@ class _LibraryRow extends StatelessWidget {
     final label = item.isEpisode
         ? '${item.seriesTitle ?? context.l10n.series} · S${item.season ?? '?'} E${item.episode ?? '?'}'
         : item.title;
-    final statusText = item.completed
+    final statusText = !item.available
+        ? context.l10n.contentUnavailable
+        : item.completed
         ? context.l10n.watched
         : item.positionMs > 0 && item.durationMs > 0
         ? context.l10n.watchRemaining(
@@ -450,7 +459,7 @@ class _LibraryRow extends StatelessWidget {
     final actions = <Widget>[
       IconButton.filledTonal(
         tooltip: context.l10n.openOrResume,
-        onPressed: onPlay,
+        onPressed: item.available ? onPlay : null,
         icon: const Icon(Icons.play_arrow_rounded),
       ),
       if (view == _View.history)
