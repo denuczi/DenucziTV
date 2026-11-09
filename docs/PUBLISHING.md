@@ -9,13 +9,13 @@ access and a writable `.git` directory. Installers are release assets: keep
 
 ## Current stable release
 
-[Version 0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2) uses these
+[Version 0.6.3](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.3) uses these
 installer filenames:
 
 | Platform | Installer | Checksum |
 | --- | --- | --- |
-| Debian / Ubuntu x64 | `denuczitv_0.6.2+1-1_amd64.deb` | `denuczitv_0.6.2+1-1_amd64.deb.sha256` |
-| Windows x64 | `DenucziTV-Setup-0.6.2-x64.exe` | `DenucziTV-Setup-0.6.2-x64.exe.sha256` |
+| Debian / Ubuntu x64 | `denuczitv_0.6.3+1-1_amd64.deb` | `denuczitv_0.6.3+1-1_amd64.deb.sha256` |
+| Windows x64 | `DenucziTV-Setup-0.6.3-x64.exe` | `DenucziTV-Setup-0.6.3-x64.exe.sha256` |
 
 The release and tag already exist. Do not recreate them to add a platform asset
 or update the description. Keep earlier prereleases available as history.
@@ -38,14 +38,14 @@ history to resolve a rejected push.
 
 ## Prepare a new application release
 
-The examples in this section use **0.6.3**, a future version. They are a template,
-not instructions to publish the existing 0.6.2 again.
+The examples in this section use **0.6.4**, a future version. They are a template,
+not instructions to publish the existing 0.6.3 again.
 
-1. Choose an unused version and set `pubspec.yaml`, for example `0.6.3+1`.
+1. Choose an unused version and set `pubspec.yaml`, for example `0.6.4+1`.
    The packagers read it directly. Selecting a filename for package tests does
    not change the application version.
 2. Update the changelog and create the new English release notes file, such as
-   `docs/releases/v0.6.3.md`. Describe user-visible changes, available platforms,
+   `docs/releases/v0.6.4.md`. Describe user-visible changes, available platforms,
    installation steps and known limitations. Record actual validation results.
 3. Complete [QA.md](QA.md), including formatting, analysis and the full test suite.
    Use `flutter test --concurrency=1` to reduce memory pressure on a small machine.
@@ -55,21 +55,21 @@ not instructions to publish the existing 0.6.2 again.
 5. Push the source commit. Create an unused application tag on that exact commit:
 
    ```bash
-   git tag -a v0.6.3 -m "DenucziTV 0.6.3" &&
+   git tag -a v0.6.4 -m "DenucziTV 0.6.4" &&
    git push origin main &&
-   git push origin v0.6.3
+   git push origin v0.6.4
    ```
 
 6. After QA, create a stable release with the platforms already verified:
 
    ```bash
-   gh release create v0.6.3 \
-     dist/denuczitv_0.6.3+1-1_amd64.deb \
-     dist/denuczitv_0.6.3+1-1_amd64.deb.sha256 \
+   gh release create v0.6.4 \
+     dist/denuczitv_0.6.4+1-1_amd64.deb \
+     dist/denuczitv_0.6.4+1-1_amd64.deb.sha256 \
      --repo denuczi/DenucziTV \
      --verify-tag \
-     --title "DenucziTV 0.6.3" \
-     --notes-file docs/releases/v0.6.3.md \
+     --title "DenucziTV 0.6.4" \
+     --notes-file docs/releases/v0.6.4.md \
      --latest \
      --prerelease=false
    ```
@@ -86,20 +86,20 @@ alone does not establish stability; complete the native installation checks.
 ## Add a Windows installer to an existing release
 
 Build and test the same application tag, following [WINDOWS_PACKAGING.md](WINDOWS_PACKAGING.md).
-The following commands are for 0.6.2, with files downloaded to
-`dist/windows-v0.6.2`. Run them from the repository root. The checksum command
+The following commands are for 0.6.3, with files downloaded to
+`dist/windows-v0.6.3`. Run them from the repository root. The checksum command
 uses a subshell so the terminal stays in that root directory:
 
 ```bash
-(cd dist/windows-v0.6.2 && sha256sum --check DenucziTV-Setup-0.6.2-x64.exe.sha256)
+(cd dist/windows-v0.6.3 && sha256sum --check DenucziTV-Setup-0.6.3-x64.exe.sha256)
 ```
 
 Only if those assets are not already published, upload them:
 
 ```bash
-gh release upload v0.6.2 \
-  dist/windows-v0.6.2/DenucziTV-Setup-0.6.2-x64.exe \
-  dist/windows-v0.6.2/DenucziTV-Setup-0.6.2-x64.exe.sha256 \
+gh release upload v0.6.3 \
+  dist/windows-v0.6.3/DenucziTV-Setup-0.6.3-x64.exe \
+  dist/windows-v0.6.3/DenucziTV-Setup-0.6.3-x64.exe.sha256 \
   --repo denuczi/DenucziTV
 ```
 
@@ -110,7 +110,7 @@ The `.build-info.json` is optional technical provenance, not an installer.
 To apply the reviewed English release description from the repository:
 
 ```bash
-gh release edit v0.6.2 --repo denuczi/DenucziTV --notes-file docs/releases/v0.6.2.md
+gh release edit v0.6.3 --repo denuczi/DenucziTV --notes-file docs/releases/v0.6.3.md
 ```
 
 This replaces the complete release description with that file. Review it first
@@ -119,9 +119,9 @@ and preserve any additional notes that should remain public.
 ## Verify the published result
 
 ```bash
-gh api repos/denuczi/DenucziTV/releases/tags/v0.6.2 \
+gh api repos/denuczi/DenucziTV/releases/tags/v0.6.3 \
   --jq '{tag: .tag_name, draft: .draft, prerelease: .prerelease, assets: [.assets[].name]}'
-gh release view v0.6.2 --repo denuczi/DenucziTV --web
+gh release view v0.6.3 --repo denuczi/DenucziTV --web
 ```
 
 For a published stable release, `draft` and `prerelease` must both be `false`.

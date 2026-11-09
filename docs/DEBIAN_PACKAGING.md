@@ -8,7 +8,7 @@ user; root access is unnecessary for packaging.
 To install the app, follow the [Linux installation steps](../README.md#linux-debian--ubuntu).
 This guide is for maintainers building or inspecting a package.
 
-The current stable release is [v0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2).
+The current stable release is [v0.6.3](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.3).
 The examples use its filenames; substitute the matching version for a future
 release. Installers belong in release assets; keep `dist/` out of source commits.
 
@@ -41,17 +41,17 @@ From the repository root:
 
 ```bash
 bash scripts/package-deb.sh
-DENUCZITV_DEB=dist/denuczitv_0.6.2+1-1_amd64.deb \
+DENUCZITV_DEB=dist/denuczitv_0.6.3+1-1_amd64.deb \
   python3 -m unittest discover -s test/packaging -v
 ```
 
-For `version: 0.6.2+1`, the default amd64 output is:
+For `version: 0.6.3+1`, the default amd64 output is:
 
 ```text
-dist/denuczitv_0.6.2+1-1_amd64.deb
-dist/denuczitv_0.6.2+1-1_amd64.deb.sha256
-dist/denuczitv_0.6.2+1-1_amd64.build-info.json
-dist/denuczitv_0.6.2+1-1_amd64.dependencies.log
+dist/denuczitv_0.6.3+1-1_amd64.deb
+dist/denuczitv_0.6.3+1-1_amd64.deb.sha256
+dist/denuczitv_0.6.3+1-1_amd64.build-info.json
+dist/denuczitv_0.6.3+1-1_amd64.dependencies.log
 ```
 
 The last `-1` is the Debian packaging revision. Increment it when redistributing
@@ -66,7 +66,7 @@ The bundle architecture must match the host (amd64 or arm64); cross-packaging is
 not supported. To verify a specific archive when multiple versions exist:
 
 ```bash
-DENUCZITV_DEB=dist/denuczitv_0.6.2+1-1_amd64.deb \
+DENUCZITV_DEB=dist/denuczitv_0.6.3+1-1_amd64.deb \
   python3 -m unittest discover -s test/packaging -v
 ```
 
@@ -170,15 +170,15 @@ build distribution, and source revision/dirty status.
 Inspect the package and simulate installation first:
 
 ```bash
-dpkg-deb --info dist/denuczitv_0.6.2+1-1_amd64.deb
-apt-get --simulate install ./dist/denuczitv_0.6.2+1-1_amd64.deb
-(cd dist && sha256sum --check denuczitv_0.6.2+1-1_amd64.deb.sha256)
+dpkg-deb --info dist/denuczitv_0.6.3+1-1_amd64.deb
+apt-get --simulate install ./dist/denuczitv_0.6.3+1-1_amd64.deb
+(cd dist && sha256sum --check denuczitv_0.6.3+1-1_amd64.deb.sha256)
 ```
 
 When ready, install through APT so dependencies are resolved:
 
 ```bash
-sudo apt install ./dist/denuczitv_0.6.2+1-1_amd64.deb
+sudo apt install ./dist/denuczitv_0.6.3+1-1_amd64.deb
 denuczitv
 ```
 

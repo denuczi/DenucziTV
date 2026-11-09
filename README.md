@@ -22,15 +22,15 @@
 <h2 align="center">Download</h2>
 
 <p align="center">
-  <strong><a href="https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2">Latest stable release: 0.6.2</a></strong>
+  <strong><a href="https://github.com/denuczi/DenucziTV/releases/tag/v0.6.3">Latest stable release: 0.6.3</a></strong>
 </p>
 
 <div align="center">
 
 | Your system | Installer | Checksum |
 | :---: | :---: | :---: |
-| Windows 10 / 11, x64 | [Download Windows installer](https://github.com/denuczi/DenucziTV/releases/download/v0.6.2/DenucziTV-Setup-0.6.2-x64.exe) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.2/DenucziTV-Setup-0.6.2-x64.exe.sha256) |
-| Debian / Ubuntu, x64 | [Download Linux package](https://github.com/denuczi/DenucziTV/releases/download/v0.6.2/denuczitv_0.6.2%2B1-1_amd64.deb) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.2/denuczitv_0.6.2%2B1-1_amd64.deb.sha256) |
+| Windows 10 / 11, x64 | [Download Windows installer](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/DenucziTV-Setup-0.6.3-x64.exe) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/DenucziTV-Setup-0.6.3-x64.exe.sha256) |
+| Debian / Ubuntu, x64 | [Download Linux package](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/denuczitv_0.6.3%2B1-1_amd64.deb) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/denuczitv_0.6.3%2B1-1_amd64.deb.sha256) |
 
 </div>
 
@@ -45,7 +45,7 @@ DenucziTV does not include channels, movies, subscriptions, or provider accounts
 
 ### Windows
 
-1. Download **`DenucziTV-Setup-0.6.2-x64.exe`** using the Windows link above.
+1. Download **`DenucziTV-Setup-0.6.3-x64.exe`** using the Windows link above.
 2. Run the installer and follow the setup steps.
 3. Open **DenucziTV** from the Start menu.
 
@@ -59,8 +59,8 @@ Download the matching `.exe.sha256` file. In PowerShell, open the folder contain
 both files and run:
 
 ```powershell
-Get-FileHash .\DenucziTV-Setup-0.6.2-x64.exe -Algorithm SHA256
-Get-Content .\DenucziTV-Setup-0.6.2-x64.exe.sha256
+Get-FileHash .\DenucziTV-Setup-0.6.3-x64.exe -Algorithm SHA256
+Get-Content .\DenucziTV-Setup-0.6.3-x64.exe.sha256
 ```
 
 The two SHA256 values must match; letter case does not matter.
@@ -69,13 +69,13 @@ The two SHA256 values must match; letter case does not matter.
 
 ### Linux: Debian / Ubuntu
 
-1. Download **`denuczitv_0.6.2+1-1_amd64.deb`** and its matching `.deb.sha256`
+1. Download **`denuczitv_0.6.3+1-1_amd64.deb`** and its matching `.deb.sha256`
    using the Linux links above.
 2. Open a terminal in the folder containing both files and run:
 
    ```bash
-   sha256sum --check denuczitv_0.6.2+1-1_amd64.deb.sha256 &&
-   sudo apt install ./denuczitv_0.6.2+1-1_amd64.deb
+   sha256sum --check denuczitv_0.6.3+1-1_amd64.deb.sha256 &&
+   sudo apt install ./denuczitv_0.6.3+1-1_amd64.deb
    ```
 
 3. Launch **DenucziTV** from your application menu, or run `denuczitv`.
@@ -84,7 +84,7 @@ The Linux package is built and has been installed on **Debian 13 amd64**. Other
 Debian/Ubuntu versions must satisfy its native library requirements; older
 systems may not be compatible. See [Debian package details](docs/DEBIAN_PACKAGING.md).
 
-These filenames are for 0.6.2. When installing another version, use that release's
+These filenames are for 0.6.3. When installing another version, use that release's
 filenames and matching checksum files.
 
 ## Start using the app

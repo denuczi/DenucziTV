@@ -55,7 +55,7 @@ Do not recreate the existing application tag.
 gh workflow run windows-installer.yml \
   --repo denuczi/DenucziTV \
   --ref main \
-  -f release_tag=v0.6.2
+  -f release_tag=v0.6.3
 ```
 
 List runs to obtain the ID of the execution you just started:
@@ -70,8 +70,8 @@ Use that numeric ID in place of `RUN_ID`:
 ```bash
 gh run watch RUN_ID --repo denuczi/DenucziTV --exit-status
 gh run download RUN_ID --repo denuczi/DenucziTV \
-  --name denuczitv-windows-v0.6.2-x64 \
-  --dir dist/windows-v0.6.2
+  --name denuczitv-windows-v0.6.3-x64 \
+  --dir dist/windows-v0.6.3
 ```
 
 If the run fails, inspect its log instead of publishing partial output:
@@ -81,7 +81,7 @@ gh run view RUN_ID --repo denuczi/DenucziTV --log-failed
 ```
 
 The same workflow is available under GitHub's Actions tab: choose **Windows
-installer**, then **Run workflow**, branch `main`, input `release_tag=v0.6.2`.
+installer**, then **Run workflow**, branch `main`, input `release_tag=v0.6.3`.
 After a successful run, download the artifact listed at the bottom of that run.
 
 ## Verify and test the result
@@ -89,15 +89,15 @@ After a successful run, download the artifact listed at the bottom of that run.
 The artifact contains:
 
 ```text
-DenucziTV-Setup-0.6.2-x64.exe
-DenucziTV-Setup-0.6.2-x64.exe.sha256
-DenucziTV-Setup-0.6.2-x64.build-info.json
+DenucziTV-Setup-0.6.3-x64.exe
+DenucziTV-Setup-0.6.3-x64.exe.sha256
+DenucziTV-Setup-0.6.3-x64.build-info.json
 ```
 
 Verify the checksum from the artifact directory:
 
 ```bash
-(cd dist/windows-v0.6.2 && sha256sum --check DenucziTV-Setup-0.6.2-x64.exe.sha256)
+(cd dist/windows-v0.6.3 && sha256sum --check DenucziTV-Setup-0.6.3-x64.exe.sha256)
 ```
 
 The build-info file records the actual application source commit/tag, numeric
@@ -123,9 +123,9 @@ it as signed or disable operating-system protections to pass QA.
 Only after the run and native installation tests pass:
 
 ```bash
-gh release upload v0.6.2 \
-  dist/windows-v0.6.2/DenucziTV-Setup-0.6.2-x64.exe \
-  dist/windows-v0.6.2/DenucziTV-Setup-0.6.2-x64.exe.sha256 \
+gh release upload v0.6.3 \
+  dist/windows-v0.6.3/DenucziTV-Setup-0.6.3-x64.exe \
+  dist/windows-v0.6.3/DenucziTV-Setup-0.6.3-x64.exe.sha256 \
   --repo denuczi/DenucziTV
 ```
 
@@ -136,7 +136,19 @@ unsigned status to release notes after actual QA. Preserve the existing Linux
 installer and other assets.
 
 If native testing requires application code fixes, create a new application
-version and tag rather than silently distributing changed code under v0.6.2.
+version and tag rather than silently distributing changed code under v0.6.3.
+
+## Verified 0.6.3 build
+
+[Workflow run 42649741827](https://github.com/denuczi/DenucziTV/actions/runs/42649741827)
+passed formatting, analysis, Flutter tests, native compilation, Inno Setup
+packaging, and artifact upload.
+
+The build-info records application version `0.6.3+1`, source tag `v0.6.3`,
+application commit `816b45fb293065d099128939f50d8f7eb65e5307`, x64 architecture,
+Visual C++ runtime `14.44.35211.0`, and signature status `NotSigned`. The downloaded
+SHA256 was verified, and the maintainer confirmed that the generated installers
+work. See the [release notes](releases/v0.6.3.md).
 
 ## Verified 0.6.2 build
 

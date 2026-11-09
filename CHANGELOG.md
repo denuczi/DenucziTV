@@ -7,7 +7,7 @@ Changes are grouped by application version. Binary availability is listed on
 
 No additional changes recorded.
 
-## 0.6.3 — Release preparation
+## [0.6.3](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.3) (Stable)
 
 ### Changed
 
@@ -41,12 +41,16 @@ No additional changes recorded.
 - Add the project banner and improve README navigation, download-table alignment,
   and screenshot presentation.
 
-### Release status
+### Distribution and verification
 
-- Set the application source version to `0.6.3+1` and the Windows installer
-  workflow's default release tag to `v0.6.3`.
-- Stable Debian amd64 and Windows x64 installers, checksums, and native-platform
-  verification are pending. This entry does not indicate binary availability.
+- Debian amd64 and Windows x64 installers use source version `0.6.3+1`, with
+  matching SHA256 files and application tag `v0.6.3`.
+- All 364 local Flutter tests and 13 Debian packaging checks passed. The Debian
+  upgrade simulation passed on the build system.
+- Windows installer workflow [42649741827](https://github.com/denuczi/DenucziTV/actions/runs/42649741827)
+  passed formatting, analysis, tests, compilation, packaging, and artifact upload.
+- The maintainer confirmed that the generated installers work. See the
+  [release notes](docs/releases/v0.6.3.md) for installation and upgrade guidance.
 
 ## [0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2) — Stable
 
