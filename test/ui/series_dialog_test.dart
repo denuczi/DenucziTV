@@ -10,6 +10,7 @@ import 'package:denuczi_tv/features/library/data/xtream_api.dart';
 import 'package:denuczi_tv/features/library/domain/media_models.dart';
 import 'package:denuczi_tv/features/library/presentation/series_dialog.dart';
 import 'package:denuczi_tv/features/library/presentation/media_artwork.dart';
+import 'package:denuczi_tv/features/library/presentation/download_action_button.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -34,6 +35,7 @@ void main() {
       settings: SettingsStore(preferences),
     );
     addTearDown(controller.dispose);
+    controller.showDownloadControls = true;
 
     const episode1 = MediaEntry(
       id: 'ep1',
@@ -106,6 +108,36 @@ void main() {
     await tester.tap(find.text('Open series'));
     await tester.pumpAndSettle();
     expect(find.text('Pilot'), findsOneWidget);
+    final play = find.byTooltip('Play episode').first;
+    expect(
+      tester
+          .widget<Icon>(
+            find.descendant(
+              of: play,
+              matching: find.byIcon(Icons.play_arrow_rounded),
+            ),
+          )
+          .color,
+      Colors.white,
+    );
+    expect(
+      (tester
+                  .widget<DecoratedBox>(
+                    find.descendant(
+                      of: play,
+                      matching: find.byType(DecoratedBox),
+                    ),
+                  )
+                  .decoration
+              as BoxDecoration)
+          .color,
+      Colors.black,
+    );
+    final download = find.byType(DownloadActionButton).first;
+    expect(
+      tester.getTopLeft(play).dx - tester.getBottomRight(download).dx,
+      greaterThanOrEqualTo(12),
+    );
     expect(
       tester
           .widget<MediaArtwork>(find.byKey(const Key('episodeArtwork-0')))

@@ -18,6 +18,7 @@ import '../../library/data/xtream_api.dart';
 import '../../library/domain/media_models.dart';
 import 'responsive_player_frame.dart';
 import 'playback_track_menu.dart';
+import 'player_video_overlay.dart';
 
 /// Plays a single channel/movie or a consecutive series episode queue.
 /// MediaKit advances to the next queued item at the end of an episode.
@@ -66,6 +67,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
   bool _nativeDisposed = false;
   bool _completed = false;
   String? _failure;
+  final _videoStatus = ValueNotifier(const PlayerVideoStatus(opening: true));
   String _liveFormat = 'm3u8';
   late int _currentIndex;
 
@@ -76,6 +78,44 @@ class _PlayerDialogState extends State<PlayerDialog> {
       _items[_currentIndex.clamp(0, _items.length - 1).toInt()];
   bool get _hasNext => _isSeriesQueue && _currentIndex < _items.length - 1;
   bool get _hasPrevious => _isSeriesQueue && _currentIndex > 0;
+
+  // Fullscreen controls live on a separate route and do not rebuild when the
+  // underlying dialog calls setState. Publish the same status to both views.
+  void _updatePlayerState(VoidCallback update) {
+    if (!mounted) return;
+    setState(update);
+    _videoStatus.value = PlayerVideoStatus(
+      opening: _opening,
+      completed: _completed && _isSeriesQueue,
+      failure: _failure,
+      accessBlocked: _sessionRevoked || _sourceUnavailable,
+      sourceUnavailable: _sourceUnavailable,
+    );
+  }
+
+  Future<void> _closeVideo(
+    VideoState video, {
+    bool exploreCatalog = false,
+  }) async {
+    if (video.mounted && video.isFullscreen()) {
+      await video.exitFullscreen();
+    }
+    if (!mounted) return;
+    if (exploreCatalog) {
+      _app.exploreUpdatedCatalog();
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Widget _videoControls(VideoState video) => PlayerVideoOverlay(
+    status: _videoStatus,
+    controls: AdaptiveVideoControls(video),
+    onRetry: _open,
+    onClose: () => _closeVideo(video),
+    onExploreCatalog: () => _closeVideo(video, exploreCatalog: true),
+  );
 
   @override
   void initState() {
@@ -114,7 +154,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
         }
       }
       if (mounted) {
-        setState(() {
+        _updatePlayerState(() {
           _opening = false;
           _failure = context.l10n.mediaEnginePlaybackFailed;
         });
@@ -153,7 +193,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
       _position = Duration.zero;
       _duration = Duration.zero;
       _lastSavedPosition = Duration.zero;
-      setState(() {
+      _updatePlayerState(() {
         _currentIndex = nextIndex;
         _failure = null;
         _completed = false;
@@ -167,7 +207,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
       if (completed && _currentMedia.kind != LibraryKind.live) {
         _recordProgress(_currentMedia, completed: true);
       }
-      setState(() => _completed = completed && !_hasNext);
+      _updatePlayerState(() => _completed = completed && !_hasNext);
     });
     if (widget.media.sourceScope.isNotEmpty && !app.canUseMedia(widget.media)) {
       _stopUnavailable();
@@ -197,7 +237,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
     _recordProgress(_currentMedia);
     unawaited(_stopNativeSession());
     if (mounted) {
-      setState(() {
+      _updatePlayerState(() {
         _opening = false;
         _failure = context.l10n.protectedExpired;
       });
@@ -210,7 +250,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
     _recordProgress(_currentMedia);
     unawaited(_stopNativeSession());
     if (mounted) {
-      setState(() {
+      _updatePlayerState(() {
         _opening = false;
         _failure = context.l10n.updatedSourceExplanation;
       });
@@ -345,14 +385,14 @@ class _PlayerDialogState extends State<PlayerDialog> {
     }
     if (credentials == null) {
       if (mounted) {
-        setState(() {
+        _updatePlayerState(() {
           _opening = false;
           _failure = 'No account is connected.';
         });
       }
       return;
     }
-    setState(() {
+    _updatePlayerState(() {
       _opening = true;
       _completed = false;
       _failure = null;
@@ -398,7 +438,9 @@ class _PlayerDialogState extends State<PlayerDialog> {
           await _player.seek(resumeAt);
         } catch (_) {
           if (mounted) {
-            setState(() => _failure = context.l10n.resumeNotSupported);
+            _updatePlayerState(
+              () => _failure = context.l10n.resumeNotSupported,
+            );
           }
         }
       }
@@ -408,13 +450,15 @@ class _PlayerDialogState extends State<PlayerDialog> {
           _revokeSession();
         } else {
           _playbackFailed = true;
-          setState(() => _failure = context.l10n.mediaResourceOpenFailed);
+          _updatePlayerState(
+            () => _failure = context.l10n.mediaResourceOpenFailed,
+          );
           _onAccountChanged();
         }
       }
     } finally {
       if (mounted) {
-        setState(() => _opening = false);
+        _updatePlayerState(() => _opening = false);
       }
     }
   }
@@ -432,7 +476,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
     _duration = Duration.zero;
     _lastSavedPosition = Duration.zero;
     _pendingManualIndex = index;
-    setState(() {
+    _updatePlayerState(() {
       _currentIndex = index;
       _completed = false;
       _failure = null;
@@ -441,7 +485,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
       await _player.jump(index);
     } catch (_) {
       if (mounted) {
-        setState(() => _failure = context.l10n.episodeSwitchFailed);
+        _updatePlayerState(() => _failure = context.l10n.episodeSwitchFailed);
       }
     }
   }
@@ -471,6 +515,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
     _app.removeListener(_onAccountChanged);
     _recordProgress(_currentMedia);
     unawaited(_releasePlayer().catchError((Object _) {}));
+    _videoStatus.dispose();
     super.dispose();
   }
 
@@ -566,76 +611,11 @@ class _PlayerDialogState extends State<PlayerDialog> {
           ],
         ),
       ),
-      video: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (!_sessionRevoked && !_sourceUnavailable)
-            Video(controller: _video, fit: BoxFit.contain, fill: Colors.black),
-          if (_opening)
-            Center(
-              child: CircularProgressIndicator(
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          if (_completed && _isSeriesQueue)
-            Center(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.black87,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    context.l10n.endEpisodeList,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
-          if (_failure != null)
-            Align(
-              alignment: Alignment.topCenter,
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.black87,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Wrap(
-                  spacing: 12,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      _failure!,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    if (_sessionRevoked || _sourceUnavailable)
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(context.l10n.closePlayer),
-                      ),
-                    if (_sourceUnavailable)
-                      TextButton(
-                        onPressed: () {
-                          context.read<AppController>().exploreUpdatedCatalog();
-                          Navigator.of(context)
-                              .popUntil((route) => route.isFirst);
-                        },
-                        child: Text(context.l10n.exploreCatalog),
-                      ),
-                    if (!_sessionRevoked && !_sourceUnavailable)
-                      TextButton.icon(
-                        onPressed: _open,
-                        icon: const Icon(Icons.refresh),
-                        label: Text(context.l10n.retry),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-        ],
+      video: Video(
+        controller: _video,
+        fit: BoxFit.contain,
+        fill: Colors.black,
+        controls: _videoControls,
       ),
     );
   }

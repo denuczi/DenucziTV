@@ -105,7 +105,22 @@ class _EpisodeWatchedButtonState extends State<EpisodeWatchedButton> {
               entry.sourceScope == widget.episode.sourceScope &&
               entry.completed,
         );
+        final dark = Theme.of(context).brightness == Brightness.dark;
         return IconButton(
+          style: IconButton.styleFrom(
+            fixedSize: const Size.square(40),
+            minimumSize: const Size.square(40),
+            maximumSize: const Size.square(40),
+            visualDensity: VisualDensity.standard,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            padding: EdgeInsets.zero,
+            backgroundColor: watched
+                ? (dark ? const Color(0xFF123D28) : const Color(0xFFD8F3DC))
+                : null,
+            foregroundColor: watched
+                ? (dark ? const Color(0xFF8FE3AA) : const Color(0xFF176239))
+                : null,
+          ),
           tooltip: watched
               ? context.l10n.markEpisodeUnwatched
               : context.l10n.markEpisodeWatched,
@@ -138,7 +153,6 @@ class _EpisodeWatchedButtonState extends State<EpisodeWatchedButton> {
                 },
           icon: Icon(
             watched ? Icons.check_circle_rounded : Icons.check_circle_outline,
-            color: watched ? Theme.of(context).colorScheme.primary : null,
           ),
         );
       },

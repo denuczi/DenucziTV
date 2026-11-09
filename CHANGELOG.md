@@ -7,6 +7,47 @@ Changes are grouped by application version. Binary availability is listed on
 
 No additional changes recorded.
 
+## 0.6.3 — Release preparation
+
+### Changed
+
+- Add a subtle circular red glow to the dark workspace background, excluding
+  the sidebar. The pinned catalog header shares the same background while
+  scrolling and resizing; light-mode backgrounds remain unchanged.
+- Use red backgrounds with white labels or icons for live badges, movie
+  playback, return-to-top controls, and poster hover actions. Episode play
+  indicators use a black circle with a white triangle.
+- Align episode actions in 40 × 40 logical-pixel areas with uniform 12-pixel
+  spacing. Watched episodes use a light-green button background in light mode
+  and a dark-green background in dark mode.
+
+### Fixed
+
+- Keep playback errors and retry actions visible inside the video in both
+  windowed and fullscreen views. Retrying does not require leaving fullscreen;
+  blocked playback hides transport controls and exposes the relevant exit actions.
+- Resolve missing My Library covers from the active catalog or provider metadata,
+  with a bounded session cache shared by episodes of the same series. Account
+  and source changes discard obsolete responses without persisting protected
+  artwork URLs or changing saved history.
+- Recognize provider artwork in `cover` and `stream_icon` metadata fields when
+  the preferred movie-image fields are unavailable.
+
+### Documentation
+
+- Publish a bilingual English/Spanish GitHub Pages landing page with remembered
+  language selection, mobile navigation, installation guidance, and non-draggable
+  images.
+- Add the project banner and improve README navigation, download-table alignment,
+  and screenshot presentation.
+
+### Release status
+
+- Set the application source version to `0.6.3+1` and the Windows installer
+  workflow's default release tag to `v0.6.3`.
+- Stable Debian amd64 and Windows x64 installers, checksums, and native-platform
+  verification are pending. This entry does not indicate binary availability.
+
 ## [0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2) — Stable
 
 ### Added

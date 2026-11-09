@@ -20,6 +20,11 @@ abstract final class AppPalette {
   static const success = Color(0xFF48C69B);
   static const outline = Color(0xFF38383D);
 
+  /// Filled media actions keep a true brand red in dark mode. Leave the light
+  /// theme's existing, contrast-adjusted red unchanged.
+  static Color mediaAction(ColorScheme scheme) =>
+      scheme.brightness == Brightness.dark ? brandRed : scheme.primary;
+
   static Color information(Brightness brightness) =>
       brightness == Brightness.dark
       ? const Color(0xFF79B8FF)

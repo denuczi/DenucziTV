@@ -7,6 +7,7 @@ import 'package:denuczi_tv/core/models/app_controller.dart';
 import 'package:denuczi_tv/core/network/network_client.dart';
 import 'package:denuczi_tv/core/storage/account_store.dart';
 import 'package:denuczi_tv/core/storage/settings_store.dart';
+import 'package:denuczi_tv/core/theme/app_theme.dart';
 import 'package:denuczi_tv/features/library/data/xtream_api.dart';
 import 'package:denuczi_tv/features/library/domain/media_models.dart';
 import 'package:denuczi_tv/features/library/presentation/media_details_dialog.dart';
@@ -20,6 +21,7 @@ void main() {
     WidgetTester tester, {
     required Future<MediaDetails> Function() detailsLoader,
     String? catalogSynopsis,
+    ThemeData? theme,
   }) async {
     tester.view.physicalSize = const Size(1000, 800);
     tester.view.devicePixelRatio = 1;
@@ -41,6 +43,7 @@ void main() {
       ChangeNotifierProvider<AppController>.value(
         value: controller,
         child: MaterialApp(
+          theme: theme,
           home: Scaffold(
             body: MediaDetailsDialog(
               entry: MediaEntry(
@@ -56,6 +59,31 @@ void main() {
       ),
     );
     await tester.pump();
+  }
+
+  for (final theme in [AppTheme.light, AppTheme.dark]) {
+    testWidgets(
+      'movie playback stays red and white in ${theme.brightness.name}',
+      (tester) async {
+        await mountDetails(
+          tester,
+          theme: theme,
+          detailsLoader: () async => const MediaDetails(),
+        );
+        await tester.pumpAndSettle();
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Play movie'),
+        );
+        expect(
+          button.style!.backgroundColor!.resolve({}),
+          theme.brightness == Brightness.dark
+              ? AppPalette.brandRed
+              : theme.colorScheme.primary,
+        );
+        expect(button.style!.foregroundColor!.resolve({}), Colors.white);
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
   testWidgets('pending metadata never claims the synopsis is unavailable', (

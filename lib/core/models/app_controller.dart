@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 
 import '../../features/library/data/xtream_api.dart';
 import '../../features/personal_library/application/personal_library_controller.dart';
+import '../../features/personal_library/application/library_artwork_resolver.dart';
+import '../../features/personal_library/domain/library_item.dart';
 import '../../features/downloads/data/download_manager.dart';
 import '../../features/library/domain/media_models.dart';
 import '../errors/app_exception.dart';
@@ -159,6 +161,18 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   XtreamApi get api => _api;
+  late final _libraryArtwork = LibraryArtworkResolver(_api);
+
+  Future<String?> resolveLibraryArtwork(LibraryItem item) =>
+      _libraryArtwork.resolve(
+        item,
+        accountId: activeAccount?.id,
+        credentials: credentials,
+        catalog: entries.followedBy(
+          _catalogCache.values.expand((catalog) => catalog.entries),
+        ),
+      );
+
   NetworkClient get network => _network;
   AccountCredentials? get credentials =>
       _credentials?.linkExpired == true ? null : _credentials;
@@ -1019,6 +1033,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void _disconnect({required bool clearError}) {
+    _libraryArtwork.clear();
     _catalogCancellation?.cancel();
     ++_catalogVersion;
     _catalogCache.clear();
@@ -1047,6 +1062,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void dispose() {
     _disposed = true;
+    _libraryArtwork.clear();
     _protectedTimer?.cancel();
     _protectedExpiryTimer?.cancel();
     _protectedClockWatch?.cancel();

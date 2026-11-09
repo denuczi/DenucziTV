@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/models/app_controller.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/navigation/dialog_launch_guard.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/workspace_background.dart';
 import '../../../shared/formatting/count_format.dart';
 import '../../connection/presentation/connect_dialog.dart';
 import '../../player/presentation/player_dialog.dart';
@@ -320,6 +322,11 @@ class _LibraryPageState extends State<LibraryPage> {
                   floating: false,
                   elevation: 0,
                   scrolledUnderElevation: 0,
+                  // Yaru adds a bottom border by default. In dark mode the
+                  // shared background should continue through the header.
+                  shape: theme.brightness == Brightness.dark
+                      ? const Border()
+                      : null,
                   toolbarHeight: 60,
                   expandedHeight: app.loading || app.entries.isNotEmpty
                       ? 188
@@ -351,20 +358,7 @@ class _LibraryPageState extends State<LibraryPage> {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            DecoratedBox(
-                              decoration: BoxDecoration(
-                                // A neutral tonal transition separates the
-                                // catalog tools without turning the header red.
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    colors.surfaceContainerLow,
-                                    colors.surface,
-                                  ],
-                                ),
-                              ),
-                            ),
+                            const WorkspaceHeaderBackground(),
                             Positioned(
                               top: 75,
                               left: 26,
@@ -678,6 +672,8 @@ class _LibraryPageState extends State<LibraryPage> {
               duration: const Duration(milliseconds: 180),
               child: FloatingActionButton.small(
                 key: const Key('returnToTop'),
+                backgroundColor: AppPalette.brandRed,
+                foregroundColor: Colors.white,
                 tooltip: context.l10n.backToTop,
                 onPressed: _goToTop,
                 child: const Icon(Icons.keyboard_arrow_up_rounded),

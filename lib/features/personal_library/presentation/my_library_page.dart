@@ -8,6 +8,7 @@ import '../../../core/models/app_controller.dart';
 import '../../../shared/navigation/dialog_launch_guard.dart';
 import '../../library/domain/media_models.dart';
 import '../../library/presentation/media_details_dialog.dart';
+import '../../library/presentation/media_artwork.dart';
 import '../../library/presentation/series_dialog.dart';
 import '../../player/presentation/player_dialog.dart';
 import '../application/personal_library_controller.dart';
@@ -396,31 +397,21 @@ class _LibraryRow extends StatelessWidget {
         : item.positionMs > 0
         ? context.l10n.inProgress
         : context.l10n.saved;
-    final artwork = SizedBox(
-      width: 64,
-      height: 82,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: ColoredBox(
-          color: colors.surfaceContainerHighest,
-          child: item.imageUrl == null
-              ? Icon(
-                  item.kind == LibraryKind.movies
-                      ? Icons.movie_outlined
-                      : Icons.tv_outlined,
-                  color: colors.onSurfaceVariant,
-                )
-              : Image.network(
-                  item.imageUrl!,
-                  fit: BoxFit.cover,
-                  headers: context.read<AppController>().network.imageHeaders,
-                  cacheWidth: 160,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.movie_outlined,
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-        ),
+    final app = context.watch<AppController>();
+    final artwork = FutureBuilder<String?>(
+      key: ValueKey((
+        item.accountId,
+        item.sourceScope,
+        item.kind,
+        item.mediaId,
+        app.credentials,
+      )),
+      future: app.resolveLibraryArtwork(item),
+      builder: (context, snapshot) => MediaArtwork(
+        width: 64,
+        height: 82,
+        imageUrl: snapshot.data,
+        network: app.network,
       ),
     );
     final details = Column(

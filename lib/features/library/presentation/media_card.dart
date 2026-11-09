@@ -42,6 +42,7 @@ class _MediaCardState extends State<MediaCard> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final actionColor = AppPalette.mediaAction(scheme);
     final media = widget.entry;
     final compactRating = formatCompactRating(media.rating);
     final uri = Uri.tryParse(media.imageUrl ?? '');
@@ -68,7 +69,7 @@ class _MediaCardState extends State<MediaCard> {
                 : scheme.surfaceContainer,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: emphasized ? scheme.primary : scheme.outlineVariant,
+              color: emphasized ? actionColor : scheme.outlineVariant,
               width: emphasized ? 1.5 : 1.0,
             ),
             boxShadow: emphasized
@@ -118,7 +119,7 @@ class _MediaCardState extends State<MediaCard> {
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               color: emphasized
-                                  ? Theme.of(context).colorScheme.primary
+                                  ? actionColor
                                   : Colors.black.withValues(alpha: 0.72),
                               borderRadius: BorderRadius.circular(28),
                             ),
@@ -128,9 +129,7 @@ class _MediaCardState extends State<MediaCard> {
                                 media.kind == LibraryKind.live
                                     ? Icons.play_arrow_rounded
                                     : Icons.arrow_outward_rounded,
-                                color: emphasized
-                                    ? Theme.of(context).colorScheme.onPrimary
-                                    : Colors.white,
+                                color: Colors.white,
                                 size: 19,
                               ),
                             ),
@@ -161,7 +160,7 @@ class _MediaCardState extends State<MediaCard> {
                             top: 10,
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                color: AppPalette.coral,
+                                color: AppPalette.brandRed,
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Padding(
@@ -172,7 +171,7 @@ class _MediaCardState extends State<MediaCard> {
                                 child: Text(
                                   context.l10n.live,
                                   style: TextStyle(
-                                    color: AppPalette.canvas,
+                                    color: Colors.white,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: .7,

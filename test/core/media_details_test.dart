@@ -20,7 +20,11 @@ void main() {
 
   test('retains series information and parsed episodes', () {
     final details = SeriesDetails.fromJson({
-      'info': {'plot': 'A long-running show', 'genre': 'Drama'},
+      'info': {
+        'plot': 'A long-running show',
+        'genre': 'Drama',
+        'cover': 'https://images.example/show.jpg',
+      },
       'episodes': {
         '1': [
           {'id': '42', 'title': 'Episode 1', 'episode_num': 1},
@@ -29,6 +33,15 @@ void main() {
     });
     expect(details.metadata.plot, 'A long-running show');
     expect(details.metadata.genre, 'Drama');
+    expect(details.metadata.imageUrl, 'https://images.example/show.jpg');
     expect(details.episodesBySeason[1]?.single.title, 'Episode 1');
+  });
+
+  test('movie artwork falls back to the provider stream icon', () {
+    final details = MediaDetails.fromJson({
+      'info': {'movie_image': ''},
+      'movie_data': {'stream_icon': 'https://images.example/movie.jpg'},
+    });
+    expect(details.imageUrl, 'https://images.example/movie.jpg');
   });
 }

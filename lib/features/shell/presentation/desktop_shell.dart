@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n_ext.dart';
 import '../../../shared/notifications/app_notice.dart';
 import '../../../shared/widgets/brand_mark.dart';
+import '../../../shared/widgets/workspace_background.dart';
 import '../../accounts/presentation/accounts_page.dart';
 import '../../personal_library/presentation/my_library_page.dart';
 import '../../downloads/presentation/downloads_page.dart';
@@ -139,13 +140,15 @@ class _DesktopShellState extends State<DesktopShell> {
                 ),
               ),
               Expanded(
-                child: switch (_workspace) {
-                  _Workspace.library => const LibraryPage(),
-                  _Workspace.accounts => const AccountsPage(),
-                  _Workspace.myLibrary => const MyLibraryPage(),
-                  _Workspace.downloads => const DownloadsPage(),
-                  _Workspace.settings => const SettingsPage(),
-                },
+                child: WorkspaceBackground(
+                  child: switch (_workspace) {
+                    _Workspace.library => const LibraryPage(),
+                    _Workspace.accounts => const AccountsPage(),
+                    _Workspace.myLibrary => const MyLibraryPage(),
+                    _Workspace.downloads => const DownloadsPage(),
+                    _Workspace.settings => const SettingsPage(),
+                  },
+                ),
               ),
             ],
           );

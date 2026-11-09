@@ -548,30 +548,56 @@ class _SeriesDialogState extends State<SeriesDialog> {
                                             ),
                                           ),
                                           const SizedBox(width: 12),
-                                          EpisodeWatchedButton(
-                                            episode: episode.withSeries(
-                                              widget.series.id,
-                                            ),
-                                            seriesTitle: widget.series.title,
-                                          ),
-                                          if (context
-                                              .watch<AppController>()
-                                              .copyLinksAvailable)
-                                            MediaActionMenu(media: episode),
-                                          if (context
-                                              .watch<AppController>()
-                                              .showDownloadControls)
-                                            DownloadActionButton(
-                                              media: episode,
-                                              compact: true,
-                                            ),
-                                          Tooltip(
-                                            message: context.l10n.playEpisode,
-                                            child: Icon(
-                                              Icons.play_circle_fill_rounded,
-                                              size: 29,
-                                              color: scheme.primary,
-                                            ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            spacing: 12,
+                                            children: [
+                                              if (app.personalLibrary != null &&
+                                                  app.activeAccount != null)
+                                                SizedBox.square(
+                                                  dimension: 40,
+                                                  child: EpisodeWatchedButton(
+                                                    episode: episode.withSeries(
+                                                      widget.series.id,
+                                                    ),
+                                                    seriesTitle:
+                                                        widget.series.title,
+                                                  ),
+                                                ),
+                                              if (app.copyLinksAvailable)
+                                                SizedBox.square(
+                                                  dimension: 40,
+                                                  child: MediaActionMenu(
+                                                    media: episode,
+                                                  ),
+                                                ),
+                                              if (app.showDownloadControls)
+                                                SizedBox.square(
+                                                  dimension: 40,
+                                                  child: DownloadActionButton(
+                                                    media: episode,
+                                                    compact: true,
+                                                  ),
+                                                ),
+                                              Tooltip(
+                                                message:
+                                                    context.l10n.playEpisode,
+                                                child: const DecoratedBox(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: SizedBox.square(
+                                                    dimension: 40,
+                                                    child: Icon(
+                                                      Icons.play_arrow_rounded,
+                                                      size: 24,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),

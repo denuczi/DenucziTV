@@ -8,6 +8,7 @@ import '../../../shared/widgets/content_unavailable_dialog.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/models/app_controller.dart';
+import '../../../core/theme/app_theme.dart';
 import '../domain/media_models.dart';
 import 'media_artwork.dart';
 import 'media_actions.dart';
@@ -289,7 +290,12 @@ class _MediaDetailsDialogState extends State<MediaDetailsDialog> {
                         style: _actionButtonStyle,
                       ),
                     FilledButton.icon(
-                      style: _actionButtonStyle,
+                      style: _actionButtonStyle.merge(
+                        FilledButton.styleFrom(
+                          backgroundColor: AppPalette.mediaAction(scheme),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
                       onPressed: () => Navigator.pop(context, true),
                       icon: const Icon(Icons.play_arrow_rounded),
                       label: Text(context.l10n.playMovie),

@@ -214,7 +214,10 @@ class MediaDetails {
       cast: field('cast', 'actors'),
       rating: field('rating'),
       country: field('country'),
-      imageUrl: field('movie_image', 'cover_big'),
+      imageUrl:
+          field('movie_image', 'cover_big') ??
+          field('cover') ??
+          field('stream_icon'),
     );
   }
 }
