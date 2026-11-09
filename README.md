@@ -1,16 +1,38 @@
-# DenucziTV
+<p align="center">
+  <img src="demo/DenucziTV.webp" alt="DenucziTV" width="100%">
+</p>
 
-An open-source IPTV player for **Windows and Linux**. Connect your own provider
-using Xtream Codes or a Protected Single Link.
+<h1 align="center">DenucziTV</h1>
 
-## Download
+<p align="center">
+  An open-source IPTV player for <strong>Windows and Linux</strong>.<br>
+  Connect your own provider using Xtream Codes or a Protected Single Link.
+</p>
 
-**[Latest stable release: 0.6.2](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2)**
+<p align="center">
+  <a href="#download">Download</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#documentation-and-development">Documentation</a>
+</p>
+
+---
+
+<h2 align="center">Download</h2>
+
+<p align="center">
+  <strong><a href="https://github.com/denuczi/DenucziTV/releases/tag/v0.6.2">Latest stable release: 0.6.2</a></strong>
+</p>
+
+<div align="center">
 
 | Your system | Installer | Checksum |
-| --- | --- | --- |
+| :---: | :---: | :---: |
 | Windows 10 / 11, x64 | [Download Windows installer](https://github.com/denuczi/DenucziTV/releases/download/v0.6.2/DenucziTV-Setup-0.6.2-x64.exe) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.2/DenucziTV-Setup-0.6.2-x64.exe.sha256) |
 | Debian / Ubuntu, x64 | [Download Linux package](https://github.com/denuczi/DenucziTV/releases/download/v0.6.2/denuczitv_0.6.2%2B1-1_amd64.deb) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.2/denuczitv_0.6.2%2B1-1_amd64.deb.sha256) |
+
+</div>
 
 **You do not need Flutter, Git, or a compiler to install DenucziTV.** Choose the
 installer for your system above. The **Source code** ZIP and TAR archives on the
@@ -110,19 +132,31 @@ entries instead of being reassigned by ID or title. See
 [personal-library behavior](docs/PERSONAL_LIBRARY.md) and the
 [protected connection guide](docs/PROTECTED_SINGLE_LINK.md).
 
-## Screenshots
+<h2 align="center">Screenshots</h2>
 
-### Live TV
+<h3 align="center">Live TV</h3>
 
-![DenucziTV live TV catalog with search and category filters](demo/LiveTV_V0.5.3.png)
+<p align="center">
+  <a href="demo/LiveTV_V0.5.3.png">
+    <img src="demo/LiveTV_V0.5.3.png" alt="DenucziTV live TV catalog with search and category filters" width="100%">
+  </a>
+</p>
 
-### Movie details
+<h3 align="center">Movie details</h3>
 
-![DenucziTV movie details with playback and download actions](demo/movies_V0.5.3.png)
+<p align="center">
+  <a href="demo/movies_V0.5.3.png">
+    <img src="demo/movies_V0.5.3.png" alt="DenucziTV movie details with playback and download actions" width="100%">
+  </a>
+</p>
 
-### Series and episodes
+<h3 align="center">Series and episodes</h3>
 
-![DenucziTV series details with season selection and an episode list](demo/Series_V0.5.3.png)
+<p align="center">
+  <a href="demo/Series_V0.5.3.png">
+    <img src="demo/Series_V0.5.3.png" alt="DenucziTV series details with season selection and an episode list" width="100%">
+  </a>
+</p>
 
 Screenshots were captured in 0.5.3 and may differ from the current interface.
 They show provider-supplied catalog information; DenucziTV does not supply the
