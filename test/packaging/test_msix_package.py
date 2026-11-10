@@ -177,6 +177,26 @@ class MsixWorkflowTest(unittest.TestCase):
         self.assertIn("The source checkout is not clean", record["run"])
         self.assertIn("describe --always --tags --dirty", record["run"])
 
+    def test_native_revision_commands_run_to_completion(self):
+        # Select-Object -First can terminate native executables prematurely,
+        # leaving LASTEXITCODE at -1 even when stdout contained a valid SHA.
+        for step_name in (
+            "Resolve and record the exact source revision",
+            "Validate packaging tooling from the same revision",
+        ):
+            step = next(step for step in self.steps if step.get("name") == step_name)
+            self.assertNotRegex(
+                step["run"],
+                r"git\b[^\n]*\|\s*Select-Object\s+-First",
+            )
+            self.assertIn("$gitExitCode = $LASTEXITCODE", step["run"])
+        self.assertNotRegex(
+            self.script,
+            r"(?:git\b|\$vswhere\b)[^\n]*\|\s*Select-Object\s+-First",
+        )
+        self.assertIn("$sourceCommit = & git -C $root rev-parse HEAD", self.script)
+        self.assertIn("$sourceDescribe = & git -C $root describe --always --tags --dirty", self.script)
+
     def test_workflow_runs_quality_gates_and_the_packager(self):
         names = [step.get("name", "") for step in self.steps]
         for expected in (

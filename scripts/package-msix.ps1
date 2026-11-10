@@ -117,7 +117,7 @@ function Get-ReleaseCrtPath {
     if (-not (Test-Path -LiteralPath $vswhere)) {
         throw 'Visual Studio Installer was not found.'
     }
-    $vsPath = (& $vswhere -latest -products '*' -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1)
+    $vsPath = & $vswhere -latest -products '*' -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($vsPath)) {
         throw 'A Visual Studio 2022 installation with the C++ toolchain is required.'
     }
@@ -791,9 +791,10 @@ if (-not (Test-Path -LiteralPath $logoPath -PathType Leaf)) {
     throw 'The configured MSIX logo does not exist.'
 }
 
-$sourceCommit = (& git -C $root rev-parse HEAD | Select-Object -First 1)
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($sourceCommit)) {
-    throw 'Could not determine the application source commit.'
+$sourceCommit = & git -C $root rev-parse HEAD
+$gitExitCode = $LASTEXITCODE
+if ($gitExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($sourceCommit)) {
+    throw "Could not determine the application source commit (git exit code: $gitExitCode)."
 }
 $sourceCommit = $sourceCommit.Trim()
 if ($sourceCommit -notmatch '^[0-9a-f]{40}$') {
@@ -810,9 +811,10 @@ if (-not [string]::IsNullOrWhiteSpace($expectedCommit)) {
 }
 $status = & git -C $root status --porcelain
 $sourceDirty = -not [string]::IsNullOrWhiteSpace(($status -join "`n"))
-$sourceDescribe = (& git -C $root describe --always --tags --dirty | Select-Object -First 1)
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($sourceDescribe)) {
-    throw 'Could not describe the application source revision.'
+$sourceDescribe = & git -C $root describe --always --tags --dirty
+$gitExitCode = $LASTEXITCODE
+if ($gitExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($sourceDescribe)) {
+    throw "Could not describe the application source revision (git exit code: $gitExitCode)."
 }
 $sourceDescribe = $sourceDescribe.Trim()
 $sourceRef = [Environment]::GetEnvironmentVariable('SOURCE_REF')

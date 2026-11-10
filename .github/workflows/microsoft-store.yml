@@ -60,9 +60,10 @@ jobs:
 
       - name: Resolve and record the exact source revision
         run: |
-          $sha = (& git -C source rev-parse HEAD | Select-Object -First 1)
-          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($sha)) {
-            throw 'Could not resolve the application source commit.'
+          $sha = & git -C source rev-parse HEAD
+          $gitExitCode = $LASTEXITCODE
+          if ($gitExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($sha)) {
+            throw "Could not resolve the application source commit (git exit code: $gitExitCode)."
           }
           $sha = $sha.Trim()
           if ($sha -notmatch '^[0-9a-f]{40}$') {
@@ -72,9 +73,10 @@ jobs:
           if (-not [string]::IsNullOrWhiteSpace(($dirty -join "`n"))) {
             throw 'The source checkout is not clean.'
           }
-          $described = (& git -C source describe --always --tags --dirty | Select-Object -First 1)
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Could not describe the application source revision.'
+          $described = & git -C source describe --always --tags --dirty
+          $gitExitCode = $LASTEXITCODE
+          if ($gitExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($described)) {
+            throw "Could not describe the application source revision (git exit code: $gitExitCode)."
           }
           "SOURCE_SHA=$sha" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "SOURCE_DESCRIBE=$($described.Trim())" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
@@ -83,9 +85,10 @@ jobs:
       - name: Validate packaging tooling from the same revision
         working-directory: source
         run: |
-          $sha = (& git rev-parse HEAD | Select-Object -First 1)
-          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($sha)) {
-            throw 'Could not re-read the application source commit.'
+          $sha = & git rev-parse HEAD
+          $gitExitCode = $LASTEXITCODE
+          if ($gitExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($sha)) {
+            throw "Could not re-read the application source commit (git exit code: $gitExitCode)."
           }
           if ($sha.Trim() -cne $env:SOURCE_SHA) {
             throw 'The packaging tools and application source are not from the same revision.'
