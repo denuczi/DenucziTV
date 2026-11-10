@@ -181,6 +181,80 @@ try {
         Assert-MsixVisualAssets -Manifest $visualManifest -Entries $visualEntries
     } 'missing the manifest image.*Wide310x150Logo'
 
+    # Validate code-signing EKU and DigitalSignature KeyUsage using standard
+    # X.509 extensions. This works on Linux and Windows without creating a
+    # Windows certificate-store entry or exporting a private key.
+    function New-TestSigningCertificate {
+        param(
+            [bool]$IncludeCodeSigning,
+            [bool]$IncludeDigitalSignature,
+            [bool]$IncludeEku = $true,
+            [bool]$IncludeKeyUsage = $true
+        )
+
+        $rsa = [Security.Cryptography.RSA]::Create(2048)
+        try {
+            $request = [Security.Cryptography.X509Certificates.CertificateRequest]::new(
+                'CN=DenucziTV-Certificate-Test',
+                $rsa,
+                [Security.Cryptography.HashAlgorithmName]::SHA256,
+                [Security.Cryptography.RSASignaturePadding]::Pkcs1
+            )
+            if ($IncludeEku) {
+                $oids = [Security.Cryptography.OidCollection]::new()
+                $oid = if ($IncludeCodeSigning) { '1.3.6.1.5.5.7.3.3' } else { '1.3.6.1.5.5.7.3.1' }
+                [void]$oids.Add([Security.Cryptography.Oid]::new($oid))
+                $request.CertificateExtensions.Add(
+                    [Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]::new($oids, $false)
+                )
+            }
+            if ($IncludeKeyUsage) {
+                $usage = if ($IncludeDigitalSignature) {
+                    [Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature
+                } else {
+                    [Security.Cryptography.X509Certificates.X509KeyUsageFlags]::KeyEncipherment
+                }
+                $request.CertificateExtensions.Add(
+                    [Security.Cryptography.X509Certificates.X509KeyUsageExtension]::new($usage, $true)
+                )
+            }
+            return $request.CreateSelfSigned((Get-Date).AddMinutes(-1), (Get-Date).AddHours(1))
+        } finally {
+            $rsa.Dispose()
+        }
+    }
+
+    $validCertificate = New-TestSigningCertificate -IncludeCodeSigning $true -IncludeDigitalSignature $true
+    try {
+        Assert-QaCertificatePurposes -Certificate $validCertificate
+    } finally {
+        $validCertificate.Dispose()
+    }
+    $wrongEku = New-TestSigningCertificate -IncludeCodeSigning $false -IncludeDigitalSignature $true
+    try {
+        Assert-Throws { Assert-QaCertificatePurposes -Certificate $wrongEku } 'does not allow code signing'
+    } finally {
+        $wrongEku.Dispose()
+    }
+    $missingEku = New-TestSigningCertificate -IncludeCodeSigning $false -IncludeDigitalSignature $true -IncludeEku $false
+    try {
+        Assert-Throws { Assert-QaCertificatePurposes -Certificate $missingEku } 'does not allow code signing'
+    } finally {
+        $missingEku.Dispose()
+    }
+    $wrongKeyUsage = New-TestSigningCertificate -IncludeCodeSigning $true -IncludeDigitalSignature $false
+    try {
+        Assert-Throws { Assert-QaCertificatePurposes -Certificate $wrongKeyUsage } 'does not allow digital signatures'
+    } finally {
+        $wrongKeyUsage.Dispose()
+    }
+    $missingKeyUsage = New-TestSigningCertificate -IncludeCodeSigning $true -IncludeDigitalSignature $false -IncludeKeyUsage $false
+    try {
+        Assert-Throws { Assert-QaCertificatePurposes -Certificate $missingKeyUsage } 'does not allow digital signatures'
+    } finally {
+        $missingKeyUsage.Dispose()
+    }
+
     # Package payload parity ignores signature and package metadata only.
     $crt = Join-Path $root 'crt'
     Write-TestFile (Join-Path $crt 'msvcp140.dll') 'msvcp'

@@ -666,6 +666,38 @@ function Get-AuthenticodeStatus {
     }
 }
 
+function Assert-QaCertificatePurposes {
+    param([Security.Cryptography.X509Certificates.X509Certificate2]$Certificate)
+
+    # Read the standard X.509 extensions directly. The PowerShell certificate
+    # provider exposes EnhancedKeyUsageList as a provider-specific projection,
+    # whose elements do not necessarily have a Value property.
+    $codeSigningOid = '1.3.6.1.5.5.7.3.3'
+    $hasCodeSigning = $false
+    $hasDigitalSignature = $false
+
+    foreach ($extension in $Certificate.Extensions) {
+        if ($extension -is [Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
+            foreach ($oid in $extension.EnhancedKeyUsages) {
+                if ($oid.Value -ceq $codeSigningOid) {
+                    $hasCodeSigning = $true
+                }
+            }
+        } elseif ($extension -is [Security.Cryptography.X509Certificates.X509KeyUsageExtension]) {
+            if ($extension.KeyUsages -band [Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature) {
+                $hasDigitalSignature = $true
+            }
+        }
+    }
+
+    if (-not $hasCodeSigning) {
+        throw 'The QA certificate does not allow code signing.'
+    }
+    if (-not $hasDigitalSignature) {
+        throw 'The QA certificate does not allow digital signatures.'
+    }
+}
+
 function New-QaCertificate {
     param(
         [string]$Subject,
@@ -692,18 +724,7 @@ function New-QaCertificate {
         if (-not $certificate.HasPrivateKey) {
             throw 'The QA certificate has no private key.'
         }
-        $codeSigningOid = '1.3.6.1.5.5.7.3.3'
-        $eku = @($certificate.EnhancedKeyUsageList | Where-Object { $_.Value -eq $codeSigningOid })
-        if ($eku.Count -eq 0) {
-            throw 'The QA certificate does not allow code signing.'
-        }
-        $keyUsage = $certificate.Extensions |
-            Where-Object { $_ -is [Security.Cryptography.X509Certificates.X509KeyUsageExtension] } |
-            Select-Object -First 1
-        if ($null -eq $keyUsage -or
-            -not ($keyUsage.KeyUsages -band [Security.Cryptography.X509Certificates.X509KeyUsageFlags]::DigitalSignature)) {
-            throw 'The QA certificate does not allow digital signatures.'
-        }
+        Assert-QaCertificatePurposes -Certificate $certificate
 
         Export-Certificate -Cert $certificate -FilePath $CerPath | Out-Null
         return $certificate
