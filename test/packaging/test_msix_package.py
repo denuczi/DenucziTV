@@ -224,7 +224,9 @@ class MsixWorkflowTest(unittest.TestCase):
         self.assertIn("modified tracked source files", clean["run"])
 
     def test_artifacts_are_separate_and_never_include_private_keys(self):
-        uploads = [step for step in self.steps if step.get("uses") == "actions/upload-artifact@v4"]
+        uploads = [step for step in self.steps if step.get("uses") == "actions/upload-artifact@v6"]
+        self.assertNotIn("actions/upload-artifact@v4", self.text)
+        self.assertNotIn("actions/upload-artifact@v5", self.text)
         self.assertEqual(len(uploads), 2)
         paths = "\n".join(step["with"]["path"] for step in uploads)
         self.assertIn("DenucziTV-0.6.3-x64-store.msix", paths)

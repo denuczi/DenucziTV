@@ -183,7 +183,7 @@ jobs:
           }
 
       - name: Upload unsigned Store MSIX
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: denuczitv-msix-store-${{ env.SOURCE_SHA }}
           path: |
@@ -194,7 +194,7 @@ jobs:
           retention-days: 14
 
       - name: Upload QA test-signed MSIX
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: denuczitv-msix-qa-${{ env.SOURCE_SHA }}
           path: |
