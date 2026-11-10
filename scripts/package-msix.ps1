@@ -771,17 +771,66 @@ function Find-SignTool {
     throw 'signtool.exe from the Windows SDK was not found.'
 }
 
+function New-QaTrustStore {
+    # Windows App Installer checks the local-machine TrustedPeople store for
+    # self-signed MSIX package certificates. Never add the QA leaf certificate
+    # to a trusted root CA store.
+    return [Security.Cryptography.X509Certificates.X509Store]::new(
+        [Security.Cryptography.X509Certificates.StoreName]::TrustedPeople,
+        [Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine
+    )
+}
+
+function Assert-QaTrustStoreWritable {
+    $store = New-QaTrustStore
+    try {
+        $store.Open([Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+    } catch {
+        throw "QA signing requires write access to LocalMachine\TrustedPeople. Run on an administrator-enabled Windows runner. $($_.Exception.Message)"
+    } finally {
+        $store.Close()
+    }
+}
+
 function Add-TrustedPeopleCertificate {
     param([string]$CerPath)
 
     $certificate = [Security.Cryptography.X509Certificates.X509Certificate2]::new($CerPath)
-    $store = [Security.Cryptography.X509Certificates.X509Store]::new(
-        [Security.Cryptography.X509Certificates.StoreName]::TrustedPeople,
-        [Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
-    )
+    $store = New-QaTrustStore
     $store.Open([Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
     try {
-        $store.Add($certificate)
+        $matching = $store.Certificates.Find(
+            [Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+            $certificate.Thumbprint,
+            $false
+        )
+        if ($matching.Count -ne 0) {
+            throw 'The QA certificate is already in LocalMachine\TrustedPeople; refusing to manage an existing trust entry.'
+        }
+
+        try {
+            $store.Add($certificate)
+            $matching = $store.Certificates.Find(
+                [Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+                $certificate.Thumbprint,
+                $false
+            )
+            if ($matching.Count -ne 1) {
+                throw 'Could not confirm temporary QA trust in LocalMachine\TrustedPeople.'
+            }
+        } catch {
+            # If an error occurs after insertion, remove only the certificate
+            # generated for this build. Never remove a pre-existing entry.
+            $matching = $store.Certificates.Find(
+                [Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+                $certificate.Thumbprint,
+                $false
+            )
+            foreach ($entry in $matching) {
+                $store.Remove($entry)
+            }
+            throw
+        }
     } finally {
         $store.Close()
     }
@@ -789,18 +838,22 @@ function Add-TrustedPeopleCertificate {
 }
 
 function Remove-TrustedPeopleCertificate {
-    param($Certificate)
+    param([Security.Cryptography.X509Certificates.X509Certificate2]$Certificate)
 
     if ($null -eq $Certificate) {
         return
     }
-    $store = [Security.Cryptography.X509Certificates.X509Store]::new(
-        [Security.Cryptography.X509Certificates.StoreName]::TrustedPeople,
-        [Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
-    )
+    $store = New-QaTrustStore
     $store.Open([Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
     try {
-        $store.Remove($Certificate)
+        $matching = $store.Certificates.Find(
+            [Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+            $Certificate.Thumbprint,
+            $false
+        )
+        foreach ($entry in $matching) {
+            $store.Remove($entry)
+        }
     } finally {
         $store.Close()
     }
@@ -925,6 +978,9 @@ try {
 }
 $crtPath = Get-ReleaseCrtPath
 
+# Check trust-store permissions before the expensive Flutter Windows build.
+Assert-QaTrustStoreWritable
+
 $qaCertificate = $null
 $trustedCertificate = $null
 $temporaryDirectory = $null
@@ -995,9 +1051,11 @@ try {
 
     $trustedCertificate = Add-TrustedPeopleCertificate -CerPath $cerPath
     try {
+        Write-Output "QA certificate temporarily trusted in LocalMachine\TrustedPeople: $($qaCertificate.Thumbprint)"
         $verifyOutput = & $signTool verify /pa /v $qaMsix 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            throw "signtool could not verify the QA package: $($verifyOutput -join ' ')"
+        $verifyExitCode = $LASTEXITCODE
+        if ($verifyExitCode -ne 0) {
+            throw "signtool could not verify the QA package with temporary LocalMachine\TrustedPeople trust (exit code: $verifyExitCode): $($verifyOutput -join ' ')"
         }
         $qaAuthenticodeStatus = Get-AuthenticodeStatus -Path $qaMsix
     } finally {
@@ -1013,7 +1071,8 @@ try {
     if ($publicCertificate.Subject -cne $publisher) {
         throw "Unexpected public QA certificate subject: $($publicCertificate.Subject)."
     }
-    $qaSignature = if ($qaAuthenticodeStatus -eq 'Valid') { 'Valid' } else { 'Signed' }
+    # The QA certificate is trusted only temporarily during verification.
+    $qaSignature = 'VerifiedWithTemporaryMachineTrust'
 
     if ($storeManifest.manifestSha256 -cne $qaManifest.manifestSha256) {
         throw 'The Store and QA packages contain different manifests.'
@@ -1103,6 +1162,8 @@ try {
     $qaInfo['certificateSubject'] = $publicCertificate.Subject
     $qaInfo['certificateThumbprint'] = $publicCertificate.Thumbprint
     $qaInfo['certificateStore'] = 'CurrentUser\My'
+    $qaInfo['verificationTrustStore'] = 'LocalMachine\TrustedPeople'
+    $qaInfo['trustTemporary'] = $true
     $qaInfo['certificateNotAfter'] = $publicCertificate.NotAfter.ToUniversalTime().ToString('o')
     Write-JsonFile -Path (Join-Path $qaDirectory "$qaName.build-info.json") -Data $qaInfo
 
@@ -1115,15 +1176,10 @@ try {
         try {
             Remove-TrustedPeopleCertificate -Certificate $trustedCertificate
         } catch {
-            Write-Warning 'Could not remove the temporary QA certificate from the current user trust store.'
+            Write-Warning 'Could not remove the temporary QA certificate from LocalMachine\TrustedPeople.'
         }
     }
     if ($null -ne $qaCertificate) {
-        try {
-            Remove-TrustedPeopleCertificate -Certificate $qaCertificate
-        } catch {
-            Write-Warning 'Could not remove a temporary QA trust entry.'
-        }
         try {
             Remove-Item -LiteralPath "Cert:\CurrentUser\My\$($qaCertificate.Thumbprint)" -DeleteKey -Force
         } catch {

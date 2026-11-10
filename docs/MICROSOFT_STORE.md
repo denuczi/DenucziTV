@@ -138,16 +138,22 @@ is uploaded.
    `runFullTrust`, executable, signature state, and the public certificate
    subject. It also compares the protected bundle files before and after packaging, compares the payload entries of the Store and QA packages (ignoring
    only the signature and package metadata), and checks that both contain the
-   exact official VC++ runtime.
+   exact official VC++ runtime. For the QA signature, it temporarily trusts the
+   signing certificate in `LocalMachine\TrustedPeople` on the Windows CI runner,
+   then requires `signtool verify /pa /v` to succeed.
 8. Deletes the temporary certificate and its private key, removes the temporary
-   trust entry, and leaves only the public `.cer` certificate.
+   machine trust entry, and leaves only the public `.cer` certificate.
 
 The QA certificate is created in `Cert:\CurrentUser\My` and removed in a
 `finally` block. Its private key is non-exportable and is deleted with the
-certificate. The `CurrentUser\TrustedPeople` entry used only for
-`signtool verify` is also removed. Only the public `.cer` is exported. Do not add
-a PFX, password, `.pem`, `.key`, or `.p12` to the repository or to a workflow
-artifact.
+certificate. The runner temporarily installs its public certificate in
+`Cert:\LocalMachine\TrustedPeople` for MSIX signature verification and removes
+that exact thumbprint afterward (including on failure). It never adds this
+certificate to the **Trusted Root Certification Authorities** store or exports
+private-key material. The hosted Windows runner must have administrative rights;
+a writable trust store is checked before the expensive Windows compilation.
+Only the public `.cer` is exported. Do not add a PFX, password, `.pem`, `.key`,
+or `.p12` to the repository or to a workflow artifact.
 
 ## Verify the artifacts
 
@@ -188,17 +194,17 @@ user profile for the first installation test. The QA certificate is disposable;
 the private key is not distributed.
 
 1. Verify the QA MSIX hash with the sidecar.
-2. Trust the public QA certificate for the test user or test machine. The
-   `CurrentUser` store usually works without elevation. If sideloading requires
-   machine trust, use an elevated shell and `LocalMachine\TrustedPeople`.
+2. From an **elevated PowerShell console** on the test machine, import the
+   public QA certificate into `LocalMachine\TrustedPeople`. MSIX App Installer
+   does not rely on the current user's personal certificate stores.
 3. Confirm the certificate subject is exactly the Store publisher.
 4. Install with `Add-AppxPackage` and launch DenucziTV from Start.
 5. Remove the package and the test certificate when finished.
 
 ```powershell
-# Current-user trust, normally no elevation.
+# Elevated PowerShell on a dedicated test computer or VM.
 Import-Certificate -FilePath .\DenucziTV-0.6.3-x64-qa.cer `
-  -CertStoreLocation Cert:\CurrentUser\TrustedPeople
+  -CertStoreLocation Cert:\LocalMachine\TrustedPeople
 
 Get-AuthenticodeSignature .\DenucziTV-0.6.3-x64-qa.msix |
   Format-List Status, StatusMessage, SignerCertificate
@@ -207,23 +213,23 @@ Add-AppxPackage -Path .\DenucziTV-0.6.3-x64-qa.msix
 Get-AppxPackage IgnacioSanguina.DenucziTV | Select-Object Name, Version, PackageFullName
 ```
 
-If the install fails, inspect the actual error and event log. Do not disable
-Windows security features to make the package install. On a machine that needs
-machine-wide trust:
+If installation fails, inspect the actual error and App Installer event log.
+Do not bypass package-signature checks or import the QA leaf certificate into
+`Trusted Root Certification Authorities`.
 
-```powershell
-# Elevated shell only; test machine only.
-Import-Certificate -FilePath .\DenucziTV-0.6.3-x64-qa.cer `
-  -CertStoreLocation Cert:\LocalMachine\TrustedPeople
-```
-
-Remove the test certificate after QA. Use the thumbprint from the build-info
-file and the store where it was installed:
+After QA, remove the package and the **exact** temporary trust entry from the
+test machine. Run this in elevated PowerShell, using the certificate thumbprint
+from the QA build-info JSON:
 
 ```powershell
 Get-AppxPackage IgnacioSanguina.DenucziTV | Remove-AppxPackage
-Remove-Item Cert:\CurrentUser\TrustedPeople\<THUMBPRINT>
+$thumbprint = '<THUMBPRINT_FROM_QA_BUILD_INFO>'
+Remove-Item -LiteralPath "Cert:\LocalMachine\TrustedPeople\$thumbprint"
 ```
+
+QA verification uses temporary machine trust. The status recorded during the
+build does not mean the QA package is publicly trusted after that entry is
+removed; it is for tests only.
 
 Check the Store-managed update message in Settings: it must explain that
 Microsoft Store manages updates and must not show a GitHub check button.
@@ -379,10 +385,14 @@ licenses before publication.
 
 ## Known limitations and status
 
-This repository can prepare and statically verify the packaging configuration,
-but the Windows build, MSIX creation, installation, WACK run, playback, downloads,
-and Store submission have **not** been executed here. They require a Windows
-10/11 x64 test environment or the GitHub Actions runner.
+Prior GitHub Actions runs on Windows compiled the 0.6.3 executable and generated
+an unsigned Store MSIX, with Flutter and packaging tests passing. These checks
+alone do **not** establish that the complete workflow succeeded. For each
+submission, confirm that the selected source SHA has a successful workflow run,
+that both Store and QA artifacts were uploaded, and that the QA signature and
+certificate cleanup checks passed. MSIX installation, manual playback and
+download QA, WACK, and Store certification require separate evidence on Windows
+10/11 x64; they must not be inferred from compilation alone.
 
 Before certification, the maintainer must still provide:
 

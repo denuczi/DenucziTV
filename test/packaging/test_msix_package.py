@@ -123,9 +123,10 @@ class MsixWorkflowTest(unittest.TestCase):
         self.assertIn("confirm_public_version", inputs)
 
         checkouts = [
-            step for step in self.steps if step.get("uses") == "actions/checkout@v4"
+            step for step in self.steps if step.get("uses") == "actions/checkout@v5"
         ]
         self.assertEqual(len(checkouts), 1)
+        self.assertNotIn('actions/checkout@v4', self.text)
         source = checkouts[0]
         self.assertEqual(source["with"]["ref"], "${{ inputs.source_ref }}")
         self.assertEqual(source["with"]["path"], "source")
@@ -308,8 +309,38 @@ class MsixWorkflowTest(unittest.TestCase):
         self.assertIn("sign /fd SHA256 /s My /sha1 $qaCertificate.Thumbprint $qaMsix", self.script)
         self.assertIn("verify /pa /v", self.script)
         self.assertIn("Remove-TrustedPeopleCertificate", self.script)
+        self.assertIn("Assert-QaTrustStoreWritable", self.script)
         self.assertIn("-DeleteKey", self.script)
         self.assertIn("Remove-Item -LiteralPath $temporaryDirectory -Recurse -Force", self.script)
+
+    def test_qa_trust_is_machine_scoped_and_never_a_root_authority(self):
+        # MSIX App Installer uses LocalMachine/TrustedPeople for self-signed
+        # packages. CurrentUser/TrustedPeople did not establish trust in CI.
+        self.assertIn('function New-QaTrustStore {', self.script)
+        self.assertIn('StoreName]::TrustedPeople', self.script)
+        self.assertIn('StoreLocation]::LocalMachine', self.script)
+        self.assertNotIn('StoreLocation]::CurrentUser', self.script)
+        self.assertNotIn('StoreName]::Root', self.script)
+        self.assertIn('Assert-QaTrustStoreWritable', self.script)
+        self.assertLess(
+            self.script.index('Assert-QaTrustStoreWritable\n'),
+            self.script.index('& flutter build windows --release'),
+        )
+        self.assertIn('The QA certificate is already in LocalMachine', self.script)
+        self.assertIn('FindByThumbprint', self.script)
+        self.assertIn('QA certificate temporarily trusted in LocalMachine', self.script)
+        self.assertIn('verify /pa /v $qaMsix', self.script)
+        self.assertIn('VerifiedWithTemporaryMachineTrust', self.script)
+        self.assertIn("$qaInfo['verificationTrustStore'] = 'LocalMachine\\TrustedPeople'", self.script)
+        self.assertIn("$qaInfo['trustTemporary'] = $true", self.script)
+
+    def test_documented_qa_trust_matches_msix_installer(self):
+        docs = read(STORE_DOC)
+        self.assertIn('Cert:\\LocalMachine\\TrustedPeople', docs)
+        self.assertNotIn('Cert:\\CurrentUser\\TrustedPeople', docs)
+        self.assertIn('Trusted Root Certification Authorities', docs)
+        self.assertIn('elevated', docs)
+        self.assertIn('Get-AppxPackage IgnacioSanguina.DenucziTV | Remove-AppxPackage', docs)
 
     def test_script_never_exports_or_passes_a_private_key(self):
         self.assertNotIn("Export-PfxCertificate", self.script)
@@ -323,7 +354,9 @@ class MsixWorkflowTest(unittest.TestCase):
     def test_script_cleans_certificate_state_on_failure(self):
         finally_block = self.script.rsplit("} finally {", 1)[1]
         self.assertIn("Remove-TrustedPeopleCertificate -Certificate $trustedCertificate", finally_block)
-        self.assertIn("Remove-TrustedPeopleCertificate -Certificate $qaCertificate", finally_block)
+        # Do not delete an existing trust entry when insertion failed.
+        self.assertNotIn("Remove-TrustedPeopleCertificate -Certificate $qaCertificate", finally_block)
+        self.assertIn("Remove-TrustedPeopleCertificate -Certificate $trustedCertificate", self.script)
         self.assertIn("-DeleteKey -Force", finally_block)
         self.assertIn("Remove-Item -LiteralPath $temporaryDirectory -Recurse -Force", finally_block)
         self.assertIn("Copy-ReleaseCrt -Bundle $bundle -CrtPath $crtPath", finally_block)

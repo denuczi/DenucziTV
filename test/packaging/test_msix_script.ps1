@@ -181,6 +181,21 @@ try {
         Assert-MsixVisualAssets -Manifest $visualManifest -Entries $visualEntries
     } 'missing the manifest image.*Wide310x150Logo'
 
+    # Inspect trust-store selection without opening or changing any certificate
+    # store. Tests can run on Linux; the Windows runner performs the native
+    # import, signtool verification, and subsequent cleanup.
+    $qaTrustStore = New-QaTrustStore
+    try {
+        if ($qaTrustStore.Name -cne 'TrustedPeople') {
+            throw "Wrong QA trust store name: $($qaTrustStore.Name)."
+        }
+        if ($qaTrustStore.Location -ne [Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine) {
+            throw "QA trust must use the LocalMachine store, not $($qaTrustStore.Location)."
+        }
+    } finally {
+        $qaTrustStore.Dispose()
+    }
+
     # Validate code-signing EKU and DigitalSignature KeyUsage using standard
     # X.509 extensions. This works on Linux and Windows without creating a
     # Windows certificate-store entry or exporting a private key.

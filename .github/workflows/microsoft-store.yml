@@ -51,7 +51,7 @@ jobs:
       # One checkout supplies the packager, tests, MSIX configuration, CMake
       # policy, and application code. No second checkout can mix revisions.
       - name: Check out the exact application source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.source_ref }}
           path: source
