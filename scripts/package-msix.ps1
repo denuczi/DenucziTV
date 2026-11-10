@@ -448,6 +448,64 @@ function Get-MsixManifest {
     return $document
 }
 
+function Assert-MsixVisualAssets {
+    param(
+        [xml]$Manifest,
+        [string[]]$Entries
+    )
+
+    $namespaces = [Xml.XmlNamespaceManager]::new($Manifest.NameTable)
+    $namespaces.AddNamespace('f', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+    $namespaces.AddNamespace('uap', 'http://schemas.microsoft.com/appx/manifest/uap/windows10')
+
+    $logo = $Manifest.SelectSingleNode('/f:Package/f:Properties/f:Logo', $namespaces)
+    if ($null -eq $logo -or [string]::IsNullOrWhiteSpace($logo.InnerText)) {
+        throw 'The MSIX manifest is missing its Store logo reference.'
+    }
+    $visual = $Manifest.SelectSingleNode('/f:Package/f:Applications/f:Application/uap:VisualElements', $namespaces)
+    if ($null -eq $visual) {
+        throw 'The MSIX manifest is missing uap:VisualElements.'
+    }
+
+    $references = @($logo.InnerText)
+    foreach ($required in @('Square44x44Logo', 'Square150x150Logo')) {
+        $value = $visual.GetAttribute($required)
+        if ([string]::IsNullOrWhiteSpace($value)) {
+            throw "The MSIX manifest is missing its $required reference."
+        }
+    }
+
+    # Validate all declared icon/tile/splash images, not just a hard-coded
+    # filename. MakePRI can package qualified image variants without an
+    # unqualified StoreLogo.png entry.
+    foreach ($element in @($visual) + @($visual.SelectNodes('.//*'))) {
+        foreach ($attribute in $element.Attributes) {
+            if ($attribute.LocalName -match 'Logo$' -or
+                ($element.LocalName -eq 'SplashScreen' -and $attribute.LocalName -eq 'Image')) {
+                $references += $attribute.Value
+            }
+        }
+    }
+
+    foreach ($reference in ($references | Sort-Object -Unique)) {
+        $relative = $reference.Trim().Replace('\', '/')
+        if ($relative.StartsWith('/') -or
+            $relative -match '(^|/)\.\.?(/|$)' -or
+            $relative -notmatch '(?i)\.png$') {
+            throw "Invalid MSIX visual asset reference: $reference."
+        }
+
+        $stem = $relative.Substring(0, $relative.Length - 4)
+        $pattern = '^' + [regex]::Escape($stem) +
+            '(?:\.(?:scale-\d+|targetsize-\d+|contrast-[a-z0-9-]+|theme-[a-z0-9-]+)(?:_[a-z0-9-]+)*)?\.png$'
+        $matches = @($Entries | Where-Object { $_.Replace('\', '/') -match $pattern })
+        if ($matches.Count -eq 0) {
+            $available = @($Entries | Where-Object { $_ -match '(?i)\.png$' } | Select-Object -First 20)
+            throw "The MSIX package is missing the manifest image '$reference' (including qualified variants). Found PNG entries: $($available -join ', ')."
+        }
+    }
+}
+
 function Assert-MsixPackage {
     param(
         [string]$Path,
@@ -476,8 +534,7 @@ function Assert-MsixPackage {
         'resources.pri',
         'vcruntime140.dll',
         'vcruntime140_1.dll',
-        'msvcp140.dll',
-        'Images/StoreLogo.png'
+        'msvcp140.dll'
     )) {
         if ($entries -notcontains $required) {
             throw "The MSIX package is missing required content: $required."
@@ -503,6 +560,7 @@ function Assert-MsixPackage {
     }
 
     $manifest = Get-MsixManifest -Path $Path
+    Assert-MsixVisualAssets -Manifest $manifest -Entries $entries
     $namespaces = [Xml.XmlNamespaceManager]::new($manifest.NameTable)
     $namespaces.AddNamespace('f', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
     $namespaces.AddNamespace('rescap', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities')

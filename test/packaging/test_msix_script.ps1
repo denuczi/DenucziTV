@@ -129,6 +129,58 @@ try {
     Assert-Throws { Assert-BundleUnchanged -Bundle $bundle -Snapshot $snapshot } 'added an unexpected bundle file'
     Remove-Item -LiteralPath (Join-Path $bundle 'unexpected.dll')
 
+    # Visual assets can have scale qualifiers instead of an unqualified PNG,
+    # but all logo paths referenced in the manifest must resolve in the MSIX.
+    [xml]$visualManifest = @'
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10">
+  <Properties><Logo>Images\StoreLogo.png</Logo></Properties>
+  <Applications>
+    <Application>
+      <uap:VisualElements Square44x44Logo="Images\Square44x44Logo.png"
+                          Square150x150Logo="Images\Square150x150Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+</Package>
+'@
+    $visualEntries = @(
+        'Images/StoreLogo.scale-200.png',
+        'Images/Square44x44Logo.scale-100.png',
+        'Images/Square150x150Logo.png',
+        'Images/Wide310x150Logo.scale-200.png'
+    )
+    Assert-MsixVisualAssets -Manifest $visualManifest -Entries $visualEntries
+
+    # Zip entries may use backslashes, and plain images remain valid.
+    $visualEntries = @(
+        'Images\StoreLogo.png',
+        'Images/Square44x44Logo.scale-100.png',
+        'Images/Square150x150Logo.png',
+        'Images/Wide310x150Logo.scale-200.png'
+    )
+    Assert-MsixVisualAssets -Manifest $visualManifest -Entries $visualEntries
+
+    $visualEntries = @(
+        'Images/StoreLogo.backup.png',
+        'Images/Square44x44Logo.scale-100.png',
+        'Images/Square150x150Logo.png',
+        'Images/Wide310x150Logo.scale-200.png'
+    )
+    Assert-Throws {
+        Assert-MsixVisualAssets -Manifest $visualManifest -Entries $visualEntries
+    } "missing the manifest image 'Images\\StoreLogo.png'"
+
+    $visualEntries = @(
+        'Images/StoreLogo.scale-200.png',
+        'Images/Square44x44Logo.scale-100.png',
+        'Images/Square150x150Logo.png'
+    )
+    Assert-Throws {
+        Assert-MsixVisualAssets -Manifest $visualManifest -Entries $visualEntries
+    } 'missing the manifest image.*Wide310x150Logo'
+
     # Package payload parity ignores signature and package metadata only.
     $crt = Join-Path $root 'crt'
     Write-TestFile (Join-Path $crt 'msvcp140.dll') 'msvcp'

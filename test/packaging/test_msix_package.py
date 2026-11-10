@@ -361,6 +361,16 @@ class MsixWorkflowTest(unittest.TestCase):
             self.script,
         )
 
+    def test_manifest_visual_assets_allow_scale_variants_without_skipping_logo_checks(self):
+        self.assertIn("Assert-MsixVisualAssets -Manifest $manifest -Entries $entries", self.script)
+        self.assertIn("$logo = $Manifest.SelectSingleNode", self.script)
+        self.assertIn("'Square44x44Logo', 'Square150x150Logo'", self.script)
+        self.assertIn("$relative = $reference.Trim().Replace", self.script)
+        self.assertIn("'Logo$'", self.script)
+        self.assertIn("scale-\\d+", self.script)
+        self.assertIn("missing the manifest image", self.script)
+        self.assertNotIn("        'Images/StoreLogo.png'", self.script)
+
     def test_script_verifies_manifest_content_and_runtime_policy(self):
         for expected in (
             "AppxManifest.xml",
