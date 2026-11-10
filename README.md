@@ -34,6 +34,11 @@
 
 </div>
 
+> Microsoft Store distribution is being prepared for 0.6.3 but is not yet
+> published. The table above lists the existing direct-download channels. See
+> [Microsoft Store MSIX distribution](docs/MICROSOFT_STORE.md) for the packaging
+> and certification process.
+
 **You do not need Flutter, Git, or a compiler to install DenucziTV.** Choose the
 installer for your system above. The **Source code** ZIP and TAR archives on the
 release page are for developers.
@@ -111,6 +116,9 @@ Download the installer for your system and install it when convenient. The app
 does not install updates or restart automatically. Versions before 0.6.2 need a
 manual upgrade to obtain the update checker. See [software updates](docs/UPDATES.md).
 
+The Microsoft Store edition receives updates through Microsoft Store and does not
+use the GitHub update checker; see [Microsoft Store MSIX distribution](docs/MICROSOFT_STORE.md).
+
 ## Features
 
 - Multiple saved Xtream and Protected Single Link accounts.
@@ -172,6 +180,7 @@ content shown.
 | Understand protected connections, renewal, expiry, and data migration | [Protected Single Link](docs/PROTECTED_SINGLE_LINK.md) |
 | Build or inspect a Debian package | [Debian packaging](docs/DEBIAN_PACKAGING.md) |
 | Generate a Windows installer from Linux | [Windows packaging with GitHub Actions](docs/WINDOWS_PACKAGING.md) |
+| Prepare, verify, or submit the Microsoft Store MSIX | [Microsoft Store MSIX distribution](docs/MICROSOFT_STORE.md) |
 | Understand stable update checks and assisted downloads | [Software updates](docs/UPDATES.md) |
 | Run release checks | [Quality assurance](docs/QA.md) |
 | Report a vulnerability or review credential handling | [Security policy](SECURITY.md) |

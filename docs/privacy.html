@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DenucziTV Privacy Policy / Política de privacidad</title>
+<meta name="description" content="Privacy policy for the DenucziTV open-source IPTV player, including the Microsoft Store edition.">
+<style>
+  :root { color-scheme: light dark; --fg: #111; --muted: #555; --bg: #fff; --line: #ddd; }
+  @media (prefers-color-scheme: dark) { :root { --fg: #eee; --muted: #aaa; --bg: #111; --line: #333; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 48px 24px 80px; }
+  h1 { font-size: 2rem; line-height: 1.2; }
+  h2 { margin-top: 2.2rem; font-size: 1.25rem; }
+  h3 { margin-top: 1.6rem; font-size: 1.05rem; }
+  p, li { color: var(--fg); }
+  .muted { color: var(--muted); }
+  a { color: inherit; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
+  code { font-size: .92em; }
+</style>
+</head>
+<body>
+<main>
+  <p class="muted"><a href="index.html">← DenucziTV</a></p>
+  <h1>DenucziTV Privacy Policy</h1>
+  <p class="muted">Effective date: 9 November 2026. This policy applies to DenucziTV 0.6.3, including the Microsoft Store edition and the GitHub Windows EXE and Debian packages.</p>
+
+  <h2>English</h2>
+
+  <h3>Who we are</h3>
+  <p>DenucziTV is an open-source IPTV player maintained by Ignacio Sanguina. The application source is published at <a href="https://github.com/denuczi/DenucziTV">github.com/denuczi/DenucziTV</a>. DenucziTV is a player: it does not provide, sell, host, or curate IPTV channels, movies, series, subscriptions, or provider accounts.</p>
+
+  <h3>Data the application stores locally</h3>
+  <p>DenucziTV stores the information needed to operate on your device:</p>
+  <ul>
+    <li>Application preferences, language, theme, playback options, download settings, download history, and the identifier of the active account.</li>
+    <li>Your personal library: favorites, watch history, playback progress, and related catalog metadata.</li>
+    <li>Provider account metadata. Passwords and protected-connection secrets are stored in the operating system's secure credential storage (Windows DPAPI/secure storage or the Linux Secret Service), not in the developer's servers.</li>
+    <li>Downloaded media in the folder you choose.</li>
+  </ul>
+  <p>This data remains on your device. The developer does not receive it, does not operate a cloud account system for it, and does not sell it. Local files can be removed through the application controls, by deleting the application data, or by uninstalling the application. Some uninstallers may leave application data; review your platform's storage settings.</p>
+
+  <h3>Direct requests to your provider</h3>
+  <p>When you connect an Xtream Codes account or a Protected Single Link, DenucziTV sends requests directly from your device to the provider you configured. Those requests can include the provider URL, credentials, an account identifier, and requests for catalogs, playback, or media downloads. The media itself is downloaded from the provider to your device. The provider's own privacy policy and terms apply. The developer does not control the provider and does not receive a copy of those requests.</p>
+
+  <h3>Update checks and the Microsoft Store edition</h3>
+  <p>DenucziTV does not include analytics, advertising SDKs, telemetry, crash-reporting uploads, or account tracking. The Windows EXE and Debian editions may contact the public GitHub Releases API to check for a newer stable version. That request goes to GitHub and may be subject to GitHub's logging and privacy practices. It does not include your provider credentials or library data.</p>
+  <p>The Microsoft Store edition is built with Store-managed updates. It does not create the GitHub updater and does not call the GitHub Releases API for update checks. Microsoft Store handles application updates, and Microsoft's own privacy terms apply to the Store service.</p>
+
+  <h3>Diagnostics and support</h3>
+  <p>The application does not upload logs or diagnostics automatically. If you choose to share a log, screenshot, or issue report, review it first: it may contain provider names, local paths, stream URLs, or account identifiers. Never publish passwords, permanent protected links, or provider secrets. Use the project's <a href="https://github.com/denuczi/DenucziTV/issues">GitHub Issues</a> for support and privacy questions.</p>
+
+  <h3>Children</h3>
+  <p>DenucziTV is a general-purpose player and is not directed to children. The content available through a provider may be subject to age ratings, regional rules, and the provider's terms. Parents and guardians are responsible for supervising use and configuring provider content.</p>
+
+  <h3>Changes</h3>
+  <p>This policy may be updated when the application's data practices change. The effective date at the top will change, and the current version will remain available in the repository. Continued use after an update means you should review the revised policy.</p>
+
+  <hr>
+
+  <h2>Español</h2>
+
+  <h3>Quiénes somos</h3>
+  <p>DenucziTV es un reproductor IPTV de código abierto mantenido por Ignacio Sanguina. El código fuente se publica en <a href="https://github.com/denuczi/DenucziTV">github.com/denuczi/DenucziTV</a>. DenucziTV es un reproductor: no proporciona, vende, aloja ni selecciona canales IPTV, películas, series, suscripciones ni cuentas de proveedores.</p>
+
+  <h3>Datos que la aplicación guarda localmente</h3>
+  <p>DenucziTV guarda en tu dispositivo la información necesaria para funcionar:</p>
+  <ul>
+    <li>Preferencias de la aplicación, idioma, tema, opciones de reproducción, configuración e historial de descargas y el identificador de la cuenta activa.</li>
+    <li>Tu biblioteca personal: favoritos, historial de visionado, progreso de reproducción y metadatos relacionados del catálogo.</li>
+    <li>Metadatos de las cuentas de proveedor. Las contraseñas y los secretos de conexión protegida se guardan en el almacén seguro del sistema operativo (DPAPI/almacenamiento seguro de Windows o Secret Service de Linux), no en servidores del desarrollador.</li>
+    <li>El contenido descargado en la carpeta que elijas.</li>
+  </ul>
+  <p>Estos datos permanecen en tu dispositivo. El desarrollador no los recibe, no opera un sistema de cuentas en la nube para ellos y no los vende. Puedes eliminarlos con los controles de la aplicación, borrando los datos de la aplicación o desinstalándola. Algunos desinstaladores pueden conservar datos; revisa el almacenamiento de tu plataforma.</p>
+
+  <h3>Solicitudes directas a tu proveedor</h3>
+  <p>Cuando conectas una cuenta Xtream Codes o un enlace único protegido, DenucziTV envía solicitudes directamente desde tu dispositivo al proveedor que hayas configurado. Esas solicitudes pueden incluir la URL del proveedor, credenciales, un identificador de cuenta y peticiones para consultar el catálogo, reproducir contenido o descargar archivos. Los archivos multimedia se descargan del proveedor a tu dispositivo. Se aplican la política de privacidad y los términos del proveedor. El desarrollador no controla al proveedor ni recibe copia de esas solicitudes.</p>
+
+  <h3>Comprobaciones de actualización y edición de Microsoft Store</h3>
+  <p>DenucziTV no incluye analítica, SDK de publicidad, telemetría, envío de informes de fallos ni seguimiento de cuentas. Las ediciones EXE de Windows y Debian pueden consultar la API pública de versiones de GitHub para buscar una versión estable más reciente. Esa solicitud va a GitHub y puede estar sujeta a sus prácticas de registro y privacidad. No incluye las credenciales de tu proveedor ni los datos de tu biblioteca.</p>
+  <p>La edición de Microsoft Store se compila con actualizaciones gestionadas por la Store. No crea el actualizador de GitHub ni consulta la API de versiones de GitHub. Microsoft Store gestiona las actualizaciones y se aplican sus propios términos de privacidad.</p>
+
+  <h3>Diagnóstico y soporte</h3>
+  <p>La aplicación no sube registros ni diagnósticos automáticamente. Si decides compartir un registro, una captura o un informe, revísalo antes: puede contener nombres de proveedores, rutas locales, URL de streaming o identificadores de cuenta. Nunca publiques contraseñas, enlaces permanentes protegidos ni secretos del proveedor. Usa <a href="https://github.com/denuczi/DenucziTV/issues">GitHub Issues</a> para soporte y cuestiones de privacidad.</p>
+
+  <h3>Menores</h3>
+  <p>DenucziTV es un reproductor de propósito general y no está dirigido a menores. El contenido disponible a través de un proveedor puede estar sujeto a clasificaciones por edad, normas regionales y los términos del proveedor. Los padres y tutores son responsables de supervisar el uso y configurar el contenido del proveedor.</p>
+
+  <h3>Cambios</h3>
+  <p>Esta política puede actualizarse cuando cambien las prácticas de datos de la aplicación. La fecha de entrada en vigor de la parte superior cambiará y la versión actual permanecerá disponible en el repositorio. Si continúas usando la aplicación tras una actualización, debes revisar la política revisada.</p>
+
+  <p class="muted">DenucziTV is released under the MIT License. Microsoft Store and GitHub are trademarks of their respective owners. / DenucziTV se distribuye bajo la licencia MIT. Microsoft Store y GitHub son marcas de sus respectivos propietarios.</p>
+</main>
+</body>
+</html>

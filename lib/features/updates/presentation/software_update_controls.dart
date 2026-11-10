@@ -5,11 +5,19 @@ import '../../../l10n/l10n_ext.dart';
 import '../../../shared/notifications/app_notice.dart';
 import '../application/update_controller.dart';
 import '../domain/stable_release.dart';
+import '../domain/update_channel.dart';
 import 'update_dialog.dart';
 import 'update_labels.dart';
 
 class SoftwareUpdateControls extends StatefulWidget {
-  const SoftwareUpdateControls({super.key});
+  const SoftwareUpdateControls({super.key, this.storeManaged});
+
+  /// Overrides the build-time channel for tests and previews. Production
+  /// builds use [AppDistribution.storeBuild].
+  final bool? storeManaged;
+
+  bool get _isStoreManaged => storeManaged ?? AppDistribution.storeBuild;
+
   @override
   State<SoftwareUpdateControls> createState() => _SoftwareUpdateControlsState();
 }
@@ -46,8 +54,27 @@ class _SoftwareUpdateControlsState extends State<SoftwareUpdateControls> {
 
   @override
   Widget build(BuildContext context) {
-    final updates = context.watch<UpdateController?>();
     final l10n = context.l10n;
+    if (widget._isStoreManaged) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.updatesStoreManagedTitle,
+            key: const Key('storeManagedUpdateMessage'),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l10n.updatesStoreManagedHelp,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      );
+    }
+    final updates = context.watch<UpdateController?>();
     final busy = _running || updates?.checking == true;
     final lastCheck = updates?.lastSuccessfulCheck?.toLocal();
     final material = MaterialLocalizations.of(context);

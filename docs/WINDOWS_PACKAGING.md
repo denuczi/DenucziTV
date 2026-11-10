@@ -1,7 +1,9 @@
 # Windows installer from Linux with GitHub Actions
 
 To install the app, follow the [Windows installation steps](../README.md#windows).
-This guide is for maintainers generating an installer.
+This guide is for maintainers generating an installer. For the Microsoft Store
+MSIX channel, see [Microsoft Store MSIX distribution](MICROSOFT_STORE.md); it
+uses a separate manual workflow and does not replace this installer.
 
 The manually dispatched `Windows installer` workflow builds a tagged Windows x64
 application on GitHub's Windows Server 2022 runner, packages it with Inno Setup 7,

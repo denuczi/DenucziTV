@@ -851,6 +851,8 @@
   "downloadPartialFileAccessFailed": "Cannot access the partial file. Check disk space and folder permissions.",
   "softwareUpdates": "Software updates",
   "softwareUpdatesHelp": "Keep DenucziTV up to date with stable releases.",
+  "updatesStoreManagedTitle": "Updates are managed by Microsoft Store",
+  "updatesStoreManagedHelp": "This edition receives updates through Microsoft Store. GitHub installers are not used and the app does not check GitHub releases.",
   "updatesInstalledVersion": "Installed version",
   "updatesLatestStable": "Latest stable version",
   "updatesAvailableVersion": "Available stable version",

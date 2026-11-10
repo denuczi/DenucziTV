@@ -17,7 +17,10 @@ To run the full CI manually on `main`:
 gh workflow run ci.yml --repo denuczi/DenucziTV --ref main
 ```
 
-The Windows installer workflow is separate and remains manually dispatched.
+The Windows installer workflow is separate and remains manually dispatched. The
+Microsoft Store MSIX workflow and its QA/WACK checklist are separate too; see
+[MICROSOFT_STORE.md](MICROSOFT_STORE.md).
+
 For local verification, run:
 
 ```bash

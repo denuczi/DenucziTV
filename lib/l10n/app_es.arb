@@ -851,6 +851,8 @@
   "downloadPartialFileAccessFailed": "No se puede acceder al archivo parcial. Comprueba el espacio en disco y los permisos de la carpeta.",
   "softwareUpdates": "Actualizaciones",
   "softwareUpdatesHelp": "Mantén DenucziTV actualizado con las versiones estables.",
+  "updatesStoreManagedTitle": "Las actualizaciones las gestiona Microsoft Store",
+  "updatesStoreManagedHelp": "Esta edición recibe actualizaciones a través de Microsoft Store. No se utilizan los instaladores de GitHub ni se consultan las versiones publicadas allí.",
   "updatesInstalledVersion": "Versión instalada",
   "updatesLatestStable": "Última versión estable",
   "updatesAvailableVersion": "Versión estable disponible",

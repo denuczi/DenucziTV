@@ -15,6 +15,7 @@ import 'core/models/app_identity.dart';
 import 'features/updates/application/update_controller.dart';
 import 'features/updates/data/github_release_api.dart';
 import 'features/updates/data/update_preferences.dart';
+import 'features/updates/domain/update_channel.dart';
 import 'features/updates/presentation/startup_update_listener.dart';
 import 'features/personal_library/application/personal_library_controller.dart';
 import 'features/personal_library/data/sqlite_library_repository.dart';
@@ -57,12 +58,15 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AppController>.value(value: controller),
-        ChangeNotifierProvider<UpdateController>(
-          create: (_) => UpdateController(
-            api: GitHubReleaseApi(),
-            preferences: UpdatePreferences(preferences),
+        // Store-managed builds must not create the GitHub updater at all, so
+        // Settings cannot trigger a release request by accident.
+        if (AppDistribution.usesGitHubUpdater)
+          ChangeNotifierProvider<UpdateController>(
+            create: (_) => UpdateController(
+              api: GitHubReleaseApi(),
+              preferences: UpdatePreferences(preferences),
+            ),
           ),
-        ),
       ],
       child: const DenucziTVApp(),
     ),

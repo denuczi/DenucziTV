@@ -6,6 +6,12 @@ browser. Installation remains the user's choice. It never executes an installer,
 requests administrator access, replaces application files, or restarts the app.
 Versions before 0.6.2 predate this feature and need a manual upgrade first.
 
+The Microsoft Store edition is different: it is built with
+`DENUCZI_STORE_BUILD=true`, does not create this GitHub updater, and shows a
+localized Store-managed update message in Settings. Microsoft Store handles its
+updates. The EXE and Debian channels keep the behavior described here. See
+[Microsoft Store MSIX distribution](MICROSOFT_STORE.md).
+
 ## Architecture and audit
 
 The existing entry point already obtains package information before creating the

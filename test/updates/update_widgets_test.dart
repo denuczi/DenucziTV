@@ -98,12 +98,51 @@ void main() {
     ),
   );
 
+  Widget standaloneHost(Widget child, {String language = 'en'}) => MaterialApp(
+    theme: AppTheme.light,
+    locale: Locale(language),
+    supportedLocales: AppLocalizations.supportedLocales,
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    home: Scaffold(body: child),
+  );
+
   Widget openButton(UpdateController updates, StableRelease release) => Builder(
     builder: (context) => TextButton(
       onPressed: () => showStableUpdateDialog(context, updates, release),
       child: const Text('Open test update'),
     ),
   );
+
+  for (final language in ['en', 'es']) {
+    testWidgets(
+      'Store-managed update notice does not require a GitHub controller in $language',
+      (tester) async {
+        await tester.pumpWidget(
+          standaloneHost(
+            const SoftwareUpdateControls(storeManaged: true),
+            language: language,
+          ),
+        );
+        final context = tester.element(find.byType(SoftwareUpdateControls));
+        final l10n = AppLocalizations.of(context)!;
+        expect(
+          find.byKey(const Key('storeManagedUpdateMessage')),
+          findsOneWidget,
+        );
+        expect(find.text(l10n.updatesStoreManagedTitle), findsOneWidget);
+        expect(find.text(l10n.updatesStoreManagedHelp), findsOneWidget);
+        expect(find.byKey(const Key('checkForUpdates')), findsNothing);
+        expect(find.byKey(const Key('softwareUpdateStatus')), findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   for (final language in ['en', 'es']) {
     for (final dark in [false, true]) {

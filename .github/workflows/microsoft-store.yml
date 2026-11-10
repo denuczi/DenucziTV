@@ -1,0 +1,229 @@
+name: Microsoft Store MSIX
+
+run-name: Microsoft Store MSIX from ${{ inputs.source_ref }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Branch, tag, or commit containing the 0.6.3 MSIX configuration
+        required: true
+        default: main
+        type: string
+      confirm_public_version:
+        description: Type 0.6.3 to confirm that the public application version stays unchanged
+        required: true
+        default: '0.6.3'
+        type: string
+
+# This workflow reads repository contents only. It uses no repository secrets,
+# so checking out a non-default source_ref cannot expose secret values.
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build Microsoft Store and QA MSIX x64
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      SOURCE_REF: ${{ inputs.source_ref }}
+      CMAKE_BUILD_PARALLEL_LEVEL: '2'
+
+    steps:
+      - name: Validate requested inputs
+        run: |
+          if ($env:SOURCE_REF -notmatch '^[A-Za-z0-9._/-]+$') {
+            throw 'source_ref may contain only letters, digits, dots, underscores, slashes, and dashes.'
+          }
+          if ($env:SOURCE_REF -match '(^|/)\.\.(/|$)' -or $env:SOURCE_REF.StartsWith('-')) {
+            throw 'source_ref is not a safe Git revision.'
+          }
+          if ($env:CONFIRM_PUBLIC_VERSION -cne '0.6.3') {
+            throw 'This workflow intentionally keeps the public application version at 0.6.3. Type 0.6.3 to continue.'
+          }
+        env:
+          CONFIRM_PUBLIC_VERSION: ${{ inputs.confirm_public_version }}
+
+      # One checkout supplies the packager, tests, MSIX configuration, CMake
+      # policy, and application code. No second checkout can mix revisions.
+      - name: Check out the exact application source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+          path: source
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Resolve and record the exact source revision
+        run: |
+          $sha = (& git -C source rev-parse HEAD | Select-Object -First 1)
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($sha)) {
+            throw 'Could not resolve the application source commit.'
+          }
+          $sha = $sha.Trim()
+          if ($sha -notmatch '^[0-9a-f]{40}$') {
+            throw 'The application source commit is not a full SHA-1.'
+          }
+          $dirty = & git -C source status --porcelain
+          if (-not [string]::IsNullOrWhiteSpace(($dirty -join "`n"))) {
+            throw 'The source checkout is not clean.'
+          }
+          $described = (& git -C source describe --always --tags --dirty | Select-Object -First 1)
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Could not describe the application source revision.'
+          }
+          "SOURCE_SHA=$sha" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "SOURCE_DESCRIBE=$($described.Trim())" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Output "Application source: $sha ($($described.Trim()))"
+
+      - name: Validate packaging tooling from the same revision
+        working-directory: source
+        run: |
+          $sha = (& git rev-parse HEAD | Select-Object -First 1)
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($sha)) {
+            throw 'Could not re-read the application source commit.'
+          }
+          if ($sha.Trim() -cne $env:SOURCE_SHA) {
+            throw 'The packaging tools and application source are not from the same revision.'
+          }
+          foreach ($path in @(
+            'scripts/package-msix.ps1',
+            'packaging/windows/flutter-toolchain.cmake',
+            'test/packaging/test_msix_package.py',
+            'pubspec.yaml',
+            'pubspec.lock'
+          )) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "The selected source revision is missing required packaging input: $path."
+            }
+          }
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/package-msix.ps1').Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            throw 'The MSIX packaging script contains PowerShell syntax errors.'
+          }
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          architecture: x64
+          cache: true
+
+      - name: Resolve dependencies
+        working-directory: source
+        run: flutter pub get
+
+      - name: Verify the dependency lockfile is unchanged
+        working-directory: source
+        run: |
+          $changes = & git status --porcelain -- pubspec.yaml pubspec.lock
+          if (-not [string]::IsNullOrWhiteSpace(($changes -join "`n"))) {
+            throw 'flutter pub get modified pubspec.yaml or pubspec.lock. Commit the resolved lockfile.'
+          }
+
+      - name: Generate localization
+        working-directory: source
+        run: flutter gen-l10n
+
+      - name: Check formatting
+        working-directory: source
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Analyze application
+        working-directory: source
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Run Flutter tests
+        working-directory: source
+        run: flutter test --concurrency=1
+
+      - name: Install packaging test dependencies
+        run: python -m pip install --disable-pip-version-check "PyYAML==6.0.2"
+
+      - name: Run MSIX packaging tests
+        working-directory: source
+        run: python -m unittest discover -s test/packaging -p "test_msix_package.py" -v
+
+      - name: Run MSIX packager behavior tests
+        working-directory: source
+        run: pwsh -NoProfile -File test/packaging/test_msix_script.ps1
+
+      - name: Verify the source is still clean before packaging
+        working-directory: source
+        run: |
+          $changes = & git status --porcelain
+          if (-not [string]::IsNullOrWhiteSpace(($changes -join "`n"))) {
+            throw "The quality gates modified tracked source files: $($changes -join ', ')"
+          }
+
+      - name: Build and package MSIX from the same revision
+        run: |
+          .\source\scripts\package-msix.ps1 -ProjectRoot .\source -ExpectedSourceCommit $env:SOURCE_SHA
+
+      - name: Reject private key artifacts
+        run: |
+          $forbidden = @(Get-ChildItem -LiteralPath 'source\build\store_msix' -Recurse -File |
+            Where-Object { $_.Extension -in @('.pfx', '.p12', '.pem', '.key') })
+          if ($forbidden.Count -gt 0) {
+            throw "Private key material was found in the MSIX output: $($forbidden.FullName -join ', ')"
+          }
+
+      - name: Upload unsigned Store MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: denuczitv-msix-store-${{ env.SOURCE_SHA }}
+          path: |
+            source/build/store_msix/DenucziTV-0.6.3-x64-store.msix
+            source/build/store_msix/DenucziTV-0.6.3-x64-store.msix.sha256
+            source/build/store_msix/DenucziTV-0.6.3-x64-store.build-info.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload QA test-signed MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: denuczitv-msix-qa-${{ env.SOURCE_SHA }}
+          path: |
+            source/build/store_msix/qa/DenucziTV-0.6.3-x64-qa.msix
+            source/build/store_msix/qa/DenucziTV-0.6.3-x64-qa.msix.sha256
+            source/build/store_msix/qa/DenucziTV-0.6.3-x64-qa.build-info.json
+            source/build/store_msix/qa/DenucziTV-0.6.3-x64-qa.cer
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish run summary
+        run: |
+          $store = Get-Content -LiteralPath 'source\build\store_msix\DenucziTV-0.6.3-x64-store.build-info.json' -Raw | ConvertFrom-Json
+          $qa = Get-Content -LiteralPath 'source\build\store_msix\qa\DenucziTV-0.6.3-x64-qa.build-info.json' -Raw | ConvertFrom-Json
+          @"
+          ## Microsoft Store MSIX 0.6.3
+
+          - Source ref: $($store.sourceRef)
+          - Source commit: $($store.sourceCommit)
+          - Public version: $($store.publicVersion)
+          - MSIX package version: $($store.packageVersion)
+          - Identity: $($store.identityName)
+          - Architecture: $($store.architecture)
+          - QA signing: $($qa.qaSigningMethod), private key exported: $($qa.privateKeyExported)
+          - Bundle payload parity: $($store.payloadMatched)
+
+          | Artifact | Signature | SHA-256 |
+          | --- | --- | --- |
+          | Store, unsigned | $($store.signatureStatus) | $($store.sha256) |
+          | QA, test-signed | $($qa.signatureStatus) | $($qa.sha256) |
+
+          The Store package is intentionally unsigned and must be uploaded to Partner Center.
+          The QA package uses an ephemeral self-signed certificate with subject
+          $($qa.certificateSubject). Its public certificate is the only certificate artifact.
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8

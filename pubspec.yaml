@@ -36,6 +36,25 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   # Supplies the official in-memory SharedPreferencesAsync test implementation.
   shared_preferences_platform_interface: ^2.4.2
+  # Builds the Microsoft Store (MSIX) package. Never bundled with the app.
+  msix: ^3.18.0
+
+# Microsoft Store packaging identity. Keep this in sync with Partner Center.
+# The public application version remains 0.6.3+1; msix_version is the internal
+# four-part package version required by Windows and the Store.
+msix_config:
+  identity_name: IgnacioSanguina.DenucziTV
+  publisher: "CN=055E0D46-1999-438C-9CDB-4069928369ED"
+  publisher_display_name: Ignacio Sanguina
+  display_name: DenucziTV
+  msix_version: 1.6.3.0
+  architecture: x64
+  build_windows: false
+  languages: en-US,es-ES
+  capabilities: runFullTrust
+  logo_path: assets/branding/denuczitv_app_icon.png
+  output_path: build/store_msix
+  output_name: DenucziTV-0.6.3-x64
 
 flutter:
   generate: true

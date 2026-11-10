@@ -20,6 +20,13 @@ installer filenames:
 The release and tag already exist. Do not recreate them to add a platform asset
 or update the description. Keep earlier prereleases available as history.
 
+Microsoft Store distribution is prepared as an additional channel for 0.6.3 and
+does not change this release, tag, or the existing EXE/DEB assets. The Store
+package version `1.6.3.0` is technical metadata only. See
+[MICROSOFT_STORE.md](MICROSOFT_STORE.md) for the separate manual MSIX workflow,
+QA package, WACK, and Partner Center submission checklist. Do not upload the QA
+package to Partner Center.
+
 ## Authentication and source review
 
 ```bash
