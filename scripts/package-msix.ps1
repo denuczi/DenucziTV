@@ -344,14 +344,21 @@ function Get-MsixPayloadHashes {
             if ([string]::IsNullOrEmpty($entry.Name)) {
                 continue
             }
-            $name = $entry.FullName
+            # MSIX signing can add the signature and PE code-integrity
+            # catalog. Both are package footprint files, not app payload.
+            # Compare every other file, including resources.pri and images.
+            $name = $entry.FullName.Replace('\', '/')
             if ($name -in @(
                 'AppxManifest.xml',
                 'AppxBlockMap.xml',
                 '[Content_Types].xml',
-                'AppxSignature.p7x'
+                'AppxSignature.p7x',
+                'AppxMetadata/CodeIntegrity.cat'
             )) {
                 continue
+            }
+            if ($hashes.Contains($name)) {
+                throw "Duplicate MSIX payload path: $name."
             }
 
             $stream = $entry.Open()
@@ -387,13 +394,14 @@ function Assert-MsixPayloadMatches {
         [System.Collections.IDictionary]$Qa
     )
 
-    if ($Store.Count -ne $Qa.Count) {
-        throw "The Store and QA packages contain a different number of payload files ($($Store.Count) vs $($Qa.Count))."
+    # Report the actual paths on failure. A file-count-only error hides
+    # whether SignTool added metadata or a real application file diverged.
+    $missing = @($Store.Keys | Where-Object { -not $Qa.Contains($_) })
+    $extra = @($Qa.Keys | Where-Object { -not $Store.Contains($_) })
+    if ($missing.Count -gt 0 -or $extra.Count -gt 0) {
+        throw "The Store and QA payload file lists differ (missing from QA: $($missing -join ', '); unexpected in QA: $($extra -join ', '))."
     }
     foreach ($key in $Store.Keys) {
-        if (-not $Qa.Contains($key)) {
-            throw "The QA package is missing the Store payload file: $key."
-        }
         if ($Store[$key] -cne $Qa[$key]) {
             throw "The Store and QA packages contain different content for: $key."
         }

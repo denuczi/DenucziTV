@@ -398,6 +398,23 @@ class MsixWorkflowTest(unittest.TestCase):
             self.script,
         )
 
+    def test_signing_metadata_is_not_compared_as_application_payload(self):
+        # SignTool can add AppxSignature.p7x and a PE integrity catalog.
+        # The original app, VC++ libraries, PRI files and assets must still match.
+        self.assertIn("'AppxMetadata/CodeIntegrity.cat'", self.script)
+        self.assertIn("$entry.FullName.Replace('\\', '/')", self.script)
+        self.assertIn("'AppxSignature.p7x'", self.script)
+        self.assertIn('Duplicate MSIX payload path:', self.script)
+        self.assertIn('missing from QA:', self.script)
+        self.assertIn('unexpected in QA:', self.script)
+        self.assertIn('different content for:', self.script)
+        self.assertIn('$qaPayload = Get-MsixPayloadHashes -Path $qaMsix', self.script)
+        behavior = read(ROOT / 'test/packaging/test_msix_script.ps1')
+        self.assertIn('AppxMetadata\\CodeIntegrity.cat', behavior)
+        self.assertIn('AppxMetadata/Unexpected.cat', behavior)
+        self.assertIn('unexpected.exe', behavior)
+        self.assertIn("'resources.pri'] = 'modified resource index'", behavior)
+
     def test_manifest_visual_assets_allow_scale_variants_without_skipping_logo_checks(self):
         self.assertIn("Assert-MsixVisualAssets -Manifest $manifest -Entries $entries", self.script)
         self.assertIn("$logo = $Manifest.SelectSingleNode", self.script)

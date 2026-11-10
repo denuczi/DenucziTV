@@ -294,6 +294,9 @@ try {
         $qaEntries[$key] = $commonEntries[$key]
     }
     $qaEntries['AppxSignature.p7x'] = 'signature'
+    # SignTool also creates a catalog for the packaged PE executables.
+    # ZIP entry separators may be either slash or backslash.
+    $qaEntries['AppxMetadata\CodeIntegrity.cat'] = 'signed PE catalog'
 
     $storeMsix = Join-Path $root 'store.msix'
     $qaMsix = Join-Path $root 'qa.msix'
@@ -305,9 +308,49 @@ try {
     Assert-MsixPayloadMatches -Store $storePayload -Qa $qaPayload
     Assert-MsixCrtPayload -Hashes $storePayload -CrtPath $crt -Label 'Store'
     Assert-MsixCrtPayload -Hashes $qaPayload -CrtPath $crt -Label 'QA'
-    if ($storePayload.Contains('AppxSignature.p7x') -or $storePayload.Contains('AppxManifest.xml')) {
-        throw 'Package metadata must not be treated as application payload.'
+    if ($qaPayload.Contains('AppxSignature.p7x') -or
+        $qaPayload.Contains('AppxMetadata/CodeIntegrity.cat') -or
+        $qaPayload.Contains('AppxManifest.xml')) {
+        throw 'Package footprint files must not be treated as application payload.'
     }
+
+    # Only known package footprint entries may be added by signing.
+    $qaEntries['AppxMetadata/Unexpected.cat'] = 'unexpected signing output'
+    New-TestZip -Path $qaMsix -Entries $qaEntries
+    $qaPayload = Get-MsixPayloadHashes -Path $qaMsix
+    Assert-Throws {
+        Assert-MsixPayloadMatches -Store $storePayload -Qa $qaPayload
+    } 'unexpected in QA: AppxMetadata/Unexpected.cat'
+    [void]$qaEntries.Remove('AppxMetadata/Unexpected.cat')
+
+    # Swapping files must fail even when the two packages have equal counts.
+    [void]$qaEntries.Remove('denuczi_tv.exe')
+    $qaEntries['unexpected.exe'] = 'unexpected binary'
+    New-TestZip -Path $qaMsix -Entries $qaEntries
+    $qaPayload = Get-MsixPayloadHashes -Path $qaMsix
+    Assert-Throws {
+        Assert-MsixPayloadMatches -Store $storePayload -Qa $qaPayload
+    } 'missing from QA: denuczi_tv.exe; unexpected in QA: unexpected.exe'
+    [void]$qaEntries.Remove('unexpected.exe')
+    $qaEntries['denuczi_tv.exe'] = 'executable'
+
+    # The catalog is ignored only in its exact MSIX footprint location.
+    $qaEntries['data/CodeIntegrity.cat'] = 'unknown additional payload'
+    New-TestZip -Path $qaMsix -Entries $qaEntries
+    $qaPayload = Get-MsixPayloadHashes -Path $qaMsix
+    Assert-Throws {
+        Assert-MsixPayloadMatches -Store $storePayload -Qa $qaPayload
+    } 'unexpected in QA: data/CodeIntegrity.cat'
+    [void]$qaEntries.Remove('data/CodeIntegrity.cat')
+
+    # Reject aliases of the same payload path rather than silently accepting
+    # whichever duplicate ZIP entry is encountered last.
+    $qaEntries['data\app.so'] = 'duplicate path with another separator'
+    New-TestZip -Path $qaMsix -Entries $qaEntries
+    Assert-Throws {
+        Get-MsixPayloadHashes -Path $qaMsix | Out-Null
+    } 'Duplicate MSIX payload path: data/app.so'
+    [void]$qaEntries.Remove('data\app.so')
 
     $qaEntries['data/app.so'] = 'different app'
     New-TestZip -Path $qaMsix -Entries $qaEntries
@@ -317,7 +360,7 @@ try {
     $qaEntries.Remove('denuczi_tv.exe')
     New-TestZip -Path $qaMsix -Entries $qaEntries
     $qaPayload = Get-MsixPayloadHashes -Path $qaMsix
-    Assert-Throws { Assert-MsixPayloadMatches -Store $storePayload -Qa $qaPayload } 'different number of payload files'
+    Assert-Throws { Assert-MsixPayloadMatches -Store $storePayload -Qa $qaPayload } 'missing from QA: denuczi_tv.exe'
 
     $qaEntries['denuczi_tv.exe'] = 'executable'
     $qaEntries['data/app.so'] = 'app'
