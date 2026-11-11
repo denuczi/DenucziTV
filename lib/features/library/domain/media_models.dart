@@ -50,6 +50,7 @@ class MediaEntry {
     this.categoryId,
     this.imageUrl,
     this.containerExtension,
+    this.channelNumber,
     this.rating,
     this.plot,
     this.seasonNumber,
@@ -64,6 +65,11 @@ class MediaEntry {
   final String? categoryId;
   final String? imageUrl;
   final String? containerExtension;
+
+  /// One-based position in the loaded Live TV catalogue, not a provider ID.
+  /// Category filtering and searching must never renumber a channel.
+  final int? channelNumber;
+
   final String? rating;
   final String? plot;
   final int? seasonNumber;
@@ -82,6 +88,7 @@ class MediaEntry {
     categoryId: categoryId,
     imageUrl: imageUrl,
     containerExtension: containerExtension,
+    channelNumber: channelNumber,
     rating: rating,
     plot: plot,
     seasonNumber: seasonNumber,
@@ -97,6 +104,7 @@ class MediaEntry {
     categoryId: categoryId,
     imageUrl: imageUrl,
     containerExtension: containerExtension,
+    channelNumber: channelNumber,
     rating: rating,
     plot: plot,
     seasonNumber: seasonNumber,
@@ -105,7 +113,11 @@ class MediaEntry {
     sourceScope: sourceScope,
   );
 
-  factory MediaEntry.fromJson(Map<String, dynamic> json, LibraryKind kind) {
+  factory MediaEntry.fromJson(
+    Map<String, dynamic> json,
+    LibraryKind kind, {
+    int? channelNumber,
+  }) {
     final id = optionalText(
       json[kind == LibraryKind.series ? 'series_id' : 'stream_id'],
     );
@@ -123,6 +135,9 @@ class MediaEntry {
           ) ??
           optionalText(json['stream_icon']),
       containerExtension: optionalText(json['container_extension']),
+      channelNumber: kind == LibraryKind.live && (channelNumber ?? 0) > 0
+          ? channelNumber
+          : null,
       rating: optionalText(json['rating']),
       plot: optionalText(json['plot']),
     );

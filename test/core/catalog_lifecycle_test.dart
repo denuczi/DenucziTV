@@ -34,6 +34,7 @@ class _TestApi extends XtreamApi {
   _TestApi(super.network);
 
   Completer<List<MediaEntry>>? pendingMovies;
+  List<MediaEntry> liveEntries = const [];
   bool failAuthentication = false;
   int movieRequests = 0;
 
@@ -62,7 +63,7 @@ class _TestApi extends XtreamApi {
       movieRequests++;
       return pendingMovies?.future ?? const <MediaEntry>[];
     }
-    return const <MediaEntry>[];
+    return kind == LibraryKind.live ? liveEntries : const <MediaEntry>[];
   }
 }
 
@@ -126,6 +127,52 @@ void main() {
         reason: 'The loaded catalog should be reused',
       );
       expect(controller.visibleEntries.length, 2);
+    },
+  );
+
+  test(
+    'live numbers stay fixed across category, search and cached navigation',
+    () async {
+      final preferences = SharedPreferencesAsync();
+      final network = NetworkClient();
+      final api = _TestApi(network)
+        ..liveEntries = [
+          for (var number = 1; number <= 15; number++)
+            MediaEntry(
+              id: '$number',
+              title: number == 10 ? 'HBO' : 'Channel $number',
+              kind: LibraryKind.live,
+              categoryId: number == 10 ? 'films' : 'news',
+              channelNumber: number,
+            ),
+        ];
+      final controller = AppController(
+        network: network,
+        api: api,
+        accounts: AccountStore.withSecrets(preferences, _MemorySecrets()),
+        settings: SettingsStore(preferences),
+      );
+      addTearDown(controller.dispose);
+
+      expect(await controller.connect(_login), isTrue);
+      final hbo = controller.visibleEntries[9];
+      expect(hbo.title, 'HBO');
+      expect(hbo.channelNumber, 10);
+
+      controller.filterCategory('films');
+      expect(controller.visibleEntries.single, same(hbo));
+      expect(controller.visibleEntries.single.channelNumber, 10);
+      controller.setSearch('HBO');
+      expect(controller.visibleEntries.single.channelNumber, 10);
+      controller.setSearch('no results');
+      expect(controller.visibleEntries, isEmpty);
+      controller.setSearch('');
+      controller.filterCategory(null);
+      expect(controller.visibleEntries[9], same(hbo));
+
+      await controller.selectKind(LibraryKind.movies);
+      await controller.selectKind(LibraryKind.live);
+      expect(controller.visibleEntries[9].channelNumber, 10);
     },
   );
 

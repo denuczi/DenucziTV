@@ -226,7 +226,13 @@ class XtreamApi {
       }
       try {
         entries.add(
-          MediaEntry.fromJson(Map<String, dynamic>.from(value), kind),
+          MediaEntry.fromJson(
+            Map<String, dynamic>.from(value),
+            kind,
+            // Count valid live channels only. Do not derive the number from
+            // stream_id: providers may reuse IDs or return them out of order.
+            channelNumber: kind == LibraryKind.live ? entries.length + 1 : null,
+          ),
         );
       } on FormatException {
         if (credentials.protected) {

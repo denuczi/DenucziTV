@@ -159,6 +159,47 @@ void main() {
   );
 
   test(
+    'Live TV numbering is sequential, unique and ignores malformed rows',
+    () async {
+      final client = NetworkClient();
+      addTearDown(client.dispose);
+      client.dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) => handler.resolve(
+            Response(
+              requestOptions: options,
+              statusCode: 200,
+              data: [
+                {'stream_id': 10, 'name': 'News', 'category_id': 'news'},
+                {'name': 'Invalid channel without ID'},
+                {'stream_id': 42, 'name': 'HBO', 'category_id': 'films'},
+                {'stream_id': 42, 'name': 'HBO copy', 'category_id': 'films'},
+                {'stream_id': 9000, 'name': 'Sports', 'category_id': 'sports'},
+              ],
+            ),
+          ),
+        ),
+      );
+      final api = XtreamApi(client);
+      final live = await api.catalog(credentials, LibraryKind.live);
+      expect(live.map((entry) => entry.channelNumber).toList(), [1, 2, 3, 4]);
+      expect(live.map((entry) => entry.id).toList(), [
+        '10',
+        '42',
+        '42',
+        '9000',
+      ]);
+      expect(live[1].withSourceScope('generation-1').channelNumber, 2);
+      expect(live[2].withSourceScope('generation-2').channelNumber, 3);
+
+      final movies = await api.catalog(credentials, LibraryKind.movies);
+      final series = await api.catalog(credentials, LibraryKind.series);
+      expect(movies.every((entry) => entry.channelNumber == null), isTrue);
+      expect(series.every((entry) => entry.channelNumber == null), isTrue);
+    },
+  );
+
+  test(
     'on-demand catalogues preserve the credential generation for every section',
     () async {
       final client = NetworkClient(userAgent: 'CatalogContract/1');

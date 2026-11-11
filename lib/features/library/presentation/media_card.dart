@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../domain/media_models.dart';
 import '../domain/rating_format.dart';
 import 'media_actions.dart';
+import 'live_channel_number_notch.dart';
 
 /// Keyboard-accessible desktop poster tile with separate artwork and metadata.
 /// The entire tile is clickable; the hover affordance never covers the title.
@@ -45,6 +46,15 @@ class _MediaCardState extends State<MediaCard> {
     final actionColor = AppPalette.mediaAction(scheme);
     final media = widget.entry;
     final compactRating = formatCompactRating(media.rating);
+    final channelNumber =
+        media.kind == LibraryKind.live && (media.channelNumber ?? 0) > 0
+        ? media.channelNumber
+        : null;
+    final openLabel = context.l10n.openMedia(switch (media.kind) {
+      LibraryKind.live => context.l10n.liveTv,
+      LibraryKind.movies => context.l10n.movies,
+      LibraryKind.series => context.l10n.series,
+    }, media.title);
     final uri = Uri.tryParse(media.imageUrl ?? '');
     final hasImage =
         uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
@@ -52,11 +62,9 @@ class _MediaCardState extends State<MediaCard> {
 
     return Semantics(
       button: true,
-      label: context.l10n.openMedia(switch (media.kind) {
-        LibraryKind.live => context.l10n.liveTv,
-        LibraryKind.movies => context.l10n.movies,
-        LibraryKind.series => context.l10n.series,
-      }, media.title),
+      label: channelNumber == null
+          ? openLabel
+          : '${context.l10n.channelPosition(channelNumber)}. $openLabel',
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
@@ -184,7 +192,12 @@ class _MediaCardState extends State<MediaCard> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
+                    padding: EdgeInsets.fromLTRB(
+                      12,
+                      11,
+                      12,
+                      channelNumber == null ? 12 : 5,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -200,34 +213,40 @@ class _MediaCardState extends State<MediaCard> {
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
-                        const SizedBox(height: 5),
-                        Row(
-                          children: [
-                            if (compactRating != null) ...[
-                              const Icon(
-                                Icons.star_rounded,
-                                size: 13,
-                                color: AppPalette.amber,
+                        if (channelNumber == null) ...[
+                          const SizedBox(height: 7),
+                          Row(
+                            children: [
+                              if (compactRating != null) ...[
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 13,
+                                  color: AppPalette.amber,
+                                ),
+                                const SizedBox(width: 4),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  compactRating ?? media.kind.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                        fontSize: 12.5,
+                                      ),
+                                ),
                               ),
-                              const SizedBox(width: 4),
                             ],
-                            Expanded(
-                              child: Text(
-                                compactRating ?? media.kind.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                      fontSize: 12.5,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
+                  if (channelNumber != null)
+                    ExcludeSemantics(
+                      child: LiveChannelNumberNotch(number: channelNumber),
+                    ),
                 ],
               ),
             ),

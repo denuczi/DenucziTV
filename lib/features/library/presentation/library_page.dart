@@ -50,6 +50,12 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   void initState() {
     super.initState();
+    final app = context.read<AppController>();
+    // The shell unmounts this page while another workspace is selected.
+    // Restore the field from the filter owner so a retained search remains
+    // visible and can still be cleared when the user returns.
+    _lastKind = app.kind;
+    _searchField.text = app.search;
     _scroll.addListener(_onScroll);
   }
 

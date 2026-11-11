@@ -3,6 +3,13 @@
   "appName": "DenucziTV",
   "library": "BIBLIOTECA",
   "liveTv": "TV en vivo",
+  "channelPosition": "Canal {number}",
+  "@channelPosition": {
+    "description": "Accessible label for the channel position in the current Live TV catalogue.",
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
   "movies": "Películas",
   "series": "Series",
   "myLibrary": "Mi biblioteca",
