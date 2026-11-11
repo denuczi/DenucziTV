@@ -267,6 +267,19 @@ class UpdateController extends ChangeNotifier {
 
   void cancelDownload() => _downloadCancellation?.cancel();
 
+  /// Uses the same injected, timeout-bounded browser launcher as official
+  /// downloads. Markdown links never trigger a download or run an installer.
+  Future<bool> openReleaseNotesLink(Uri uri) async {
+    if (_disposed ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        (uri.hasPort && uri.port != 443)) {
+      return false;
+    }
+    return _launch(uri);
+  }
+
   Future<bool> openNotes(StableRelease release) async {
     if (_disposed ||
         installed == null ||

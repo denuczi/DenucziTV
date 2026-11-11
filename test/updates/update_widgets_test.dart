@@ -179,12 +179,12 @@ void main() {
             expect(find.text('0.6.2+1'), findsOneWidget);
             expect(find.text('9.0.0'), findsOneWidget);
             expect(
-              find.textContaining('<script>never execute this</script>'),
+              find.byKey(const Key('releaseNotesMarkdown')),
               findsOneWidget,
             );
             expect(
               tester
-                  .widget<AlertDialog>(find.byType(AlertDialog))
+                  .widget<Dialog>(find.byKey(const Key('stableUpdateDialog')))
                   .backgroundColor,
               Theme.of(context).colorScheme.surface,
             );
@@ -202,6 +202,80 @@ void main() {
       }
     }
   }
+
+  for (final language in ['en', 'es']) {
+    testWidgets('empty release notes show a localized fallback in $language', (
+      tester,
+    ) async {
+      api.releases = [releaseFixture('v9.0.0', notes: null)];
+      final updates = create();
+      final release = (await updates.checkManually()).release!;
+      await tester.pumpWidget(
+        host(updates, openButton(updates, release), language: language),
+      );
+      await tester.tap(find.text('Open test update'));
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(StableUpdateDialog)),
+      )!;
+      expect(find.text(l10n.updatesNoNotes), findsOneWidget);
+      expect(find.byKey(const Key('releaseNotesMarkdown')), findsNothing);
+      expect(
+        find.byKey(const Key('postponeUpdate')).hitTestable(),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('postponeUpdate')));
+      await tester.pumpAndSettle();
+    });
+  }
+
+  testWidgets('long Markdown is scrollable while download actions stay visible', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 540);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    api.releases = [
+      releaseFixture(
+        'v9.0.0',
+        notes:
+            '# Changelog\n\n${'- **Improved playback** and navigation.\n' * 80}',
+      ),
+    ];
+    final updates = create();
+    final release = (await updates.checkManually()).release!;
+    await tester.pumpWidget(host(updates, openButton(updates, release)));
+    await tester.tap(find.text('Open test update'));
+    await tester.pumpAndSettle();
+
+    final scroll = tester.widget<SingleChildScrollView>(
+      find.byKey(const Key('releaseNotesScroll')),
+    );
+    expect(scroll.controller!.position.maxScrollExtent, greaterThan(0));
+    expect(find.byKey(const Key('releaseNotesMarkdown')), findsOneWidget);
+    expect(
+      find.byKey(const Key('postponeUpdate')).hitTestable(),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('downloadUpdate')).hitTestable(),
+      findsOneWidget,
+    );
+    await tester.drag(
+      find.byKey(const Key('releaseNotesScroll')),
+      const Offset(0, -240),
+    );
+    await tester.pumpAndSettle();
+    expect(scroll.controller!.offset, greaterThan(0));
+    expect(
+      find.byKey(const Key('downloadUpdate')).hitTestable(),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byKey(const Key('postponeUpdate')));
+    await tester.pumpAndSettle();
+  });
 
   for (final language in ['en', 'es']) {
     testWidgets(
@@ -229,7 +303,7 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
           expect(
-            tester.getSize(find.byType(AlertDialog)).width,
+            tester.getSize(find.byKey(const Key('stableUpdateDialog'))).width,
             lessThanOrEqualTo(size.width),
           );
           expect(later.hitTestable(), findsOneWidget);

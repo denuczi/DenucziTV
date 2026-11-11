@@ -22,7 +22,36 @@ void main() {
   runApp(
     ChangeNotifierProvider(
       create: (_) => UpdateController(
-        api: FakeReleaseApi(),
+        api: FakeReleaseApi()
+          ..releases = [
+            releaseFixture(
+              'v9.0.0',
+              notes: """
+# DenucziTV 9.0.0
+
+## What's improved
+
+- **Live TV:** faster channel switching.
+- **Library:** better artwork caching.
+- **Updates:** readable release notes with `Markdown` support.
+
+## Compatibility
+
+| Platform | Package |
+| --- | --- |
+| Windows x64 | Setup EXE |
+| Debian x64 | DEB |
+
+> This is a fictional preview. No installer is downloaded.
+
+[View project repository](https://github.com/denuczi/DenucziTV)
+
+```dart
+final update = 'preview only';
+```
+""",
+            ),
+          ],
         preferences: UpdatePreferences(SharedPreferencesAsync()),
         openUrl: (_) async => false,
       ),

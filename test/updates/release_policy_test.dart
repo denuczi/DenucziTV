@@ -162,7 +162,17 @@ void main() {
       final release = StableRelease.parse(
         releaseFixture('v9.0.0', notes: 'X' * 5000),
       )!;
-      expect(release.notes.length, 1200);
+      expect(release.notes.length, 5000);
+      expect(release.notesTruncated, isFalse);
+      final oversized = StableRelease.parse(
+        releaseFixture('v9.0.0', notes: ('## Feature\n\nDetails.\n\n' * 1500)),
+      )!;
+      expect(oversized.notesTruncated, isTrue);
+      expect(
+        oversized.notes.length,
+        lessThanOrEqualTo(StableRelease.maxReleaseNotesCharacters),
+      );
+      expect(oversized.notes, isNot(contains('\u0000')));
     },
   );
 

@@ -35,11 +35,24 @@ class ReleaseAsset {
 
 /// Constructible only through strict parsing of a stable, published release.
 class StableRelease {
-  StableRelease._(this.tag, this.version, this.url, this.notes, this.assets);
+  StableRelease._(
+    this.tag,
+    this.version,
+    this.url,
+    this.notes,
+    this.notesTruncated,
+    this.assets,
+  );
   final String tag;
   final SemanticVersion version;
   final Uri url;
   final String notes;
+
+  /// True when an unusually long body is shortened for UI responsiveness.
+  /// The complete notes remain available at the verified GitHub release URL.
+  final bool notesTruncated;
+
+  static const maxReleaseNotesCharacters = 16000;
   final List<ReleaseAsset> assets;
 
   static const owner = 'denuczi';
@@ -104,19 +117,38 @@ class StableRelease {
         accepted.add(ReleaseAsset._(name, assetUrl));
       }
     }
-    final safeNotes = (notes as String? ?? '')
-        .replaceAll(
-          RegExp(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u202a-\u202e\u2066-\u2069]'),
-          '',
-        )
-        .runes
-        .take(1200)
-        .toList();
+    final normalizedNotes = (notes as String? ?? '').replaceAll(
+      RegExp(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u202a-\u202e\u2066-\u2069]'),
+      '',
+    );
+    // Keep enough room for real release announcements without giving a single
+    // oversized API field unlimited rendering work on the UI thread.
+    final codePoints = normalizedNotes.runes
+        .take(maxReleaseNotesCharacters + 1)
+        .toList(growable: false);
+    final shortened = codePoints.length > maxReleaseNotesCharacters;
+    var displayedNotes = String.fromCharCodes(
+      shortened ? codePoints.take(maxReleaseNotesCharacters) : codePoints,
+    );
+    if (shortened) {
+      // Prefer stopping after a complete paragraph rather than cutting a
+      // Markdown link or the last word in half.
+      final paragraphEnd = displayedNotes.lastIndexOf('\n\n');
+      if (paragraphEnd >= maxReleaseNotesCharacters ~/ 2) {
+        displayedNotes = displayedNotes.substring(0, paragraphEnd);
+      } else {
+        final lineEnd = displayedNotes.lastIndexOf('\n');
+        if (lineEnd >= maxReleaseNotesCharacters ~/ 2) {
+          displayedNotes = displayedNotes.substring(0, lineEnd);
+        }
+      }
+    }
     return StableRelease._(
       tag,
       version,
       url,
-      String.fromCharCodes(safeNotes).trim(),
+      displayedNotes.trim(),
+      shortened,
       List.unmodifiable(accepted),
     );
   }

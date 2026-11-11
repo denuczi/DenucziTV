@@ -147,6 +147,29 @@ void main() {
     expect(opened.single.path, '/denuczi/DenucziTV/releases/tag/v9.0.0');
   });
 
+  test('release-note links reuse the guarded browser launcher', () async {
+    final updates = create();
+    expect(
+      await updates.openReleaseNotesLink(
+        Uri.parse('https://github.com/denuczi/DenucziTV/issues/1'),
+      ),
+      isTrue,
+    );
+    expect(opened, hasLength(1));
+    expect(opened.single.host, 'github.com');
+
+    for (final blocked in [
+      'javascript:alert(1)',
+      'file:///tmp/something',
+      'http://github.com/denuczi/DenucziTV',
+      'https://someone@github.com/denuczi/DenucziTV',
+      'https://github.com:8080/path',
+    ]) {
+      expect(await updates.openReleaseNotesLink(Uri.parse(blocked)), isFalse);
+    }
+    expect(opened, hasLength(1));
+  });
+
   test('24-hour startup throttling does not block manual checks', () async {
     await storage.saveLastSuccess(time.subtract(const Duration(hours: 23)));
     final updates = create();
