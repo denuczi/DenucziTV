@@ -117,13 +117,24 @@
       }
     }
   },
+  "searchFavorites": "Search",
+  "clearFavoritesSearch": "Clear favorites search",
+  "clearAllFavorites": "Remove all favorites",
+  "clearAllFavoritesQuestion": "Remove all favorites?",
+  "clearAllFavoritesDetails": "Remove every favorite saved for {account}? Channels, movies and series will be removed. Watch history, progress and downloaded files are not affected.",
+  "@clearAllFavoritesDetails": {
+    "placeholders": {
+      "account": {"type": "String"}
+    }
+  },
+  "noFavoriteMatches": "No favorites match your search.",
   "clearHistory": "Clear history",
   "clearWatchHistoryQuestion": "Clear watch history?",
   "clearWatchHistoryDetails": "This removes viewing history and saved playback positions for the active account. Favorites and downloaded videos are not affected.",
   "nothingToResume": "Nothing to resume yet",
   "noFavorites": "No favorites yet",
   "emptyViewingHistory": "Your viewing history is empty",
-  "libraryEmptyHelp": "Start watching or save a movie or series to see it here.",
+  "libraryEmptyHelp": "Save a channel, movie or series to see it here.",
   "connectToUseLibrary": "Connect to a provider to see your personal library.",
   "libraryUnavailable": "Personal library storage is unavailable.",
   "libraryUpdateFailed": "Unable to update My Library. Try again.",

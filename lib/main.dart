@@ -18,6 +18,7 @@ import 'features/updates/data/update_preferences.dart';
 import 'features/updates/domain/update_channel.dart';
 import 'features/updates/presentation/startup_update_listener.dart';
 import 'features/personal_library/application/personal_library_controller.dart';
+import 'features/personal_library/application/library_artwork_cache.dart';
 import 'features/personal_library/data/sqlite_library_repository.dart';
 import 'core/theme/app_theme.dart';
 import 'core/network/network_client.dart';
@@ -42,8 +43,11 @@ Future<void> main() async {
     // A missing desktop integration must not prevent media playback.
   }
 
-  final library = PersonalLibraryController(SqliteLibraryRepository());
   final network = NetworkClient();
+  final library = PersonalLibraryController(
+    SqliteLibraryRepository(),
+    artworkCache: LibraryArtworkCache(network),
+  );
   final preferences = SharedPreferencesAsync();
   final controller = AppController(
     network: network,

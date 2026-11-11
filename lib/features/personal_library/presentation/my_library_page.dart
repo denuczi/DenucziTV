@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n_ext.dart';
@@ -11,6 +13,7 @@ import '../../library/presentation/media_details_dialog.dart';
 import '../../library/presentation/media_artwork.dart';
 import '../../library/presentation/series_dialog.dart';
 import '../../player/presentation/player_dialog.dart';
+import '../../connection/presentation/connect_dialog.dart';
 import '../application/personal_library_controller.dart';
 import '../domain/library_item.dart';
 
@@ -26,8 +29,17 @@ class MyLibraryPage extends StatefulWidget {
 
 class _MyLibraryPageState extends State<MyLibraryPage> {
   _View _view = _View.continueWatching;
+  LibraryKind _favoriteKind = LibraryKind.live;
   bool _busy = false;
+  final TextEditingController _favoritesSearch = TextEditingController();
+  String _favoriteQuery = '';
   final DialogLaunchGuard _playbackGuard = DialogLaunchGuard();
+
+  @override
+  void dispose() {
+    _favoritesSearch.dispose();
+    super.dispose();
+  }
 
   Future<void> _perform(Future<void> Function() action) async {
     if (_busy) {
@@ -97,6 +109,11 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
           context: context,
           builder: (_) => SeriesDialog(series: item.toMediaEntry()),
         );
+      } else if (item.kind == LibraryKind.live) {
+        await showDialog<void>(
+          context: context,
+          builder: (_) => PlayerDialog(media: item.toMediaEntry()),
+        );
       } else {
         final entry = item.toMediaEntry();
         final play = await showDialog<bool>(
@@ -148,29 +165,130 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
     }
   }
 
+  Future<void> _confirmClearFavorites(
+    PersonalLibraryController library,
+    String accountName,
+  ) async {
+    if (library.favorites.isEmpty) {
+      return;
+    }
+    // A confirmation opened for one account cannot delete another account's
+    // favorites if the user navigates or switches providers in the meantime.
+    final accountId = library.accountId;
+    if (accountId == null) {
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 22, 24, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.clearAllFavoritesQuestion,
+                  style: Theme.of(dialogContext).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  context.l10n.clearAllFavoritesDetails(accountName),
+                  style: Theme.of(dialogContext).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 22),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: Text(context.l10n.cancel),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(dialogContext, true),
+                      child: Text(context.l10n.clearAllFavorites),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (confirmed == true && mounted && library.accountId == accountId) {
+      await _perform(() async {
+        await library.clearFavorites(expectedAccountId: accountId);
+        if (!mounted) {
+          return;
+        }
+        _favoritesSearch.clear();
+        setState(() => _favoriteQuery = '');
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppController>();
     final library = app.personalLibrary;
+    final libraryAccount = app.activeAccount ?? app.offlineLibraryAccount;
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    if (app.activeAccount == null) {
+    if (libraryAccount == null) {
       return Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Text(context.l10n.connectToUseLibrary),
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.bookmarks_outlined, size: 44),
+              const SizedBox(height: 14),
+              Text(
+                context.l10n.connectToUseLibrary,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                icon: const Icon(Icons.add_rounded),
+                label: Text(context.l10n.connectProvider),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => const ConnectDialog(),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
     if (library == null) {
       return Center(child: Text(context.l10n.libraryUnavailable));
     }
+    // Never show favorites from a previous account under the newly selected
+    // provider while an asynchronous account switch is in progress.
+    if (library.accountId != null && library.accountId != libraryAccount.id) {
+      return Center(child: Text(context.l10n.loadingLibrary));
+    }
     return ListenableBuilder(
       listenable: library,
       builder: (context, _) {
+        final query = _favoriteQuery;
         final rows = switch (_view) {
           _View.continueWatching => library.continueWatching,
-          _View.favorites => library.favorites,
+          _View.favorites =>
+            library.favorites
+                .where(
+                  (item) =>
+                      item.kind == _favoriteKind &&
+                      (query.isEmpty ||
+                          item.title.toLowerCase().contains(query)),
+                )
+                .toList(growable: false),
           _View.history => library.history,
         };
         return Center(
@@ -191,7 +309,7 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
                       const SizedBox(height: 5),
                       Text(
                         context.l10n.playbackAccountLibrary(
-                          app.activeAccount!.label,
+                          libraryAccount.label,
                         ),
                         style: TextStyle(color: colors.onSurfaceVariant),
                       ),
@@ -231,6 +349,127 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
                           ),
                         ),
                       ),
+                      if (_view == _View.favorites) ...[
+                        const SizedBox(height: 16),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final compact = constraints.maxWidth < 860;
+                            final searchField = TextField(
+                              key: const Key('favoriteSearchField'),
+                              controller: _favoritesSearch,
+                              onChanged: (value) => setState(
+                                () =>
+                                    _favoriteQuery = value.trim().toLowerCase(),
+                              ),
+                              textInputAction: TextInputAction.search,
+                              decoration: InputDecoration(
+                                isDense: true,
+                                hintText: context.l10n.searchFavorites,
+                                prefixIcon: const Icon(Icons.search, size: 18),
+                                suffixIcon: _favoritesSearch.text.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        key: const Key('clearFavoriteSearch'),
+                                        tooltip:
+                                            context.l10n.clearFavoritesSearch,
+                                        onPressed: () {
+                                          _favoritesSearch.clear();
+                                          setState(() => _favoriteQuery = '');
+                                        },
+                                        icon: const Icon(Icons.close, size: 16),
+                                      ),
+                                filled: true,
+                                fillColor: colors.surfaceContainerLowest,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                              ),
+                            );
+                            final clearAction = library.favorites.isEmpty
+                                ? const SizedBox.shrink()
+                                : IconButton(
+                                    key: const Key('clearAllFavoritesAction'),
+                                    tooltip: context.l10n.clearAllFavorites,
+                                    onPressed: _busy
+                                        ? null
+                                        : () => _confirmClearFavorites(
+                                            library,
+                                            libraryAccount.label,
+                                          ),
+                                    icon: const Icon(
+                                      Icons.delete_sweep_outlined,
+                                    ),
+                                  );
+                            final chips = Wrap(
+                              key: const Key('favoriteKindFilters'),
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final kind in LibraryKind.values)
+                                  ChoiceChip(
+                                    key: Key('favoriteKind_${kind.name}'),
+                                    showCheckmark: false,
+                                    selected: _favoriteKind == kind,
+                                    avatar: Icon(switch (kind) {
+                                      LibraryKind.live =>
+                                        Icons.live_tv_outlined,
+                                      LibraryKind.movies =>
+                                        Icons.movie_outlined,
+                                      LibraryKind.series => Icons.tv_outlined,
+                                    }, size: 17),
+                                    label: Text(switch (kind) {
+                                      LibraryKind.live => context.l10n.liveTv,
+                                      LibraryKind.movies => context.l10n.movies,
+                                      LibraryKind.series => context.l10n.series,
+                                    }),
+                                    onSelected: (_) =>
+                                        setState(() => _favoriteKind = kind),
+                                  ),
+                              ],
+                            );
+                            final trailingActions = Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(width: 260, child: searchField),
+                                if (library.favorites.isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  clearAction,
+                                ],
+                              ],
+                            );
+                            if (compact) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  chips,
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Expanded(child: searchField),
+                                      if (library.favorites.isNotEmpty) ...[
+                                        const SizedBox(width: 6),
+                                        clearAction,
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              );
+                            }
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(child: chips),
+                                const SizedBox(width: 16),
+                                trailingActions,
+                              ],
+                            );
+                          },
+                        ),
+                      ],
                       if (_view == _View.history && rows.isNotEmpty)
                         Align(
                           alignment: Alignment.centerRight,
@@ -285,13 +524,19 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
                                 Text(switch (_view) {
                                   _View.continueWatching =>
                                     context.l10n.nothingToResume,
-                                  _View.favorites => context.l10n.noFavorites,
+                                  _View.favorites =>
+                                    _favoriteQuery.isNotEmpty
+                                        ? context.l10n.noFavoriteMatches
+                                        : context.l10n.noFavorites,
                                   _View.history =>
                                     context.l10n.emptyViewingHistory,
                                 }, style: theme.textTheme.titleMedium),
                                 const SizedBox(height: 6),
                                 Text(
-                                  context.l10n.libraryEmptyHelp,
+                                  _view == _View.favorites &&
+                                          _favoriteQuery.isNotEmpty
+                                      ? context.l10n.noMatchesHelp
+                                      : context.l10n.libraryEmptyHelp,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: colors.onSurfaceVariant,
@@ -309,6 +554,13 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 10),
                               child: _LibraryRow(
+                                key: ValueKey((
+                                  item.accountId,
+                                  item.sourceScope,
+                                  item.kind,
+                                  item.mediaId,
+                                  item.isEpisode,
+                                )),
                                 item: item,
                                 view: _view,
                                 busy: _busy,
@@ -343,6 +595,7 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
 
 class _LibraryRow extends StatelessWidget {
   const _LibraryRow({
+    super.key,
     required this.item,
     required this.view,
     required this.busy,
@@ -398,22 +651,7 @@ class _LibraryRow extends StatelessWidget {
         ? context.l10n.inProgress
         : context.l10n.saved;
     final app = context.watch<AppController>();
-    final artwork = FutureBuilder<String?>(
-      key: ValueKey((
-        item.accountId,
-        item.sourceScope,
-        item.kind,
-        item.mediaId,
-        app.credentials,
-      )),
-      future: app.resolveLibraryArtwork(item),
-      builder: (context, snapshot) => MediaArtwork(
-        width: 64,
-        height: 82,
-        imageUrl: snapshot.data,
-        network: app.network,
-      ),
-    );
+    final artwork = _CachedLibraryArtwork(item: item, app: app);
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -447,10 +685,12 @@ class _LibraryRow extends StatelessWidget {
         ],
       ],
     );
+    final canOpen =
+        !busy && item.available && app.canUseMedia(item.toMediaEntry());
     final actions = <Widget>[
       IconButton.filledTonal(
         tooltip: context.l10n.openOrResume,
-        onPressed: item.available ? onPlay : null,
+        onPressed: canOpen ? onPlay : null,
         icon: const Icon(Icons.play_arrow_rounded),
       ),
       if (view == _View.history)
@@ -495,9 +735,31 @@ class _LibraryRow extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    artwork,
-                    const SizedBox(width: 14),
-                    Expanded(child: details),
+                    Expanded(
+                      child: InkWell(
+                        key:
+                            item.kind == LibraryKind.live &&
+                                view == _View.favorites
+                            ? Key('favoriteLiveOpen_${item.mediaId}')
+                            : null,
+                        borderRadius: BorderRadius.circular(9),
+                        // Only channel favorites gain a direct artwork/title
+                        // play target. Playback buttons retain their actions.
+                        onTap:
+                            item.kind == LibraryKind.live &&
+                                view == _View.favorites &&
+                                canOpen
+                            ? onPlay
+                            : null,
+                        child: Row(
+                          children: [
+                            artwork,
+                            const SizedBox(width: 14),
+                            Expanded(child: details),
+                          ],
+                        ),
+                      ),
+                    ),
                     if (!narrow) ...[const SizedBox(width: 12), ...actions],
                   ],
                 ),
@@ -515,4 +777,70 @@ class _LibraryRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Preserves the image request when a parent controller notifies listeners.
+/// Disk files are readable before a provider catalog has been fetched.
+class _CachedLibraryArtwork extends StatefulWidget {
+  const _CachedLibraryArtwork({required this.item, required this.app});
+
+  final LibraryItem item;
+  final AppController app;
+
+  @override
+  State<_CachedLibraryArtwork> createState() => _CachedLibraryArtworkState();
+}
+
+class _CachedLibraryArtworkState extends State<_CachedLibraryArtwork> {
+  late Future<({File? file, String? url})> _cover;
+  Object? _credentialsSnapshot;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CachedLibraryArtwork oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.accountId != widget.item.accountId ||
+        oldWidget.item.sourceScope != widget.item.sourceScope ||
+        oldWidget.item.mediaId != widget.item.mediaId ||
+        oldWidget.item.kind != widget.item.kind ||
+        !identical(_credentialsSnapshot, widget.app.credentials)) {
+      _reload();
+    }
+  }
+
+  void _reload() {
+    final app = widget.app;
+    final item = widget.item;
+    _credentialsSnapshot = app.credentials;
+    final cache = app.personalLibrary?.artworkCache;
+    _cover = cache == null
+        ? app.resolveLibraryArtwork(item).then((url) => (file: null, url: url))
+        : cache
+              .getOrLoad(
+                item,
+                resolveUrl: () => app.resolveLibraryArtwork(item),
+              )
+              .then(
+                (file) =>
+                    (file: file, url: file == null ? item.imageUrl : null),
+              );
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      FutureBuilder<({File? file, String? url})>(
+        future: _cover,
+        builder: (context, snapshot) => MediaArtwork(
+          width: 64,
+          height: 82,
+          cachedFile: snapshot.data?.file,
+          imageUrl: snapshot.data?.url,
+          network: widget.app.network,
+        ),
+      );
 }

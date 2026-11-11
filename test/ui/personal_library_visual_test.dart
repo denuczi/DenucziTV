@@ -24,6 +24,18 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 
 class _UnusedRepository implements LibraryRepository {
   @override
+  Future<List<LibraryItem>> favorites(
+    String accountId, {
+    bool includeUnavailable = false,
+  }) async => const [];
+
+  @override
+  Future<List<LibraryItem>> history(
+    String accountId, {
+    bool includeUnavailable = false,
+  }) async => const [];
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -215,6 +227,130 @@ void main() {
       expect(artwork.imageUrl, 'https://images.example/current-cover.jpg');
       expect(library.history.single.imageUrl, isNull);
       expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets('favorites keep Live TV, movies and series in separate filters', (
+    tester,
+  ) async {
+    final library = _MemoryLibrary();
+    library.favorites = const [
+      LibraryItem(
+        accountId: 'account',
+        mediaId: 'live',
+        kind: LibraryKind.live,
+        title: 'Live channel',
+        sourceScope: 'older',
+      ),
+      LibraryItem(
+        accountId: 'account',
+        mediaId: 'movie',
+        kind: LibraryKind.movies,
+        title: 'Favorite movie',
+        sourceScope: 'older',
+      ),
+      LibraryItem(
+        accountId: 'account',
+        mediaId: 'series',
+        kind: LibraryKind.series,
+        title: 'Favorite series',
+        sourceScope: 'older',
+      ),
+    ];
+    final app = _ConnectedApp(NetworkClient(), library);
+    addTearDown(app.dispose);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppController>.value(
+        value: app,
+        child: MaterialApp(
+          theme: AppTheme.dark,
+          home: const Scaffold(body: MyLibraryPage()),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Favorites'));
+    await tester.pumpAndSettle();
+    expect(find.text('Live channel'), findsOneWidget);
+    expect(find.text('Favorite movie'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('favoriteKind_movies')));
+    await tester.pumpAndSettle();
+    expect(find.text('Favorite movie'), findsOneWidget);
+    expect(find.text('Live channel'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('favoriteKind_series')));
+    await tester.pumpAndSettle();
+    expect(find.text('Favorite series'), findsOneWidget);
+    expect(find.text('Favorite movie'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'favorites search filters locally and clearing restores results',
+    (tester) async {
+      final library = _MemoryLibrary();
+      await library.selectAccount(
+        'account',
+        sourceScope: 'current',
+        protected: true,
+      );
+      library.favorites = const [
+        LibraryItem(
+          accountId: 'account',
+          mediaId: 'hbo',
+          kind: LibraryKind.live,
+          title: 'HBO',
+          sourceScope: 'current',
+        ),
+        LibraryItem(
+          accountId: 'account',
+          mediaId: 'news',
+          kind: LibraryKind.live,
+          title: 'News One',
+          sourceScope: 'current',
+        ),
+      ];
+      final app = _ConnectedApp(NetworkClient(), library);
+      addTearDown(app.dispose);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppController>.value(
+          value: app,
+          child: MaterialApp(
+            theme: AppTheme.dark,
+            home: const Scaffold(body: MyLibraryPage()),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Favorites'));
+      await tester.pumpAndSettle();
+      expect(find.text('HBO'), findsOneWidget);
+      expect(find.text('News One'), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('favoriteSearchField')),
+        'hbo',
+      );
+      await tester.pump();
+      expect(find.text('HBO'), findsOneWidget);
+      expect(find.text('News One'), findsNothing);
+      final directPlay = tester.widget<InkWell>(
+        find.byKey(const Key('favoriteLiveOpen_hbo')),
+      );
+      expect(
+        directPlay.onTap,
+        isNotNull,
+        reason: 'The artwork and title should play an available channel.',
+      );
+
+      await tester.tap(find.byKey(const Key('clearFavoriteSearch')));
+      await tester.pump();
+      expect(find.text('News One'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('clearAllFavoritesAction')));
+      await tester.pumpAndSettle();
+      expect(find.text('Remove all favorites?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(library.favorites, hasLength(2));
     },
   );
 }

@@ -174,8 +174,8 @@ class SqliteLibraryRepository implements LibraryRepository {
 
   @override
   Future<void> setFavorite(LibraryItem item, bool enabled) async {
-    if (item.kind == LibraryKind.live || item.isEpisode) {
-      throw ArgumentError('Only movies and series can be favorited.');
+    if (item.isEpisode) {
+      throw ArgumentError('Episodes cannot be favorited individually.');
     }
     if (enabled) {
       await _database.insert('favorites', {
@@ -201,6 +201,15 @@ class SqliteLibraryRepository implements LibraryRepository {
         ],
       );
     }
+  }
+
+  @override
+  Future<void> clearFavorites(String accountId) async {
+    await _database.delete(
+      'favorites',
+      where: 'account_id = ?',
+      whereArgs: [accountId],
+    );
   }
 
   @override
@@ -413,9 +422,6 @@ class SqliteLibraryRepository implements LibraryRepository {
     Iterable<String> ids, {
     String sourceScope = '',
   }) async {
-    if (kind == LibraryKind.live) {
-      return;
-    }
     // Only compare locally tracked IDs. Avoid building an extra million-item
     // HashSet solely for validating a small personal library.
     final tracked = await _database.query(

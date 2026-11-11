@@ -4,16 +4,21 @@ import 'package:flutter/foundation.dart';
 
 import '../../library/domain/media_models.dart';
 import '../data/library_repository.dart';
+import 'library_artwork_cache.dart';
 import '../domain/library_item.dart';
 
 /// Account-scoped view model. Database operations are serialized so a late
 /// playback event cannot overwrite a newer position on the same device.
 class PersonalLibraryController extends ChangeNotifier {
-  PersonalLibraryController(this._repository);
+  PersonalLibraryController(this._repository, {this.artworkCache});
   final LibraryRepository _repository;
+  final LibraryArtworkCache? artworkCache;
+  final _favoriteIndex = <(LibraryKind, String, String)>{};
+  final _pendingFavorites = <(String, LibraryKind, String, String)>{};
+  final _deletingAccounts = <String>{};
+  final _clearingFavorites = <String>{};
   String? _accountId;
   String? _sourceScope = '';
-  bool _protected = false;
   int _revision = 0;
   bool _closed = false;
   Future<void> _writes = Future<void>.value();
@@ -32,9 +37,9 @@ class PersonalLibraryController extends ChangeNotifier {
   }) async {
     _accountId = accountId;
     _sourceScope = sourceScope;
-    _protected = protected;
     final revision = ++_revision;
     favorites = const [];
+    _favoriteIndex.clear();
     history = const [];
     error = null;
     notifyListeners();
@@ -48,17 +53,24 @@ class PersonalLibraryController extends ChangeNotifier {
     try {
       final savedFavorites = await _repository.favorites(
         id,
-        includeUnavailable: _protected,
+        includeUnavailable: true,
       );
       final savedHistory = await _repository.history(
         id,
-        includeUnavailable: _protected,
+        includeUnavailable: true,
       );
       if (!_closed && _revision == revision && _accountId == id) {
         LibraryItem scoped(LibraryItem item) => item.withAvailability(
           item.available && item.sourceScope == _sourceScope,
         );
         favorites = savedFavorites.map(scoped).toList(growable: false);
+        _favoriteIndex
+          ..clear()
+          ..addAll(
+            favorites.map(
+              (item) => (item.kind, item.mediaId, item.sourceScope),
+            ),
+          );
         history = savedHistory.map(scoped).toList(growable: false);
         error = null;
         notifyListeners();
@@ -78,12 +90,15 @@ class PersonalLibraryController extends ChangeNotifier {
     }
   }
 
-  bool isFavorite(MediaEntry media) => favorites.any(
-    (item) =>
-        item.kind == media.kind &&
-        item.mediaId == media.id &&
-        item.sourceScope == media.sourceScope,
-  );
+  bool isFavorite(MediaEntry media) =>
+      _favoriteIndex.contains((media.kind, media.id, media.sourceScope));
+
+  bool favoritePending(MediaEntry media) => _pendingFavorites.contains((
+    _accountId ?? '',
+    media.kind,
+    media.id,
+    media.sourceScope,
+  ));
 
   Future<T> _write<T>(Future<T> Function() work) {
     final result = _writes.then((_) => work());
@@ -96,24 +111,109 @@ class PersonalLibraryController extends ChangeNotifier {
 
   Future<void> toggleFavorite(MediaEntry media) async {
     final id = _accountId;
-    if (id == null || media.sourceScope != _sourceScope) {
+    if (id == null ||
+        _deletingAccounts.contains(id) ||
+        _clearingFavorites.contains(id) ||
+        media.sourceScope != _sourceScope ||
+        (media.kind == LibraryKind.series && media.seriesId != null)) {
       return;
     }
-    final enabled = !isFavorite(media);
-    await _write(
-      () => _repository.setFavorite(
-        LibraryItem.fromMedia(accountId: id, media: media),
-        enabled,
-      ),
+    final key = (id, media.kind, media.id, media.sourceScope);
+    if (!_pendingFavorites.add(key)) return;
+    final revision = _revision;
+    notifyListeners();
+    try {
+      final enabled = !isFavorite(media);
+      final item = LibraryItem.fromMedia(accountId: id, media: media);
+      await _write(() async {
+        if (_deletingAccounts.contains(id)) return;
+        await _repository.setFavorite(item, enabled);
+      });
+      if (!_closed && _accountId == id && _revision == revision) {
+        await refresh();
+      }
+      if (enabled) {
+        // Warm only the saved item, not the entire provider catalog.
+        unawaited(artworkCache?.warm(id, media) ?? Future<void>.value());
+      } else {
+        await _evictIfUnreferenced(item);
+      }
+    } finally {
+      _pendingFavorites.remove(key);
+      if (!_closed) notifyListeners();
+    }
+  }
+
+  Future<void> _evictIfUnreferenced(LibraryItem item) async {
+    if (artworkCache == null) return;
+    // Query the repository after the write to avoid evicting an image still
+    // referenced by the other personal-library collection.
+    final favorites = await _repository.favorites(
+      item.accountId,
+      includeUnavailable: true,
     );
-    if (_accountId == id) {
-      await refresh();
+    final history = await _repository.history(
+      item.accountId,
+      includeUnavailable: true,
+    );
+    bool same(LibraryItem other) =>
+        other.kind == item.kind &&
+        other.mediaId == item.mediaId &&
+        other.sourceScope == item.sourceScope;
+    if (!favorites.any(same) && !history.any(same)) {
+      await artworkCache!.removeItem(item);
     }
   }
 
   Future<void> removeFavorite(LibraryItem item) async {
+    if (_deletingAccounts.contains(item.accountId) ||
+        _clearingFavorites.contains(item.accountId)) {
+      return;
+    }
     await _write(() => _repository.setFavorite(item, false));
     if (_accountId == item.accountId) await refresh();
+    await _evictIfUnreferenced(item);
+  }
+
+  Future<void> clearFavorites({String? expectedAccountId}) async {
+    final id = _accountId;
+    if (id == null ||
+        (expectedAccountId != null && expectedAccountId != id) ||
+        _deletingAccounts.contains(id) ||
+        !_clearingFavorites.add(id)) {
+      return;
+    }
+    notifyListeners();
+    try {
+      // Serialize against outstanding favorite writes and query the snapshot
+      // inside the same queue; clear never affects other provider accounts.
+      final removed = await _write(() async {
+        final items = await _repository.favorites(id, includeUnavailable: true);
+        await _repository.clearFavorites(id);
+        return items;
+      });
+      if (_accountId == id) {
+        await refresh();
+      }
+      if (artworkCache != null && removed.isNotEmpty) {
+        final historyItems = await _repository.history(
+          id,
+          includeUnavailable: true,
+        );
+        final retained = {
+          for (final item in historyItems)
+            (item.kind, item.mediaId, item.sourceScope),
+        };
+        for (final item in removed) {
+          if (!retained.contains((item.kind, item.mediaId, item.sourceScope))) {
+            await artworkCache!.removeItem(item);
+          }
+        }
+      }
+    } finally {
+      _clearingFavorites.remove(id);
+      if (!_closed) notifyListeners();
+    }
   }
 
   Future<LibraryItem?> progressFor(String accountId, MediaEntry media) =>
@@ -132,27 +232,34 @@ class PersonalLibraryController extends ChangeNotifier {
     String? seriesTitle,
     bool completed = false,
   }) async {
-    if (media.kind == LibraryKind.live) {
+    if (media.kind == LibraryKind.live ||
+        _deletingAccounts.contains(accountId)) {
       return;
     }
     await _write(
-      () => _repository.saveProgress(
-        LibraryItem.fromMedia(
-          accountId: accountId,
-          media: media,
-          seriesTitle: seriesTitle,
-        ),
-        positionMs: position.inMilliseconds,
-        durationMs: duration.inMilliseconds,
-        completed: completed,
-      ),
+      () => _deletingAccounts.contains(accountId)
+          ? Future<void>.value()
+          : _repository.saveProgress(
+              LibraryItem.fromMedia(
+                accountId: accountId,
+                media: media,
+                seriesTitle: seriesTitle,
+              ),
+              positionMs: position.inMilliseconds,
+              durationMs: duration.inMilliseconds,
+              completed: completed,
+            ),
     );
+    if (media.imageUrl != null) {
+      unawaited(artworkCache?.warm(accountId, media) ?? Future<void>.value());
+    }
     if (_accountId == accountId) {
       await refresh();
     }
   }
 
   Future<void> markWatched(LibraryItem item, bool watched) async {
+    if (_deletingAccounts.contains(item.accountId)) return;
     await _write(() => _repository.markWatched(item, watched));
     if (_accountId == item.accountId) {
       await refresh();
@@ -160,10 +267,10 @@ class PersonalLibraryController extends ChangeNotifier {
   }
 
   Future<void> removeHistory(LibraryItem item) async {
+    if (_deletingAccounts.contains(item.accountId)) return;
     await _write(() => _repository.removeHistory(item));
-    if (_accountId == item.accountId) {
-      await refresh();
-    }
+    if (_accountId == item.accountId) await refresh();
+    await _evictIfUnreferenced(item);
   }
 
   Future<void> removeFromContinue(LibraryItem item) async {
@@ -174,20 +281,21 @@ class PersonalLibraryController extends ChangeNotifier {
   }
 
   Future<void> deleteAccount(String accountId) async {
+    // Block late UI actions before the queued delete reaches SQLite.
+    _deletingAccounts.add(accountId);
     await _write(() => _repository.deleteAccount(accountId));
-    if (_accountId == accountId) {
-      await refresh();
-    }
+    await artworkCache?.removeAccount(accountId);
+    if (_accountId == accountId) await refresh();
   }
 
   Future<void> clearHistory() async {
     final id = _accountId;
-    if (id == null) {
-      return;
-    }
+    if (id == null || _deletingAccounts.contains(id)) return;
+    final removed = await _repository.history(id, includeUnavailable: true);
     await _write(() => _repository.clearHistory(id));
-    if (_accountId == id) {
-      await refresh();
+    if (_accountId == id) await refresh();
+    for (final item in removed) {
+      await _evictIfUnreferenced(item);
     }
   }
 

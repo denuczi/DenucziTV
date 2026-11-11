@@ -117,13 +117,24 @@
       }
     }
   },
+  "searchFavorites": "Buscar",
+  "clearFavoritesSearch": "Limpiar búsqueda de favoritos",
+  "clearAllFavorites": "Eliminar todos los favoritos",
+  "clearAllFavoritesQuestion": "¿Eliminar todos los favoritos?",
+  "clearAllFavoritesDetails": "¿Eliminar todos los favoritos guardados en {account}? Se quitarán los canales, películas y series. El historial, el progreso y las descargas no se verán afectados.",
+  "@clearAllFavoritesDetails": {
+    "placeholders": {
+      "account": {"type": "String"}
+    }
+  },
+  "noFavoriteMatches": "No hay favoritos que coincidan con la búsqueda.",
   "clearHistory": "Borrar historial",
   "clearWatchHistoryQuestion": "¿Borrar historial de reproducción?",
   "clearWatchHistoryDetails": "Esto elimina el historial de reproducción y las posiciones guardadas de la cuenta activa. No afecta los favoritos ni los videos descargados.",
   "nothingToResume": "No hay contenido para continuar",
   "noFavorites": "Todavía no hay favoritos",
   "emptyViewingHistory": "Tu historial de reproducción está vacío",
-  "libraryEmptyHelp": "Reproduce contenido o guarda una película o serie para verla aquí.",
+  "libraryEmptyHelp": "Guarda un canal, una película o una serie para encontrarlo aquí.",
   "connectToUseLibrary": "Conéctate a un proveedor para ver tu biblioteca personal.",
   "libraryUnavailable": "El almacenamiento de la biblioteca personal no está disponible.",
   "libraryUpdateFailed": "No se pudo actualizar Mi biblioteca. Inténtalo de nuevo.",

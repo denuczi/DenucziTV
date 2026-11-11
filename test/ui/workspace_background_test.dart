@@ -125,6 +125,7 @@ void main() {
       ),
     );
 
+    var openedCatalog = false;
     Future<void> mount(ThemeData theme) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<AppController>.value(
@@ -136,6 +137,13 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      if (!openedCatalog) {
+        // The app now starts in My Library. Enter the existing catalog before
+        // checking its scrolling and header continuity.
+        await tester.tap(find.byKey(const Key('navigation-movies')));
+        await tester.pumpAndSettle();
+        openedCatalog = true;
+      }
     }
 
     Future<void> expectContinuousHeader() async {

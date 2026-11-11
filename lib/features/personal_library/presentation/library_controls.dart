@@ -9,8 +9,15 @@ import '../../library/domain/media_models.dart';
 import '../domain/library_item.dart';
 
 class FavoriteToggleButton extends StatefulWidget {
-  const FavoriteToggleButton({super.key, required this.media});
+  const FavoriteToggleButton({
+    super.key,
+    required this.media,
+    this.compact = false,
+    this.onDarkSurface = false,
+  });
   final MediaEntry media;
+  final bool compact;
+  final bool onDarkSurface;
 
   @override
   State<FavoriteToggleButton> createState() => _FavoriteToggleButtonState();
@@ -20,8 +27,10 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
   bool _busy = false;
 
   Future<void> _toggle() async {
-    final app = context.read<AppController>();
-    if (widget.media.sourceScope.isNotEmpty && !app.canUseMedia(widget.media)) {
+    final app = context.read<AppController?>();
+    if (app == null ||
+        (widget.media.sourceScope.isNotEmpty &&
+            !app.canUseMedia(widget.media))) {
       return;
     }
     final library = app.personalLibrary;
@@ -46,25 +55,41 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
 
   @override
   Widget build(BuildContext context) {
-    final library = context.read<AppController>().personalLibrary;
-    if (library == null ||
-        widget.media.kind == LibraryKind.live ||
-        widget.media.seriesId != null) {
+    final library = context.read<AppController?>()?.personalLibrary;
+    if (library == null || widget.media.seriesId != null) {
       return const SizedBox.shrink();
     }
     return ListenableBuilder(
       listenable: library,
       builder: (context, _) {
         final saved = library.isFavorite(widget.media);
+        final active = !_busy && !library.favoritePending(widget.media);
         return IconButton(
           key: const Key('favoriteToggle'),
           tooltip: saved
               ? context.l10n.removeFromFavorites
               : context.l10n.addToFavorites,
-          onPressed: _busy ? null : _toggle,
+          onPressed: active ? _toggle : null,
+          style: widget.compact
+              ? IconButton.styleFrom(
+                  backgroundColor: Colors.black.withValues(alpha: 0.66),
+                  foregroundColor: Colors.white,
+                  disabledForegroundColor: Colors.white54,
+                  fixedSize: const Size.square(36),
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                )
+              : null,
           icon: Icon(
             saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            color: saved ? Theme.of(context).colorScheme.error : null,
+            size: widget.compact ? 20 : 24,
+            color: saved
+                ? (widget.onDarkSurface || widget.compact
+                      ? const Color(0xFFFF6874)
+                      : Theme.of(context).colorScheme.error)
+                : widget.onDarkSurface
+                ? Colors.white
+                : null,
           ),
         );
       },

@@ -29,7 +29,7 @@ class DesktopShell extends StatefulWidget {
 }
 
 class _DesktopShellState extends State<DesktopShell> {
-  _Workspace _workspace = _Workspace.library;
+  _Workspace _workspace = _Workspace.myLibrary;
   late DownloadManager _downloads;
   late AppController _app;
   int _catalogNavigationRequest = 0;
@@ -52,9 +52,20 @@ class _DesktopShellState extends State<DesktopShell> {
   }
 
   void _onCatalogNavigation() {
-    if (mounted && _catalogNavigationRequest != _app.catalogNavigationRequest) {
+    if (!mounted) {
+      return;
+    }
+    if (_catalogNavigationRequest != _app.catalogNavigationRequest) {
       _catalogNavigationRequest = _app.catalogNavigationRequest;
       setState(() => _workspace = _Workspace.library);
+    }
+    // Navigation can precede the asynchronous account restoration. Once
+    // authenticated, load only the section the user explicitly opened.
+    if (_workspace == _Workspace.library &&
+        _app.credentials != null &&
+        !_app.selectedCatalogRequested &&
+        !_app.loading) {
+      unawaited(_app.selectKind(_app.kind));
     }
   }
 
@@ -133,7 +144,8 @@ class _DesktopShellState extends State<DesktopShell> {
                   workspace: _workspace,
                   onNavigate: (workspace, kind) {
                     setState(() => _workspace = workspace);
-                    if (kind != null && kind != app.kind) {
+                    if (kind != null &&
+                        (kind != app.kind || !app.selectedCatalogRequested)) {
                       unawaited(app.selectKind(kind));
                     }
                   },
@@ -144,7 +156,11 @@ class _DesktopShellState extends State<DesktopShell> {
                   child: switch (_workspace) {
                     _Workspace.library => const LibraryPage(),
                     _Workspace.accounts => const AccountsPage(),
-                    _Workspace.myLibrary => const MyLibraryPage(),
+                    _Workspace.myLibrary => MyLibraryPage(
+                      key: ValueKey(
+                        app.activeAccount?.id ?? app.offlineLibraryAccount?.id,
+                      ),
+                    ),
                     _Workspace.downloads => const DownloadsPage(),
                     _Workspace.settings => const SettingsPage(),
                   },

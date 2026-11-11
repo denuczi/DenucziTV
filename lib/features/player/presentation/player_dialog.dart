@@ -13,6 +13,7 @@ import '../../../core/models/app_controller.dart';
 import '../../../core/network/network_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../personal_library/application/personal_library_controller.dart';
+import '../../personal_library/presentation/library_controls.dart';
 import '../application/playback_retry_controller.dart';
 import '../../personal_library/domain/playback_policy.dart';
 import '../../library/data/xtream_api.dart';
@@ -738,6 +739,10 @@ class _PlayerDialogState extends State<PlayerDialog> {
                 icon: const Icon(Icons.skip_next_rounded, color: Colors.white),
               ),
             ],
+            if (current.kind == LibraryKind.live &&
+                !_sessionRevoked &&
+                !_sourceUnavailable)
+              FavoriteToggleButton(media: current, onDarkSurface: true),
             if (current.kind == LibraryKind.live &&
                 !_sessionRevoked &&
                 !_sourceUnavailable)

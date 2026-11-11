@@ -1,7 +1,11 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:denuczi_tv/features/shell/presentation/desktop_shell.dart';
+import 'package:denuczi_tv/core/theme/app_theme.dart';
 import 'package:denuczi_tv/core/models/account.dart';
 import 'package:denuczi_tv/core/models/app_controller.dart';
 import 'package:denuczi_tv/core/network/network_client.dart';
@@ -37,6 +41,7 @@ class _TestApi extends XtreamApi {
   List<MediaEntry> liveEntries = const [];
   bool failAuthentication = false;
   int movieRequests = 0;
+  int liveRequests = 0;
 
   @override
   Future<AccountStatus> authenticate(AccountCredentials credentials) async {
@@ -63,7 +68,11 @@ class _TestApi extends XtreamApi {
       movieRequests++;
       return pendingMovies?.future ?? const <MediaEntry>[];
     }
-    return kind == LibraryKind.live ? liveEntries : const <MediaEntry>[];
+    if (kind == LibraryKind.live) {
+      liveRequests++;
+      return liveEntries;
+    }
+    return const <MediaEntry>[];
   }
 }
 
@@ -256,5 +265,112 @@ void main() {
     expect(restored.restoringAccount, isFalse);
     expect(restored.savedAccounts, hasLength(1));
     expect(await settings.readActiveAccountId(), isNotNull);
+  });
+  testWidgets('first Live TV navigation loads a deferred catalog only once', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final preferences = SharedPreferencesAsync();
+    final secrets = _MemorySecrets();
+    final settings = SettingsStore(preferences);
+    final originalNetwork = NetworkClient();
+    final original = AppController(
+      network: originalNetwork,
+      api: _TestApi(originalNetwork),
+      accounts: AccountStore.withSecrets(preferences, secrets),
+      settings: settings,
+    );
+    expect(await original.connect(_login), isTrue);
+    original.dispose();
+
+    final network = NetworkClient();
+    final api = _TestApi(network);
+    final app = AppController(
+      network: network,
+      api: api,
+      accounts: AccountStore.withSecrets(preferences, secrets),
+      settings: settings,
+    );
+    // The controller starts a periodic account validation timer during
+    // initialize(). Widget tests must cancel it before Flutter checks for
+    // pending timers, rather than relying on addTearDown().
+    try {
+      await app.initialize();
+      await app.automaticConnection;
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppController>.value(
+          value: app,
+          child: MaterialApp(theme: AppTheme.dark, home: const DesktopShell()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(api.liveRequests, 0);
+
+      await tester.tap(find.byKey(const Key('navigation-live-tv')));
+      await tester.pumpAndSettle();
+      expect(api.liveRequests, 1);
+      await tester.tap(find.byKey(const Key('navigation-my-library')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('navigation-live-tv')));
+      await tester.pumpAndSettle();
+      expect(api.liveRequests, 1);
+    } finally {
+      // Unmount provider listeners before disposing their notifier. A failed
+      // expectation must still release the production-owned periodic timer.
+      try {
+        await tester.pumpWidget(const SizedBox.shrink());
+      } finally {
+        app.dispose();
+      }
+    }
+  });
+
+  test('restoring an account does not fetch Live TV until requested', () async {
+    final preferences = SharedPreferencesAsync();
+    final secrets = _MemorySecrets();
+    final settings = SettingsStore(preferences);
+    final originalNetwork = NetworkClient();
+    final original = AppController(
+      network: originalNetwork,
+      api: _TestApi(originalNetwork),
+      accounts: AccountStore.withSecrets(preferences, secrets),
+      settings: settings,
+    );
+    expect(await original.connect(_login), isTrue);
+    original.dispose();
+
+    final restoredNetwork = NetworkClient();
+    final restoredApi = _TestApi(restoredNetwork)
+      ..liveEntries = const [
+        MediaEntry(id: '1', title: 'Live', kind: LibraryKind.live),
+      ];
+    final restored = AppController(
+      network: restoredNetwork,
+      api: restoredApi,
+      accounts: AccountStore.withSecrets(preferences, secrets),
+      settings: settings,
+    );
+    addTearDown(restored.dispose);
+    await restored.initialize();
+    await restored.automaticConnection;
+
+    expect(restored.activeAccount, isNotNull);
+    expect(restored.selectedCatalogRequested, isFalse);
+    expect(restoredApi.liveRequests, 0);
+    expect(restored.entries, isEmpty);
+
+    await restored.selectKind(LibraryKind.live);
+    expect(restoredApi.liveRequests, 1);
+    expect(restored.selectedCatalogRequested, isTrue);
+    expect(restored.entries.single.title, 'Live');
+    await restored.selectKind(LibraryKind.live);
+    expect(
+      restoredApi.liveRequests,
+      1,
+      reason: 'Returning to the section should reuse its cached catalog.',
+    );
   });
 }

@@ -361,4 +361,26 @@ void main() {
       isFalse,
     );
   });
+  test(
+    'reconnecting protected accounts can authenticate without a catalog',
+    () async {
+      final previous = await register();
+      api.categoryRequests.clear();
+      api.catalogRequests.clear();
+
+      final restored = await service.connect(
+        previous.account,
+        loadInitialCatalog: false,
+      );
+
+      expect(restored.catalogs, isEmpty);
+      expect(api.categoryRequests, isEmpty);
+      expect(api.catalogRequests, isEmpty);
+      expect(restored.secret.sourceScope, previous.secret.sourceScope);
+      expect(
+        restored.secret.credentials?.accessGrant?.allowsNewSessions,
+        isTrue,
+      );
+    },
+  );
 }

@@ -129,6 +129,7 @@ class ProtectedAccountService {
     Account account, {
     bool automatic = false,
     LibraryKind initialKind = LibraryKind.live,
+    bool loadInitialCatalog = true,
   }) {
     final existing = _flights[account.id];
     if (existing != null) return existing;
@@ -136,6 +137,7 @@ class ProtectedAccountService {
       account,
       automatic: automatic,
       initialKind: initialKind,
+      loadInitialCatalog: loadInitialCatalog,
     );
     _flights[account.id] = future;
     future.then<void>(
@@ -153,6 +155,7 @@ class ProtectedAccountService {
     Account account, {
     required bool automatic,
     required LibraryKind initialKind,
+    required bool loadInitialCatalog,
   }) async {
     final version = _versions[account.id] ?? 0;
     final previous = await store.readProtected(account);
@@ -176,6 +179,7 @@ class ProtectedAccountService {
         account,
         previous.originalUrl,
         initialKind: initialKind,
+        loadInitialCatalog: loadInitialCatalog,
       );
     } on ProtectedLinkExpired catch (error) {
       revokeAccess(account.id);
@@ -220,13 +224,19 @@ class ProtectedAccountService {
   Future<PreparedProtectedAccount> connect(
     Account account, {
     LibraryKind initialKind = LibraryKind.live,
+    bool loadInitialCatalog = true,
   }) async {
     final saved = await store.readProtected(account);
     if (saved.expiredAt(now())) {
       throw const AppException('The protected link has expired.');
     }
     if (isDue(saved)) {
-      return renew(account, automatic: true, initialKind: initialKind);
+      return renew(
+        account,
+        automatic: true,
+        initialKind: initialKind,
+        loadInitialCatalog: loadInitialCatalog,
+      );
     }
     final credentials = saved.credentials;
     if (credentials == null) {
@@ -235,7 +245,12 @@ class ProtectedAccountService {
       );
     }
     try {
-      return await _validate(account, saved, initialKind: initialKind);
+      return await _validate(
+        account,
+        saved,
+        initialKind: initialKind,
+        loadInitialCatalog: loadInitialCatalog,
+      );
     } on AppException catch (error) {
       if (const {
         'Account access is denied or inactive.',
@@ -243,7 +258,12 @@ class ProtectedAccountService {
         'The server returned HTTP 401.',
         'The server returned HTTP 403.',
       }.contains(error.message)) {
-        return renew(account, automatic: true, initialKind: initialKind);
+        return renew(
+          account,
+          automatic: true,
+          initialKind: initialKind,
+          loadInitialCatalog: loadInitialCatalog,
+        );
       }
       rethrow;
     }
@@ -253,6 +273,7 @@ class ProtectedAccountService {
     Account account,
     String url, {
     required LibraryKind initialKind,
+    bool loadInitialCatalog = true,
   }) async {
     final installation = await store.installationIdentity();
     final resolved = await resolver.resolve(
@@ -287,13 +308,19 @@ class ProtectedAccountService {
         linkExpiresAt: resolved.expiresAt,
       ),
     );
-    return _validate(account, secret, initialKind: initialKind);
+    return _validate(
+      account,
+      secret,
+      initialKind: initialKind,
+      loadInitialCatalog: loadInitialCatalog,
+    );
   }
 
   Future<PreparedProtectedAccount> _validate(
     Account account,
     ProtectedAccountSecret secret, {
     required LibraryKind initialKind,
+    bool loadInitialCatalog = true,
   }) async {
     final saved = secret.credentials!;
     final grant = ProtectedAccessGrant(
@@ -314,20 +341,21 @@ class ProtectedAccountService {
     );
     try {
       final status = await api.authenticate(credentials);
-      // Validate only the entry section before publishing a connection. Other
-      // sections use the same scoped credentials and load on user navigation.
-      final results = await Future.wait<Object>([
-        api.categories(credentials, initialKind),
-        api.catalog(credentials, initialKind),
-      ]);
-      final catalogs = <LibraryKind, ProtectedCatalog>{
-        initialKind: (
+      // Restoring My Library requires valid credentials, not a full channel
+      // catalog. Explicit connections retain the existing catalog validation.
+      final catalogs = <LibraryKind, ProtectedCatalog>{};
+      if (loadInitialCatalog) {
+        final results = await Future.wait<Object>([
+          api.categories(credentials, initialKind),
+          api.catalog(credentials, initialKind),
+        ]);
+        catalogs[initialKind] = (
           categories: results[0] as List<MediaCategory>,
           entries: (results[1] as List<MediaEntry>)
               .map((entry) => entry.withSourceScope(secret.sourceScope))
               .toList(growable: false),
-        ),
-      };
+        );
+      }
       if (secret.expiredAt(now())) {
         throw ProtectedLinkExpired(secret.expiresAt!);
       }

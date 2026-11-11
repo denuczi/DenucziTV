@@ -116,6 +116,10 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   List<MediaCategory> categories = [];
   List<MediaEntry> entries = [];
   Account? activeAccount;
+
+  /// Last selected account, visible locally before its network login finishes.
+  /// This does not grant playback access or indicate a connected session.
+  Account? offlineLibraryAccount;
   AccountStatus? accountStatus;
   LibraryKind kind = LibraryKind.live;
   String? categoryId;
@@ -124,6 +128,10 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   String userAgent = UserAgent.defaultValue;
   bool customUserAgent = false;
   bool loading = false;
+  // A selected section may not have been requested yet when My Library opens.
+  // Keep this separate from loading: a successful empty catalog is still loaded.
+  bool _selectedCatalogRequested = false;
+  bool get selectedCatalogRequested => _selectedCatalogRequested;
   bool connecting = false;
   bool restoringAccount = false;
   bool initialized = false;
@@ -294,6 +302,17 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
         (account) => account.id == preferredId,
       );
       if (matches.isNotEmpty) {
+        // The cached library is available before authentication or catalog
+        // refresh. Playback remains gated on active credentials.
+        offlineLibraryAccount = matches.first;
+        unawaited(
+          personalLibrary?.selectAccount(
+                matches.first.id,
+                sourceScope: matches.first.isProtected ? null : '',
+                protected: matches.first.isProtected,
+              ) ??
+              Future<void>.value(),
+        );
         // Do not hold the first window hostage to a slow or offline provider.
         // A failure leaves the saved profiles available for manual selection.
         _automaticConnection = _restoreSavedAccount(matches.first);
@@ -308,7 +327,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     restoringAccount = true;
     notifyListeners();
     try {
-      await connectSaved(account);
+      await connectSaved(account, loadCatalog: false);
     } finally {
       restoringAccount = false;
       notifyListeners();
@@ -465,7 +484,10 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<bool> _adoptProtected(PreparedProtectedAccount prepared) async {
+  Future<bool> _adoptProtected(
+    PreparedProtectedAccount prepared, {
+    bool loadCatalog = true,
+  }) async {
     final account =
         savedAccounts
             .where((item) => item.id == prepared.account.id)
@@ -489,6 +511,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     }
     final selected = activeAccount?.id == account.id ? kind : LibraryKind.live;
     activeAccount = account;
+    offlineLibraryAccount = null;
     _credentials = prepared.secret.credentials;
     accountStatus = prepared.status;
     accountStatuses[account.id] = prepared.status;
@@ -498,7 +521,8 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     entries = selectedCatalog?.entries ?? [];
     categoryId = null;
     search = '';
-    loading = selectedCatalog == null;
+    loading = loadCatalog && selectedCatalog == null;
+    _selectedCatalogRequested = selectedCatalog != null;
     error = null;
     _invalidateVisibleEntries();
     _rememberProtected(account, prepared.secret);
@@ -511,7 +535,6 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
         protected: true,
       );
       for (final catalog in prepared.catalogs.entries) {
-        if (catalog.key == LibraryKind.live) continue;
         await personalLibrary?.reconcileCatalog(
           account.id,
           catalog.key,
@@ -528,7 +551,9 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     if (!_disposed &&
         identical(_credentials, prepared.secret.credentials) &&
         kind == selected &&
-        selectedCatalog == null) {
+        selectedCatalog == null &&
+        loadCatalog &&
+        !_selectedCatalogRequested) {
       await selectKind(selected);
     }
     return true;
@@ -564,7 +589,10 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _connectProtectedSaved(Account account) async {
+  Future<void> _connectProtectedSaved(
+    Account account, {
+    bool loadCatalog = true,
+  }) async {
     if (connecting) return;
     connecting = true;
     final version = ++_connectionVersion;
@@ -580,9 +608,10 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
       final prepared = await protectedAccounts.connect(
         account,
         initialKind: activeAccount?.id == account.id ? kind : LibraryKind.live,
+        loadInitialCatalog: loadCatalog,
       );
       if (_disposed || version != _connectionVersion) return;
-      if (!await _adoptProtected(prepared)) return;
+      if (!await _adoptProtected(prepared, loadCatalog: loadCatalog)) return;
       protectedSyncStates[account.id] = ProtectedSyncState.updated;
       await _persistPreferredAccount(account.id);
     } catch (failure) {
@@ -614,10 +643,13 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     protectedSyncStates[account.id] = ProtectedSyncState.checking;
     notifyListeners();
     try {
+      final loadInitialCatalog =
+          !automatic || (activate && _selectedCatalogRequested);
       final prepared = await protectedAccounts.renew(
         account,
         automatic: automatic,
         initialKind: activate ? kind : LibraryKind.live,
+        loadInitialCatalog: loadInitialCatalog,
       );
       if (_disposed || !savedAccounts.any((item) => item.id == account.id)) {
         return;
@@ -626,7 +658,9 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
       if (activate &&
           activeAccount?.id == account.id &&
           version == _connectionVersion) {
-        if (!await _adoptProtected(prepared)) return;
+        if (!await _adoptProtected(prepared, loadCatalog: loadInitialCatalog)) {
+          return;
+        }
       }
       protectedSyncStates[account.id] = ProtectedSyncState.updated;
     } catch (failure) {
@@ -726,7 +760,11 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  Future<bool> connect(AccountCredentials input, {String? existingId}) async {
+  Future<bool> connect(
+    AccountCredentials input, {
+    String? existingId,
+    bool loadCatalog = true,
+  }) async {
     if (connecting) {
       return false;
     }
@@ -805,7 +843,9 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
         error = 'Connected, but the account selection could not be saved.';
       }
       notifyListeners();
-      await selectKind(LibraryKind.live);
+      if (loadCatalog && !_selectedCatalogRequested) {
+        await selectKind(LibraryKind.live);
+      }
       return true;
     } catch (failure) {
       if (version == _connectionVersion) {
@@ -823,9 +863,9 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> connectSaved(Account account) async {
+  Future<void> connectSaved(Account account, {bool loadCatalog = true}) async {
     if (account.isProtected) {
-      await _connectProtectedSaved(account);
+      await _connectProtectedSaved(account, loadCatalog: loadCatalog);
       return;
     }
     final connectionVersion = _connectionVersion;
@@ -842,6 +882,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
           label: account.label,
         ),
         existingId: account.id,
+        loadCatalog: loadCatalog,
       );
     } catch (_) {
       if (connectionVersion == _connectionVersion) {
@@ -872,7 +913,8 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
       protectedExpirations.remove(account.id);
       protectedLastUpdated.remove(account.id);
       expiredProtectedAccounts.remove(account.id);
-      if (activeAccount?.id == account.id) {
+      if (activeAccount?.id == account.id ||
+          offlineLibraryAccount?.id == account.id) {
         await disconnect();
       }
       notifyListeners();
@@ -890,6 +932,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> selectKind(LibraryKind selected) async {
     kind = selected;
+    _selectedCatalogRequested = false;
     _invalidateVisibleEntries();
     categoryId = null;
     search = '';
@@ -906,6 +949,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     }
     final cached = _catalogCache[selected];
     if (cached != null) {
+      _selectedCatalogRequested = true;
       categories = cached.categories;
       entries = cached.entries;
       _invalidateVisibleEntries();
@@ -915,6 +959,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     }
     categories = [];
     entries = [];
+    _selectedCatalogRequested = true;
     loading = true;
     notifyListeners();
     final token = CancelToken();
@@ -941,8 +986,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
       categories = resolvedCategories;
       entries = resolvedEntries;
       _invalidateVisibleEntries();
-      if (selected != LibraryKind.live &&
-          (resolvedEntries.isNotEmpty || activeAccount?.isProtected == true) &&
+      if ((resolvedEntries.isNotEmpty || activeAccount?.isProtected == true) &&
           activeAccount != null) {
         final accountId = activeAccount!.id;
         unawaited(
@@ -1039,7 +1083,9 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     _catalogCancellation?.cancel();
     ++_catalogVersion;
     _catalogCache.clear();
+    _selectedCatalogRequested = false;
     activeAccount = null;
+    offlineLibraryAccount = null;
     accountStatus = null;
     _credentials = null;
     // Scope switches immediately, even if a previous database read finishes later.

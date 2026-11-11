@@ -46,7 +46,8 @@ void main() {
     Semantics item(String label) =>
         tester.widget<Semantics>(find.byKey(Key('navigation-$label')));
 
-    expect(item('live-tv').properties.selected, isTrue);
+    expect(item('my-library').properties.selected, isTrue);
+    expect(item('live-tv').properties.selected, isFalse);
     expect(item('movies').properties.selected, isFalse);
     expect(item('series').properties.selected, isFalse);
 

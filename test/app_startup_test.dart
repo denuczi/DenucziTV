@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:denuczi_tv/core/models/app_controller.dart';
 import 'package:denuczi_tv/core/network/network_client.dart';
+import 'package:denuczi_tv/features/personal_library/presentation/my_library_page.dart';
 import 'package:denuczi_tv/core/storage/account_store.dart';
 import 'package:denuczi_tv/core/storage/settings_store.dart';
 import 'package:denuczi_tv/features/library/data/xtream_api.dart';
@@ -47,7 +48,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Your media, one place.'), findsOneWidget);
+    expect(find.byType(MyLibraryPage), findsOneWidget);
+    expect(
+      find.text('Connect to a provider to see your personal library.'),
+      findsOneWidget,
+    );
     expect(find.text('Settings'), findsOneWidget);
 
     await tester.tap(find.text('Settings'));

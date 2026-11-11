@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../domain/media_models.dart';
 import '../domain/rating_format.dart';
 import 'media_actions.dart';
+import '../../personal_library/presentation/library_controls.dart';
 import 'live_channel_number_notch.dart';
 
 /// Keyboard-accessible desktop poster tile with separate artwork and metadata.
@@ -146,7 +147,7 @@ class _MediaCardState extends State<MediaCard> {
                         if (widget.showActions &&
                             (emphasized || _actionMenuOpen))
                           Positioned(
-                            right: 6,
+                            right: media.kind == LibraryKind.live ? 52 : 6,
                             top: 6,
                             // Keep the popup button alive when the pointer
                             // leaves the card while an action is in progress.
@@ -160,6 +161,15 @@ class _MediaCardState extends State<MediaCard> {
                                 onMenuOpened: () => _setActionMenuOpen(true),
                                 onMenuClosed: () => _setActionMenuOpen(false),
                               ),
+                            ),
+                          ),
+                        if (media.kind == LibraryKind.live)
+                          Positioned(
+                            right: 7,
+                            top: 7,
+                            child: FavoriteToggleButton(
+                              media: media,
+                              compact: true,
                             ),
                           ),
                         if (media.kind == LibraryKind.live)

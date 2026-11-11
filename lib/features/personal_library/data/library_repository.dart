@@ -11,6 +11,9 @@ abstract interface class LibraryRepository {
     String sourceScope = '',
   });
   Future<void> setFavorite(LibraryItem item, bool enabled);
+
+  /// Removes favorites only for this account; watch activity is unaffected.
+  Future<void> clearFavorites(String accountId);
   Future<List<LibraryItem>> favorites(
     String accountId, {
     bool includeUnavailable = false,

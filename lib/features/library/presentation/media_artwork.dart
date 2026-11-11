@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/network/network_client.dart';
@@ -10,12 +12,14 @@ class MediaArtwork extends StatelessWidget {
     required this.network,
     this.width = 156,
     this.height = 224,
+    this.cachedFile,
   });
 
   final String? imageUrl;
   final NetworkClient network;
   final double width;
   final double height;
+  final File? cachedFile;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +36,15 @@ class MediaArtwork extends StatelessWidget {
         height: height,
         child: ColoredBox(
           color: scheme.surfaceContainerHighest,
-          child: valid
+          child: cachedFile != null
+              ? Image.file(
+                  cachedFile!,
+                  fit: BoxFit.cover,
+                  cacheWidth: decodedWidth > 0 ? decodedWidth : 1,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Center(child: Icon(Icons.movie_outlined, size: 36)),
+                )
+              : valid
               ? Image.network(
                   uri.toString(),
                   headers: network.imageHeaders,
