@@ -59,9 +59,19 @@ No additional changes recorded.
   commit `d9078f636435621e176305b7eb19eb24082fde10`.
 - The maintainer reported 434 passing Flutter tests, a clean static analysis,
   and no Dart formatting changes on Debian during release preparation.
-- Debian and Windows standalone release installers require separate packaging,
-  checksum verification and installation checks before publication. The
-  Microsoft Store MSIX update is a separate submission.
+- GitHub Release `v0.6.4` is published as the latest stable release with
+  standalone Windows x64 EXE and Debian amd64 DEB installers, each accompanied
+  by a SHA-256 checksum file.
+- The Debian 13 maintainer verified all 13 Debian/JNI packaging tests, a matching
+  package checksum, successful upgrade from 0.6.3 to 0.6.4, application startup,
+  and manual playback. Some provider streams may contain decoding errors.
+- GitHub Actions [Windows installer run 43098917643](https://github.com/denuczi/DenucziTV/actions/runs/43098917643)
+  passed formatting, analysis, Flutter tests, native compilation, Inno Setup
+  packaging and artifact upload; the downloaded EXE checksum matched. The
+  maintainer also reported completion of Windows installer QA without providing
+  a detailed platform matrix.
+- Microsoft Store remains on its separately published 0.6.3 package pending a
+  new MSIX submission and certification.
 - See the [0.6.4 release notes](docs/releases/v0.6.4.md) for user-facing
   details and upgrade instructions.
 

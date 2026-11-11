@@ -9,23 +9,25 @@ access and a writable `.git` directory. Installers are release assets: keep
 
 ## Current stable release
 
-[Version 0.6.3](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.3) uses these
-installer filenames:
+[Version 0.6.4](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.4)
+is published as the latest stable GitHub release. Its assets are:
 
 | Platform | Installer | Checksum |
 | --- | --- | --- |
-| Debian / Ubuntu x64 | `denuczitv_0.6.3+1-1_amd64.deb` | `denuczitv_0.6.3+1-1_amd64.deb.sha256` |
-| Windows x64 | `DenucziTV-Setup-0.6.3-x64.exe` | `DenucziTV-Setup-0.6.3-x64.exe.sha256` |
+| Debian amd64 | `denuczitv_0.6.4+1-1_amd64.deb` | `denuczitv_0.6.4+1-1_amd64.deb.sha256` |
+| Windows x64 | `DenucziTV-Setup-0.6.4-x64.exe` | `DenucziTV-Setup-0.6.4-x64.exe.sha256` |
 
-The release and tag already exist. Do not recreate them to add a platform asset
-or update the description. Keep earlier prereleases available as history.
+The immutable tag `v0.6.4` points to commit
+`d9078f636435621e176305b7eb19eb24082fde10`.
+Do not recreate or move the tag, overwrite released binaries, or re-run
+publication commands on this already published release.
+Documentation-only changes may be committed to `main` afterward without
+changing the application binary or tag.
 
-Microsoft Store distribution is prepared as an additional channel for 0.6.3 and
-does not change this release, tag, or the existing EXE/DEB assets. The Store
-package version `1.6.3.0` is technical metadata only. See
-[MICROSOFT_STORE.md](MICROSOFT_STORE.md) for the separate manual MSIX workflow,
-QA package, WACK, and Partner Center submission checklist. Do not upload the QA
-package to Partner Center.
+The [Microsoft Store edition](https://apps.microsoft.com/detail/9p25pqphwdvr)
+is a separate channel, currently at version 0.6.3 with package version
+`1.6.3.0`. The Store receives updates through Partner Center certification,
+not GitHub Releases. See [MICROSOFT_STORE.md](MICROSOFT_STORE.md).
 
 ## Authentication and source review
 
@@ -43,97 +45,36 @@ tests. Exclude local credentials, configuration, databases and build output.
 Keep `pubspec.lock` and the native runners tracked. Do not overwrite remote
 history to resolve a rejected push.
 
-## Prepare a new application release
+## Prepare and publish a future application release
 
-The examples in this section use **0.6.4**, a future version. They are a template,
-not instructions to publish the existing 0.6.3 again.
+This procedure applies only to a **new, unused** version (for example,
+`0.6.5`), not to the already published 0.6.4.
 
-1. Choose an unused version and set `pubspec.yaml`, for example `0.6.4+1`.
-   The packagers read it directly. Selecting a filename for package tests does
-   not change the application version.
-2. Update the changelog and create the new English release notes file, such as
-   `docs/releases/v0.6.4.md`. Describe user-visible changes, available platforms,
-   installation steps and known limitations. Record actual validation results.
-3. Complete [QA.md](QA.md), including formatting, analysis and the full test suite.
-   Use `flutter test --concurrency=1` to reduce memory pressure on a small machine.
-4. Review and commit the source that will be distributed. Build a fresh Linux
-   release and [Debian package](DEBIAN_PACKAGING.md), then verify its checksum,
-   packaging tests and installed-app behaviour. Do not rename an older binary.
-5. Push the source commit. Create an unused application tag on that exact commit:
+1. Update `pubspec.yaml`, `CHANGELOG.md`, release notes and relevant version
+   assertions. Commit the exact source that will be distributed.
+2. Run [QA.md](QA.md), Linux packaging checks, and actual desktop installation
+   tests. Check GitHub Actions before tagging.
+3. Create a new annotated tag on the reviewed commit and push it **once**.
+   Never retarget a published tag to include documentation changes.
+4. Generate installers from that tag. Check SHA-256 and platform-specific QA
+   before announcing binaries.
+5. Create the GitHub Release as a draft, attach compatible installers and their
+   matching checksums, and review the official English notes.
+6. Publish the draft as the latest stable release only when every promised
+   asset and required verification is complete.
+7. Prepare and submit the Store MSIX independently through Partner Center. Its
+   package version, identity, workflow and tests must agree on the new version.
 
-   ```bash
-   git tag -a v0.6.4 -m "DenucziTV 0.6.4" &&
-   git push origin main &&
-   git push origin v0.6.4
-   ```
-
-6. After QA, create a stable release with the platforms already verified:
-
-   ```bash
-   gh release create v0.6.4 \
-     dist/denuczitv_0.6.4+1-1_amd64.deb \
-     dist/denuczitv_0.6.4+1-1_amd64.deb.sha256 \
-     --repo denuczi/DenucziTV \
-     --verify-tag \
-     --title "DenucziTV 0.6.4" \
-     --notes-file docs/releases/v0.6.4.md \
-     --latest \
-     --prerelease=false
-   ```
-
-7. Use the [Windows installer workflow](WINDOWS_PACKAGING.md) with that same tag.
-   Download its artifact, test it on Windows, and attach the verified installer
-   and checksum to the existing release. Update the description when the new
-   platform is available.
-
-When publishing through the website, leave **Set as a pre-release** unchecked
-for a stable version and select **Set as the latest release**. A successful build
-alone does not establish stability; complete the native installation checks.
-
-## Add a Windows installer to an existing release
-
-Build and test the same application tag, following [WINDOWS_PACKAGING.md](WINDOWS_PACKAGING.md).
-The following commands are for 0.6.3, with files downloaded to
-`dist/windows-v0.6.3`. Run them from the repository root. The checksum command
-uses a subshell so the terminal stays in that root directory:
+To **inspect** the current published release (read-only):
 
 ```bash
-(cd dist/windows-v0.6.3 && sha256sum --check DenucziTV-Setup-0.6.3-x64.exe.sha256)
+gh release view v0.6.4 --repo denuczi/DenucziTV --json tagName,isDraft,isPrerelease,assets --jq '{tag: .tagName, draft: .isDraft, prerelease: .isPrerelease, assets: [.assets[].name]}'
 ```
 
-Only if those assets are not already published, upload them:
-
-```bash
-gh release upload v0.6.3 \
-  dist/windows-v0.6.3/DenucziTV-Setup-0.6.3-x64.exe \
-  dist/windows-v0.6.3/DenucziTV-Setup-0.6.3-x64.exe.sha256 \
-  --repo denuczi/DenucziTV
-```
-
-This preserves the Linux assets. Do not use `--clobber` to replace a published
-installer. A changed application requires a new application version and tag.
-The `.build-info.json` is optional technical provenance, not an installer.
-
-To apply the reviewed English release description from the repository:
-
-```bash
-gh release edit v0.6.3 --repo denuczi/DenucziTV --notes-file docs/releases/v0.6.3.md
-```
-
-This replaces the complete release description with that file. Review it first
-and preserve any additional notes that should remain public.
-
-## Verify the published result
-
-```bash
-gh api repos/denuczi/DenucziTV/releases/tags/v0.6.3 \
-  --jq '{tag: .tag_name, draft: .draft, prerelease: .prerelease, assets: [.assets[].name]}'
-gh release view v0.6.3 --repo denuczi/DenucziTV --web
-```
-
-For a published stable release, `draft` and `prerelease` must both be `false`.
-Check the exact filenames and verify that downloads are accessible without
-signing in. The repository must be public for the unauthenticated update checker.
+For instructions and source-of-truth commands, see
+[DEBIAN_PACKAGING.md](DEBIAN_PACKAGING.md) and
+[WINDOWS_PACKAGING.md](WINDOWS_PACKAGING.md). Release artifacts belong on the
+GitHub Release, never in `dist/` inside Git history.
 
 ## Stable update policy
 
@@ -143,7 +84,7 @@ remains manual. Never change a real release flag just to test the modal; use
 [the isolated fixtures and preview](UPDATES.md).
 
 Use explicit package prerelease identifiers for future candidates, such as
-`0.6.3-rc.1+1`. Plain `0.6.3+1` and stable tag `v0.6.3` compare equal even if one
+`0.6.5-rc.1+1`. Plain `0.6.5+1` and stable tag `v0.6.5` compare equal even if one
 was previously labelled as a GitHub prerelease. Build numbers do not force an
 application update. Keep the installer naming contract in [UPDATES.md](UPDATES.md).
 

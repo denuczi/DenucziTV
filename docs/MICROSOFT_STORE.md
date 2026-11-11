@@ -3,6 +3,15 @@
 **DenucziTV 0.6.3 has passed Microsoft Store certification and is published.**
 The public listing is [DenucziTV on Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr), Store ID `9P25PQPHWDVR` (first publication: November 11, 2026).
 
+**Release channel distinction (November 11, 2026):** DenucziTV
+[0.6.4 is published on GitHub](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.4)
+as standalone EXE and DEB installers, but this document still describes the
+original **0.6.3 Microsoft Store submission**. Publishing the GitHub Release
+neither uploads an MSIX nor updates Store customers. A Store 0.6.4 submission
+requires versioned MSIX metadata, updated packaging checks, its own QA, and
+Partner Center certification. Do not change the original 0.6.3 records below
+until a new Store package has actually been approved and distributed.
+
 ## Install from Microsoft Store
 
 On a compatible Windows 10/11 x64 PC, open the listing above, select **Get** or

@@ -90,6 +90,24 @@ permanent links, provider secrets, or installation identifiers in logs or report
 - Supply a later valid authorization through the same permanent link and verify
   recovery only after credentials and the entry section have been validated.
 
+## Live TV and personal-library checks (0.6.4)
+
+- Verify numeric selection in the player with the main keyboard and numeric
+  keypad. Wait five seconds after the final digit; use Enter to confirm early,
+  Backspace to edit and Escape to cancel. Invalid channel numbers must not
+  terminate the current stream.
+- Verify `Up`/`Down` and `W`/`S` channel navigation from both windowed and
+  fullscreen playback. Repeated key presses must not create duplicate players,
+  and channel numbering must remain stable across search/category filters.
+- Check the high-contrast channel banner with a missing logo, a long title,
+  a small window and both light/dark themes. It must only appear for keyboard
+  channel changes, not for initial playback or unrelated media.
+- Check My Library on startup without an eager Live TV catalog request. Save
+  Live TV favorites, filter/search by type, clear favorites after confirmation,
+  and confirm history/downloads and other accounts remain unaffected.
+- Verify the Markdown update modal with long notes, malformed links, a narrow
+  window and both languages. Actions must remain reachable while content scrolls.
+
 ## Stable update checker checks (0.6.2)
 
 Run `flutter test --concurrency=1 test/updates` and use the isolated preview in

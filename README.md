@@ -22,7 +22,7 @@
 <h2 align="center">Download</h2>
 
 <p align="center">
-  <strong><a href="https://github.com/denuczi/DenucziTV/releases/tag/v0.6.3">Latest stable release: 0.6.3</a></strong>
+  <strong><a href="https://github.com/denuczi/DenucziTV/releases/tag/v0.6.4">Latest stable release: 0.6.4</a></strong>
 </p>
 
 <div align="center">
@@ -30,8 +30,8 @@
 | Your system | Installer | Checksum |
 | :---: | :---: | :---: |
 | Windows 10 / 11, x64 | [Install from Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr) | Managed by Microsoft Store |
-| Windows 10 / 11, x64 (standalone) | [Download Windows installer](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/DenucziTV-Setup-0.6.3-x64.exe) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/DenucziTV-Setup-0.6.3-x64.exe.sha256) |
-| Debian / Ubuntu, x64 | [Download Linux package](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/denuczitv_0.6.3%2B1-1_amd64.deb) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/denuczitv_0.6.3%2B1-1_amd64.deb.sha256) |
+| Windows 10 / 11, x64 (standalone) | [Download Windows installer](https://github.com/denuczi/DenucziTV/releases/download/v0.6.4/DenucziTV-Setup-0.6.4-x64.exe) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.4/DenucziTV-Setup-0.6.4-x64.exe.sha256) |
+| Debian / Ubuntu, x64 | [Download Linux package](https://github.com/denuczi/DenucziTV/releases/download/v0.6.4/denuczitv_0.6.4%2B1-1_amd64.deb) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.4/denuczitv_0.6.4%2B1-1_amd64.deb.sha256) |
 
 </div>
 
@@ -52,11 +52,11 @@ DenucziTV does not include channels, movies, subscriptions, or provider accounts
 2. Select **Get** or **Install** in Microsoft Store and follow the prompts.
 3. Open **DenucziTV** from the Start menu. Future Store-edition updates are managed by Microsoft Store.
 
-The published Store listing is for the 0.6.3 edition. Availability can depend on the user's region and Store configuration. Microsoft Store and standalone EXE installations may have separate app data: **do not assume accounts, downloads, or favorites migrate automatically between editions**.
+The Store listing currently distributes the 0.6.3 edition, while the standalone GitHub release is 0.6.4. Availability can depend on the user's region and Store configuration. Microsoft Store and standalone EXE installations may have separate app data: **do not assume accounts, downloads, or favorites migrate automatically between editions**.
 
 ### Windows: standalone EXE (alternative)
 
-1. Download **`DenucziTV-Setup-0.6.3-x64.exe`** using the GitHub link above.
+1. Download **`DenucziTV-Setup-0.6.4-x64.exe`** using the GitHub link above.
 2. Run the installer and follow the setup steps.
 3. Open **DenucziTV** from the Start menu.
 
@@ -72,8 +72,8 @@ Download the matching `.exe.sha256` file. In PowerShell, open the folder contain
 both files and run:
 
 ```powershell
-Get-FileHash .\DenucziTV-Setup-0.6.3-x64.exe -Algorithm SHA256
-Get-Content .\DenucziTV-Setup-0.6.3-x64.exe.sha256
+Get-FileHash .\DenucziTV-Setup-0.6.4-x64.exe -Algorithm SHA256
+Get-Content .\DenucziTV-Setup-0.6.4-x64.exe.sha256
 ```
 
 The two SHA256 values must match; letter case does not matter.
@@ -82,13 +82,13 @@ The two SHA256 values must match; letter case does not matter.
 
 ### Linux: Debian / Ubuntu
 
-1. Download **`denuczitv_0.6.3+1-1_amd64.deb`** and its matching `.deb.sha256`
+1. Download **`denuczitv_0.6.4+1-1_amd64.deb`** and its matching `.deb.sha256`
    using the Linux links above.
 2. Open a terminal in the folder containing both files and run:
 
    ```bash
-   sha256sum --check denuczitv_0.6.3+1-1_amd64.deb.sha256 &&
-   sudo apt install ./denuczitv_0.6.3+1-1_amd64.deb
+   sha256sum --check denuczitv_0.6.4+1-1_amd64.deb.sha256 &&
+   sudo apt install ./denuczitv_0.6.4+1-1_amd64.deb
    ```
 
 3. Launch **DenucziTV** from your application menu, or run `denuczitv`.
@@ -97,8 +97,8 @@ The Linux package is built and has been installed on **Debian 13 amd64**. Other
 Debian/Ubuntu versions must satisfy its native library requirements; older
 systems may not be compatible. See [Debian package details](docs/DEBIAN_PACKAGING.md).
 
-These filenames are for 0.6.3. When installing another version, use that release's
-filenames and matching checksum files.
+These filenames are for the 0.6.4 standalone release. For another version,
+use that release's filenames and matching checksum files.
 
 ## Start using the app
 
@@ -130,10 +130,16 @@ The [published Microsoft Store edition](https://apps.microsoft.com/detail/9p25pq
 
 - Multiple saved Xtream and Protected Single Link accounts.
 - Live TV, movies, series, category filters, and catalog search.
+- Live TV channel switching with number keys (five-second selection timeout),
+  `Enter`, `Up`/`Down`, or `W`/`S` without closing the player.
 - Video playback with audio and subtitle selection when the stream supports it.
 - Downloads with reconnection and resume when supported by the provider.
-- Favorites, Continue Watching, and Watch History, stored locally per account.
-- Stable-release update checks and installer downloads.
+- Live TV, movie, and series favorites with local search, account-scoped removal,
+  and bounded on-disk artwork caching.
+- Continue Watching and Watch History, stored locally per account.
+- My Library on startup, with Live TV catalog loading deferred until needed.
+- Stable-release update checks, installer downloads, and readable Markdown
+  release notes with safe link handling.
 - Light, dark, and system appearance; English and Spanish interfaces.
 - M3U export and stream-link copying for manual Xtream accounts.
 - Automatic credential renewal for Protected Single Link accounts.
@@ -189,6 +195,8 @@ content shown.
 | Generate a Windows installer from Linux | [Windows packaging with GitHub Actions](docs/WINDOWS_PACKAGING.md) |
 | Install the Microsoft Store edition or maintain its MSIX packaging | [Microsoft Store distribution](docs/MICROSOFT_STORE.md) |
 | Understand stable update checks and assisted downloads | [Software updates](docs/UPDATES.md) |
+| See what changed in 0.6.4 | [0.6.4 release notes](docs/releases/v0.6.4.md) |
+| Publish source and release installers | [Release publishing](docs/PUBLISHING.md) |
 | Run release checks | [Quality assurance](docs/QA.md) |
 | Report a vulnerability or review credential handling | [Security policy](SECURITY.md) |
 | Read the change history | [Changelog](CHANGELOG.md) |

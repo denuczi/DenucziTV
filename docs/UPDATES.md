@@ -171,7 +171,7 @@ stored. Release responses and download URLs are not persisted. A failed query
 never produces an up-to-date result. Latest stable metadata is kept only in
 memory when known; a recent timestamp alone does not fabricate availability.
 
-As of the 0.6.4 development update, the release-notes body renders as GitHub
+Starting with the published 0.6.4 release, the release-notes body renders as GitHub
 Flavored Markdown through `flutter_markdown_plus`. The dedicated renderer supports
 headings, emphasis, lists, tables, and code blocks with theme-aware typography.
 Remote images are replaced with a small icon and their alt text: an automatic
@@ -219,6 +219,17 @@ flutter run -d linux -t tool/update_preview.dart \
 The preview is a separate entry point and is not included in the normal app.
 Manual platform QA should also cover the real browser, native package metadata,
 Windows x64, Debian/Ubuntu x64, and suppression during actual playback/downloads.
+
+## Verification record for 0.6.4
+
+The maintainer reported 434 Flutter tests passed with a clean `flutter analyze`
+result and no Dart formatting changes. The Markdown preview was visually
+checked in the desktop application, and the 0.6.4 release was published with
+Windows x64 EXE and Debian amd64 DEB assets and matching checksums.
+The Windows installer build passed in
+[workflow run 43098917643](https://github.com/denuczi/DenucziTV/actions/runs/43098917643).
+The DEB was installed as an upgrade from 0.6.3 and tested on Debian 13.
+These results do not establish compatibility with every provider or desktop.
 
 ## Verification record for 0.6.2
 

@@ -8,8 +8,8 @@ user; root access is unnecessary for packaging.
 To install the app, follow the [Linux installation steps](../README.md#linux-debian--ubuntu).
 This guide is for maintainers building or inspecting a package.
 
-The current stable release is [v0.6.3](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.3).
-The examples use its filenames; substitute the matching version for a future
+The current stable GitHub release is [v0.6.4](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.4).
+The examples use its filenames; substitute the matching version for another
 release. Installers belong in release assets; keep `dist/` out of source commits.
 
 ## Prerequisites
@@ -41,17 +41,17 @@ From the repository root:
 
 ```bash
 bash scripts/package-deb.sh
-DENUCZITV_DEB=dist/denuczitv_0.6.3+1-1_amd64.deb \
-  python3 -m unittest discover -s test/packaging -v
+DENUCZITV_DEB=dist/denuczitv_0.6.4+1-1_amd64.deb python3 -m unittest discover -s test/packaging -p 'test_deb_package.py' -v
+python3 -m unittest discover -s test/packaging -p 'test_linux_jni_policy.py' -v
 ```
 
-For `version: 0.6.3+1`, the default amd64 output is:
+For `version: 0.6.4+1`, the default amd64 output is:
 
 ```text
-dist/denuczitv_0.6.3+1-1_amd64.deb
-dist/denuczitv_0.6.3+1-1_amd64.deb.sha256
-dist/denuczitv_0.6.3+1-1_amd64.build-info.json
-dist/denuczitv_0.6.3+1-1_amd64.dependencies.log
+dist/denuczitv_0.6.4+1-1_amd64.deb
+dist/denuczitv_0.6.4+1-1_amd64.deb.sha256
+dist/denuczitv_0.6.4+1-1_amd64.build-info.json
+dist/denuczitv_0.6.4+1-1_amd64.dependencies.log
 ```
 
 The last `-1` is the Debian packaging revision. Increment it when redistributing
@@ -66,9 +66,14 @@ The bundle architecture must match the host (amd64 or arm64); cross-packaging is
 not supported. To verify a specific archive when multiple versions exist:
 
 ```bash
-DENUCZITV_DEB=dist/denuczitv_0.6.3+1-1_amd64.deb \
-  python3 -m unittest discover -s test/packaging -v
+DENUCZITV_DEB=dist/denuczitv_0.6.4+1-1_amd64.deb python3 -m unittest discover -s test/packaging -p 'test_deb_package.py' -v
+python3 -m unittest discover -s test/packaging -p 'test_linux_jni_policy.py' -v
 ```
+
+The 0.6.4 Linux-specific tests passed (10 Debian and 3 JNI policy cases).
+The full `test/packaging` discovery also includes MSIX checks still pinned to
+0.6.3; those require version-policy maintenance before the separate Store 0.6.4
+submission. Do not misreport those failures as DEB packaging failures.
 
 The integration checks compare extracted files against the package checksums,
 inspect ownership and permissions, verify desktop integration, resolve relocated
@@ -170,15 +175,15 @@ build distribution, and source revision/dirty status.
 Inspect the package and simulate installation first:
 
 ```bash
-dpkg-deb --info dist/denuczitv_0.6.3+1-1_amd64.deb
-apt-get --simulate install ./dist/denuczitv_0.6.3+1-1_amd64.deb
-(cd dist && sha256sum --check denuczitv_0.6.3+1-1_amd64.deb.sha256)
+dpkg-deb --info dist/denuczitv_0.6.4+1-1_amd64.deb
+apt-get --simulate install ./dist/denuczitv_0.6.4+1-1_amd64.deb
+(cd dist && sha256sum --check denuczitv_0.6.4+1-1_amd64.deb.sha256)
 ```
 
 When ready, install through APT so dependencies are resolved:
 
 ```bash
-sudo apt install ./dist/denuczitv_0.6.3+1-1_amd64.deb
+sudo apt install ./dist/denuczitv_0.6.4+1-1_amd64.deb
 denuczitv
 ```
 
@@ -189,3 +194,20 @@ remaining [manual QA checks](QA.md) on a real desktop before publishing.
 
 Uninstall with `sudo apt remove denuczitv`. User profile data is preserved; the
 package does not delete credentials, history, or downloaded files on removal.
+
+## Verified 0.6.4 standalone package
+
+The 0.6.4 DEB was built from the immutable `v0.6.4` tag on Debian 13 amd64.
+The packager completed its dependency, ELF and desktop checks. All 10 DEB and
+3 Linux JNI policy tests passed. The maintainer verified the SHA-256 checksum,
+APT upgrade simulation, and real upgrade from 0.6.3 to 0.6.4. The package was
+installed and launched successfully; manual playback was reported working,
+with individual provider-stream decoding errors outside the package checks.
+
+SHA-256 for `denuczitv_0.6.4+1-1_amd64.deb`:
+
+```text
+47b07af064a826edfa799d0891930ff439507b29bea731a6feeb874d43bd1888
+```
+
+These checks validate Debian 13 amd64, not all Debian/Ubuntu releases.
