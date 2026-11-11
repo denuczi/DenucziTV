@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:dio/dio.dart';
 
 import '../../../l10n/l10n_ext.dart';
 
@@ -15,12 +17,15 @@ import '../../../core/theme/app_theme.dart';
 import '../../personal_library/application/personal_library_controller.dart';
 import '../../personal_library/presentation/library_controls.dart';
 import '../application/playback_retry_controller.dart';
+import '../application/live_channel_input_controller.dart';
+import '../domain/live_channel_directory.dart';
 import '../../personal_library/domain/playback_policy.dart';
 import '../../library/data/xtream_api.dart';
 import '../../library/domain/media_models.dart';
 import 'responsive_player_frame.dart';
 import 'playback_track_menu.dart';
 import 'player_video_overlay.dart';
+import 'live_channel_indicator.dart';
 
 /// Plays a single channel/movie or a consecutive series episode queue.
 /// MediaKit advances to the next queued item at the end of an episode.
@@ -79,12 +84,26 @@ class _PlayerDialogState extends State<PlayerDialog> {
   final _videoStatus = ValueNotifier(const PlayerVideoStatus(opening: true));
   String _liveFormat = 'm3u8';
   late int _currentIndex;
+  MediaEntry? _activeLiveMedia;
+  LiveChannelDirectory? _liveDirectory;
+  CancelToken? _liveCatalogCancellation;
+  bool _liveCatalogUnavailable = false;
+  int? _queuedChannelNumber;
+  int _queuedChannelSteps = 0;
+  MediaEntry? _pendingLiveChannel;
+  late final LiveChannelInputController _channelInput;
+  final _liveNotice = ValueNotifier<LiveChannelNotice?>(null);
+  Timer? _liveNoticeTimer;
 
   bool get _isSeriesQueue => widget.episodeQueue.isNotEmpty;
   List<MediaEntry> get _items =>
-      _isSeriesQueue ? widget.episodeQueue : [widget.media];
-  MediaEntry get _currentMedia =>
-      _items[_currentIndex.clamp(0, _items.length - 1).toInt()];
+      _isSeriesQueue ? widget.episodeQueue : [_activeLiveMedia ?? widget.media];
+  bool get _isLive => widget.media.kind == LibraryKind.live;
+  MediaEntry get _currentMedia => _isSeriesQueue
+      ? widget.episodeQueue[_currentIndex
+            .clamp(0, widget.episodeQueue.length - 1)
+            .toInt()]
+      : _activeLiveMedia ?? widget.media;
   bool get _hasNext => _isSeriesQueue && _currentIndex < _items.length - 1;
   bool get _hasPrevious => _isSeriesQueue && _currentIndex > 0;
 
@@ -119,13 +138,86 @@ class _PlayerDialogState extends State<PlayerDialog> {
     }
   }
 
-  Widget _videoControls(VideoState video) => PlayerVideoOverlay(
-    status: _videoStatus,
-    controls: AdaptiveVideoControls(video),
-    onRetry: () => _retryPlayback(manual: true),
-    onClose: () => _closeVideo(video),
-    onExploreCatalog: () => _closeVideo(video, exploreCatalog: true),
-  );
+  // media_kit normally binds Arrow Up/Down to volume. Override those keys
+  // on Live TV while retaining its standard desktop shortcuts for playback,
+  // seeking, fullscreen and media keys. The same map is used in fullscreen.
+  Map<ShortcutActivator, VoidCallback> _livePlayerShortcuts(
+    VideoState video,
+  ) => {
+    const SingleActivator(LogicalKeyboardKey.mediaPlay): () => _player.play(),
+    const SingleActivator(LogicalKeyboardKey.mediaPause): () => _player.pause(),
+    const SingleActivator(LogicalKeyboardKey.mediaPlayPause): () =>
+        _player.playOrPause(),
+    const SingleActivator(LogicalKeyboardKey.mediaTrackNext): () =>
+        _player.next(),
+    const SingleActivator(LogicalKeyboardKey.mediaTrackPrevious): () =>
+        _player.previous(),
+    const SingleActivator(LogicalKeyboardKey.space): () =>
+        _player.playOrPause(),
+    const SingleActivator(LogicalKeyboardKey.keyJ): () =>
+        _player.seek(_player.state.position - const Duration(seconds: 10)),
+    const SingleActivator(LogicalKeyboardKey.keyI): () =>
+        _player.seek(_player.state.position + const Duration(seconds: 10)),
+    const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+        _player.seek(_player.state.position - const Duration(seconds: 2)),
+    const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+        _player.seek(_player.state.position + const Duration(seconds: 2)),
+    const SingleActivator(
+      LogicalKeyboardKey.arrowUp,
+      includeRepeats: false,
+    ): () =>
+        _directionalKey(-1),
+    const SingleActivator(
+      LogicalKeyboardKey.arrowDown,
+      includeRepeats: false,
+    ): () =>
+        _directionalKey(1),
+    const SingleActivator(LogicalKeyboardKey.keyW, includeRepeats: false): () =>
+        _directionalKey(-1),
+    const SingleActivator(LogicalKeyboardKey.keyS, includeRepeats: false): () =>
+        _directionalKey(1),
+    const SingleActivator(LogicalKeyboardKey.keyF): () =>
+        video.toggleFullscreen(),
+    const SingleActivator(LogicalKeyboardKey.escape): () {
+      if (_channelInput.digits.isNotEmpty) {
+        _channelInput.clear();
+      } else if (video.isFullscreen()) {
+        unawaited(video.exitFullscreen());
+      }
+    },
+  };
+
+  void _directionalKey(int direction) {
+    if (!_canNavigateLive) return;
+    _channelInput.clear();
+    _stepChannel(direction);
+  }
+
+  Widget _videoControls(VideoState video) {
+    final nativeControls = AdaptiveVideoControls(video);
+    final shortcuts = _isLive ? _livePlayerShortcuts(video) : null;
+    final controls = _isLive
+        ? MaterialDesktopVideoControlsTheme(
+            normal: MaterialDesktopVideoControlsThemeData(
+              keyboardShortcuts: shortcuts,
+            ),
+            fullscreen: MaterialDesktopVideoControlsThemeData(
+              keyboardShortcuts: shortcuts,
+            ),
+            child: nativeControls,
+          )
+        : nativeControls;
+    return PlayerVideoOverlay(
+      status: _videoStatus,
+      controls: controls,
+      onRetry: () => _retryPlayback(manual: true),
+      onClose: () => _closeVideo(video),
+      onExploreCatalog: () => _closeVideo(video, exploreCatalog: true),
+      liveChannelNotice: _isLive ? _liveNotice : null,
+      network: _isLive ? _network : null,
+      onChannelKeyEvent: _isLive ? _onChannelKey : null,
+    );
+  }
 
   @override
   void initState() {
@@ -141,6 +233,19 @@ class _PlayerDialogState extends State<PlayerDialog> {
     _currentIndex = _isSeriesQueue
         ? widget.initialIndex.clamp(0, widget.episodeQueue.length - 1).toInt()
         : 0;
+    _activeLiveMedia = _isLive ? widget.media : null;
+    _channelInput = LiveChannelInputController(
+      onChanged: (digits) {
+        if (!mounted) return;
+        if (digits.isEmpty) {
+          _liveNoticeTimer?.cancel();
+          _liveNotice.value = null;
+        } else {
+          _showLiveNotice(LiveChannelNotice.forDigits(digits));
+        }
+      },
+      onSubmitted: _selectChannelNumber,
+    );
     _retryController = PlaybackRetryController(
       onCountdownChanged: (seconds) {
         if (mounted) {
@@ -250,11 +355,212 @@ class _PlayerDialogState extends State<PlayerDialog> {
       _stopUnavailable();
     } else {
       unawaited(_open());
+      if (_isLive) unawaited(_loadLiveDirectory());
     }
+  }
+
+  bool get _canNavigateLive {
+    return _isLive &&
+        mounted &&
+        !_nativeDisposed &&
+        !_sessionRevoked &&
+        !_sourceUnavailable &&
+        _playbackAccountId != null &&
+        _app.activeAccount?.id == _playbackAccountId &&
+        _app.credentials?.sourceScope == _credentials?.sourceScope &&
+        _app.canUseMedia(_currentMedia);
+  }
+
+  /// Channel lists are reused when already loaded; opening a favorite from
+  /// My Library loads them on demand without changing the selected workspace.
+  Future<void> _loadLiveDirectory() async {
+    final accountId = _playbackAccountId;
+    final credentials = _credentials;
+    if (accountId == null || credentials == null || !_canNavigateLive) return;
+    try {
+      final cached = _app.cachedLiveChannels;
+      final channels =
+          cached ??
+          await _api.catalog(
+            credentials,
+            LibraryKind.live,
+            cancelToken: _liveCatalogCancellation = CancelToken(),
+          );
+      if (!_canNavigateLive || _app.activeAccount?.id != accountId) return;
+      final directory = LiveChannelDirectory(channels);
+      _liveDirectory = directory;
+      _liveCatalogUnavailable = directory.isEmpty;
+      if (_queuedChannelNumber != null) {
+        final number = _queuedChannelNumber!;
+        _queuedChannelNumber = null;
+        _queuedChannelSteps = 0;
+        _selectChannelNumber(number);
+      } else if (_queuedChannelSteps != 0) {
+        final steps = _queuedChannelSteps;
+        _queuedChannelSteps = 0;
+        _stepChannel(steps);
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      if (!_canNavigateLive) return;
+      _liveCatalogUnavailable = true;
+      final hadInput = _queuedChannelNumber != null || _queuedChannelSteps != 0;
+      _queuedChannelNumber = null;
+      _queuedChannelSteps = 0;
+      // Loading a catalog is not itself a channel change. Stay silent until
+      // the user has requested navigation.
+      if (hadInput) {
+        _showLiveNotice(
+          LiveChannelNotice.forMessage(context.l10n.liveChannelsUnavailable),
+          timeout: const Duration(seconds: 3),
+        );
+      }
+    }
+  }
+
+  void _showLiveNotice(LiveChannelNotice notice, {Duration? timeout}) {
+    if (!mounted) return;
+    _liveNoticeTimer?.cancel();
+    _liveNotice.value = notice;
+    if (timeout != null) {
+      _liveNoticeTimer = Timer(timeout, () {
+        if (mounted) _liveNotice.value = null;
+      });
+    }
+  }
+
+  void _selectChannelNumber(int number) {
+    if (!_canNavigateLive) return;
+    final directory = _liveDirectory;
+    if (directory == null) {
+      if (_liveCatalogUnavailable) {
+        _showLiveNotice(
+          LiveChannelNotice.forMessage(context.l10n.liveChannelsUnavailable),
+          timeout: const Duration(seconds: 3),
+        );
+        return;
+      }
+      _queuedChannelNumber = number;
+      _queuedChannelSteps = 0;
+      _showLiveNotice(
+        LiveChannelNotice.forMessage(context.l10n.liveChannelsLoading),
+      );
+      return;
+    }
+    final target = directory.byNumber(number);
+    if (target == null || !_app.canUseMedia(target)) {
+      _showLiveNotice(
+        LiveChannelNotice.forMessage(context.l10n.liveChannelNotFound(number)),
+        timeout: const Duration(seconds: 3),
+      );
+      return;
+    }
+    _requestLiveChannel(target);
+  }
+
+  void _stepChannel(int direction) {
+    if (!_canNavigateLive) return;
+    final directory = _liveDirectory;
+    if (directory == null) {
+      if (_liveCatalogUnavailable) {
+        _showLiveNotice(
+          LiveChannelNotice.forMessage(context.l10n.liveChannelsUnavailable),
+          timeout: const Duration(seconds: 3),
+        );
+        return;
+      }
+      _queuedChannelNumber = null;
+      _queuedChannelSteps = (_queuedChannelSteps + direction)
+          .clamp(-100, 100)
+          .toInt();
+      _showLiveNotice(
+        LiveChannelNotice.forMessage(context.l10n.liveChannelsLoading),
+      );
+      return;
+    }
+    final target = directory.stepFrom(
+      _pendingLiveChannel?.id ?? _currentMedia.id,
+      direction,
+    );
+    if (target == null || !_app.canUseMedia(target)) {
+      _showLiveNotice(
+        LiveChannelNotice.forMessage(context.l10n.liveChannelsUnavailable),
+        timeout: const Duration(seconds: 3),
+      );
+      return;
+    }
+    _requestLiveChannel(target);
+  }
+
+  KeyEventResult _onChannelKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent || !_canNavigateLive) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    final digit = LiveChannelKeys.digit(key);
+    if (digit != null) {
+      _channelInput.addDigit(digit);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.backspace &&
+        _channelInput.digits.isNotEmpty) {
+      _channelInput.backspace();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.enter && _channelInput.digits.isNotEmpty) {
+      _channelInput.submitNow();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape && _channelInput.digits.isNotEmpty) {
+      _channelInput.clear();
+      return KeyEventResult.handled;
+    }
+    final direction = LiveChannelKeys.direction(key);
+    if (direction != null) {
+      _directionalKey(direction);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  /// Most recent request wins. If media_kit is still opening or stopping the
+  /// previous source, wait for it to settle instead of opening concurrently.
+  void _requestLiveChannel(MediaEntry target) {
+    if (!_canNavigateLive) return;
+    _showLiveNotice(
+      LiveChannelNotice.forChannel(target),
+      timeout: const Duration(seconds: 4),
+    );
+    if (_currentMedia.id == target.id && _pendingLiveChannel == null) return;
+    _pendingLiveChannel = target;
+    _retryAfterOpen = false;
+    if (!_openInProgress) _applyPendingLiveChannel();
+  }
+
+  void _applyPendingLiveChannel() {
+    final next = _pendingLiveChannel;
+    _pendingLiveChannel = null;
+    if (next == null || !_canNavigateLive || !_app.canUseMedia(next)) return;
+    if (_currentMedia.id == next.id) return;
+    _retryController.reset();
+    _playbackHealthy = false;
+    _position = Duration.zero;
+    _duration = Duration.zero;
+    _lastSavedPosition = Duration.zero;
+    _updatePlayerState(() {
+      _activeLiveMedia = next;
+      _completed = false;
+      _failure = null;
+    });
+    unawaited(_open(retry: true));
   }
 
   void _showPlaybackFailure(String message) {
     if (!mounted || _sessionRevoked || _sourceUnavailable) return;
+    _liveNoticeTimer?.cancel();
+    _liveNotice.value = null;
     _playbackHealthy = false;
     _updatePlayerState(() {
       _opening = false;
@@ -304,6 +610,10 @@ class _PlayerDialogState extends State<PlayerDialog> {
   }
 
   void _onAccountChanged() {
+    if (_app.activeAccount?.id != _playbackAccountId) {
+      _stopUnavailable();
+      return;
+    }
     if (_credentials?.protected != true) return;
     if (_credentials!.linkExpired) {
       _revokeSession();
@@ -321,6 +631,13 @@ class _PlayerDialogState extends State<PlayerDialog> {
       return;
     }
     _sessionRevoked = true;
+    _liveCatalogCancellation?.cancel();
+    _pendingLiveChannel = null;
+    _queuedChannelNumber = null;
+    _queuedChannelSteps = 0;
+    _channelInput.clear();
+    _liveNoticeTimer?.cancel();
+    _liveNotice.value = null;
     _retryAfterOpen = false;
     _retryController.cancelPending();
     _recordProgress(_currentMedia);
@@ -336,6 +653,13 @@ class _PlayerDialogState extends State<PlayerDialog> {
   void _stopUnavailable() {
     if (_sourceUnavailable) return;
     _sourceUnavailable = true;
+    _liveCatalogCancellation?.cancel();
+    _pendingLiveChannel = null;
+    _queuedChannelNumber = null;
+    _queuedChannelSteps = 0;
+    _channelInput.clear();
+    _liveNoticeTimer?.cancel();
+    _liveNotice.value = null;
     _retryAfterOpen = false;
     _retryController.cancelPending();
     _recordProgress(_currentMedia);
@@ -476,7 +800,10 @@ class _PlayerDialogState extends State<PlayerDialog> {
       await _performOpen(retry: retry);
     } finally {
       _openInProgress = false;
-      if (_retryAfterOpen &&
+      if (_pendingLiveChannel != null) {
+        _retryAfterOpen = false;
+        _applyPendingLiveChannel();
+      } else if (_retryAfterOpen &&
           mounted &&
           !_nativeDisposed &&
           !_sessionRevoked &&
@@ -670,11 +997,15 @@ class _PlayerDialogState extends State<PlayerDialog> {
   @override
   void dispose() {
     _retryAfterOpen = false;
+    _liveCatalogCancellation?.cancel();
+    _liveNoticeTimer?.cancel();
+    _channelInput.dispose();
     _retryController.dispose();
     _app.removeListener(_onAccountChanged);
     _recordProgress(_currentMedia);
     unawaited(_releasePlayer().catchError((Object _) {}));
     _videoStatus.dispose();
+    _liveNotice.dispose();
     super.dispose();
   }
 
@@ -682,104 +1013,111 @@ class _PlayerDialogState extends State<PlayerDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final current = _currentMedia;
-    return ResponsivePlayerFrame(
-      header: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 5, 0),
-        child: Row(
-          children: [
-            Icon(
-              Icons.play_circle_outline,
-              color: theme.colorScheme.primary,
-              size: 21,
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    current.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                  if (_isSeriesQueue)
+    return Focus(
+      canRequestFocus: false,
+      onKeyEvent: _isLive ? _onChannelKey : null,
+      child: ResponsivePlayerFrame(
+        header: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 5, 0),
+          child: Row(
+            children: [
+              Icon(
+                Icons.play_circle_outline,
+                color: theme.colorScheme.primary,
+                size: 21,
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'S${current.seasonNumber ?? '?'} E${current.episodeNumber ?? '?'} · ${_currentIndex + 1} of ${_items.length} · Auto-play on',
+                      current.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppPalette.muted,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: Colors.white,
                       ),
                     ),
-                ],
-              ),
-            ),
-            if (_isSeriesQueue) ...[
-              IconButton(
-                tooltip: context.l10n.previousEpisode,
-                onPressed:
-                    _hasPrevious && !_sessionRevoked && !_sourceUnavailable
-                    ? () => _goTo(_currentIndex - 1)
-                    : null,
-                icon: const Icon(
-                  Icons.skip_previous_rounded,
-                  color: Colors.white,
+                    if (_isSeriesQueue)
+                      Text(
+                        'S${current.seasonNumber ?? '?'} E${current.episodeNumber ?? '?'} · ${_currentIndex + 1} of ${_items.length} · Auto-play on',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppPalette.muted,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              IconButton(
-                key: const Key('nextEpisode'),
-                tooltip: context.l10n.nextEpisode,
-                onPressed: _hasNext && !_sessionRevoked && !_sourceUnavailable
-                    ? () => _goTo(_currentIndex + 1)
-                    : null,
-                icon: const Icon(Icons.skip_next_rounded, color: Colors.white),
-              ),
-            ],
-            if (current.kind == LibraryKind.live &&
-                !_sessionRevoked &&
-                !_sourceUnavailable)
-              FavoriteToggleButton(media: current, onDarkSurface: true),
-            if (current.kind == LibraryKind.live &&
-                !_sessionRevoked &&
-                !_sourceUnavailable)
-              PopupMenuButton<String>(
-                tooltip: context.l10n.liveStreamFormat,
-                onSelected: (value) {
-                  if (_liveFormat == value) return;
-                  _liveFormat = value;
-                  _retryPlayback(manual: true);
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'm3u8', child: Text('HLS (.m3u8)')),
-                  PopupMenuItem(value: 'ts', child: Text('MPEG-TS (.ts)')),
-                ],
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    _liveFormat.toUpperCase(),
-                    style: const TextStyle(color: Colors.white70),
+              if (_isSeriesQueue) ...[
+                IconButton(
+                  tooltip: context.l10n.previousEpisode,
+                  onPressed:
+                      _hasPrevious && !_sessionRevoked && !_sourceUnavailable
+                      ? () => _goTo(_currentIndex - 1)
+                      : null,
+                  icon: const Icon(
+                    Icons.skip_previous_rounded,
+                    color: Colors.white,
                   ),
                 ),
+                IconButton(
+                  key: const Key('nextEpisode'),
+                  tooltip: context.l10n.nextEpisode,
+                  onPressed: _hasNext && !_sessionRevoked && !_sourceUnavailable
+                      ? () => _goTo(_currentIndex + 1)
+                      : null,
+                  icon: const Icon(
+                    Icons.skip_next_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+              if (current.kind == LibraryKind.live &&
+                  !_sessionRevoked &&
+                  !_sourceUnavailable)
+                FavoriteToggleButton(media: current, onDarkSurface: true),
+              if (current.kind == LibraryKind.live &&
+                  !_sessionRevoked &&
+                  !_sourceUnavailable)
+                PopupMenuButton<String>(
+                  tooltip: context.l10n.liveStreamFormat,
+                  onSelected: (value) {
+                    if (_liveFormat == value) return;
+                    _liveFormat = value;
+                    _retryPlayback(manual: true);
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'm3u8', child: Text('HLS (.m3u8)')),
+                    PopupMenuItem(value: 'ts', child: Text('MPEG-TS (.ts)')),
+                  ],
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      _liveFormat.toUpperCase(),
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                ),
+              if (!_sessionRevoked && !_sourceUnavailable)
+                PlaybackTrackMenu(player: _player),
+              IconButton(
+                tooltip: context.l10n.closePlayer,
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close, color: Colors.white),
               ),
-            if (!_sessionRevoked && !_sourceUnavailable)
-              PlaybackTrackMenu(player: _player),
-            IconButton(
-              tooltip: context.l10n.closePlayer,
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close, color: Colors.white),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      video: Video(
-        controller: _video,
-        fit: BoxFit.contain,
-        fill: Colors.black,
-        controls: _videoControls,
+        video: Video(
+          controller: _video,
+          fit: BoxFit.contain,
+          fill: Colors.black,
+          controls: _videoControls,
+        ),
       ),
     );
   }

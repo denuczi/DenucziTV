@@ -168,6 +168,13 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     return update;
   }
 
+  /// Full numbered Live TV catalog if already loaded for this connection.
+  /// Unlike visibleEntries, this ignores search and category filters.
+  List<MediaEntry>? get cachedLiveChannels =>
+      kind == LibraryKind.live && _selectedCatalogRequested && !loading
+      ? entries
+      : _catalogCache[LibraryKind.live]?.entries;
+
   XtreamApi get api => _api;
   late final _libraryArtwork = LibraryArtworkResolver(_api);
 

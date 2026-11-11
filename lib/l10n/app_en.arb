@@ -7,7 +7,9 @@
   "@channelPosition": {
     "description": "Accessible label for the channel position in the current Live TV catalogue.",
     "placeholders": {
-      "number": {"type": "int"}
+      "number": {
+        "type": "int"
+      }
     }
   },
   "movies": "Movies",
@@ -124,7 +126,9 @@
   "clearAllFavoritesDetails": "Remove every favorite saved for {account}? Channels, movies and series will be removed. Watch history, progress and downloaded files are not affected.",
   "@clearAllFavoritesDetails": {
     "placeholders": {
-      "account": {"type": "String"}
+      "account": {
+        "type": "String"
+      }
     }
   },
   "noFavoriteMatches": "No favorites match your search.",
@@ -914,13 +918,25 @@
   "updatesViewNotes": "View release notes",
   "updatesNotes": "Release notes",
   "updatesNoNotes": "No release notes were provided.",
+  "updatesNotesTruncated": "These notes are shortened for performance. View the full release on GitHub.",
   "updatesOpenFailed": "Could not verify or open the official link. Check your connection and default browser, then try again.",
+  "updatesLinkOpenFailed": "This link could not be opened securely. Check the link or open the official release page.",
   "updatesPostponeClose": "Close",
   "updatesBodyWithoutPackage": "DenucziTV {version} is available as a stable release. A compatible installer has not been published for this system.",
   "@updatesBodyWithoutPackage": {
     "placeholders": {
       "version": {
         "type": "String"
+      }
+    }
+  },
+  "liveChannelsLoading": "Loading channels…",
+  "liveChannelsUnavailable": "Channel list unavailable.",
+  "liveChannelNotFound": "Channel {number} was not found.",
+  "@liveChannelNotFound": {
+    "placeholders": {
+      "number": {
+        "type": "int"
       }
     }
   }
