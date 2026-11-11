@@ -1,12 +1,28 @@
-# Microsoft Store MSIX distribution
+# Microsoft Store distribution (MSIX)
 
-This guide is for maintainers preparing the existing **DenucziTV 0.6.3** for the
-Microsoft Store. It does not change the public application version, publish a
-release, move the `v0.6.3` tag, or replace the existing Windows EXE and Debian
-packages.
+**DenucziTV 0.6.3 has passed Microsoft Store certification and is published.**
+The public listing is [DenucziTV on Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr), Store ID `9P25PQPHWDVR` (first publication: November 11, 2026).
 
-The Store is an additional distribution channel. The GitHub EXE installer and
-the Debian package remain the direct-download channels.
+## Install from Microsoft Store
+
+On a compatible Windows 10/11 x64 PC, open the listing above, select **Get** or
+**Install**, and follow Microsoft Store's prompts. Store availability can vary by
+region and account configuration. The Store edition receives its updates through
+Microsoft Store rather than DenucziTV's GitHub stable-release updater.
+
+The Store is an additional distribution channel. Users can continue to install
+the **standalone Windows EXE** or **Debian DEB** from the
+[public download instructions](../README.md#download). Do not assume the Store
+edition and standalone EXE edition share settings, secrets, downloads, or local
+libraries: MSIX storage virtualization may isolate their application data, and
+automatic migration between editions is not implemented for 0.6.3.
+
+## Maintainer reference: original 0.6.3 submission
+
+The build and QA instructions below document the original 0.6.3 Store package.
+They do not create a new app version, republish the existing submission, move
+`v0.6.3`, or replace the GitHub EXE and Debian packages. Future Store updates
+require their own versioned packages and submission/certification cycle.
 
 ## Release and version policy
 
@@ -295,8 +311,8 @@ Prepare these outside this repository, then upload the **Store** MSIX:
 - Age rating and content-filter questionnaire answers. DenucziTV is a player;
   the questionnaire must describe that users supply their own provider and
   content, and that no IPTV content is included.
-- Pricing and availability for the desired markets. Do not claim Store
-  availability before the listing is published.
+- Pricing and availability for the desired markets; reconfirm the intended
+  distribution markets for each future submission.
 - At least one rights-safe screenshot at the required desktop size, plus the
   Store icon and description.
 - A `runFullTrust` justification: DenucziTV is an existing full-trust desktop
@@ -337,13 +353,13 @@ The public app version shown inside DenucziTV comes from the Windows executable
 resource generated from `pubspec.yaml` (`0.6.3+1`), not from the MSIX manifest
 version. Keep both values correct.
 
-### First publication and package flights
+### Package flights after the first publication
 
-The initial Store publication cannot use a package flight. Package flights are
-available only after the product already has a published submission. Submit the
-first 0.6.3 package through the normal submission flow; use package flights for
-later controlled tests once the product is published. Do not create a fictional
-flight or a separate test product to bypass review.
+The first 0.6.3 Store submission was published through the standard submission
+flow. Package flights are available for subsequent controlled tests because the
+product now has a published submission; they were not available for the first
+submission. Check Partner Center eligibility and package versioning before
+creating a flight. Never distribute QA-signed packages as production installs.
 
 ## Updates in the Store edition
 
@@ -383,26 +399,29 @@ The app is MIT-licensed. Third-party dependencies retain their licenses; review
 the bundled license notices generated for the Debian package and the dependency
 licenses before publication.
 
-## Known limitations and status
+## Publication status, verification, and limitations
 
-Prior GitHub Actions runs on Windows compiled the 0.6.3 executable and generated
-an unsigned Store MSIX, with Flutter and packaging tests passing. These checks
-alone do **not** establish that the complete workflow succeeded. For each
-submission, confirm that the selected source SHA has a successful workflow run,
-that both Store and QA artifacts were uploaded, and that the QA signature and
-certificate cleanup checks passed. MSIX installation, manual playback and
-download QA, WACK, and Store certification require separate evidence on Windows
-10/11 x64; they must not be inferred from compilation alone.
+**Publication status:** the 0.6.3 Store submission passed Microsoft's
+certification and was published on November 11, 2026. The public listing is
+[available here](https://apps.microsoft.com/detail/9p25pqphwdvr).
+Certification does not prove that every provider, playback format, download,
+or Windows configuration has been tested. Keep manual QA records for each
+package revision and preserve the reviewed source SHA and package checksum.
 
-Before certification, the maintainer must still provide:
+For **future submissions**, verify a successful packaging workflow, exact
+source revision, Store and QA artifact integrity, and all applicable certification
+and manual QA requirements. Review the following again:
 
-- Authorized demo account/content for screenshots and manual QA.
-- A confirmed privacy/support contact acceptable to Microsoft Store.
-- New rights-safe screenshots at the required size.
-- Age-rating and content-filter decisions.
-- Installed-app QA evidence; WACK results if the optional local check is executed.
-- A decision on whether Store and EXE local data need migration; none is
-  implemented for 0.6.3.
+- Authorized demo content for screenshots and manual QA.
+- Privacy and support contact details, rating and market availability.
+- Rights-safe screenshots that meet Partner Center requirements.
+- Installed-app playback, download, accessibility, and persistence behavior.
+- Data location and account migration behavior between Store and standalone EXE:
+  no automatic migration is implemented for 0.6.3.
+
+The Store package is distributed by Microsoft Store, not by downloading the
+unsigned Store MSIX or the disposable QA-signed MSIX from CI. The QA certificate
+must not be installed as a trusted production publisher.
 
 ## Official references
 

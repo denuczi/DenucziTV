@@ -29,15 +29,13 @@
 
 | Your system | Installer | Checksum |
 | :---: | :---: | :---: |
-| Windows 10 / 11, x64 | [Download Windows installer](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/DenucziTV-Setup-0.6.3-x64.exe) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/DenucziTV-Setup-0.6.3-x64.exe.sha256) |
+| Windows 10 / 11, x64 | [Install from Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr) | Managed by Microsoft Store |
+| Windows 10 / 11, x64 (standalone) | [Download Windows installer](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/DenucziTV-Setup-0.6.3-x64.exe) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/DenucziTV-Setup-0.6.3-x64.exe.sha256) |
 | Debian / Ubuntu, x64 | [Download Linux package](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/denuczitv_0.6.3%2B1-1_amd64.deb) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.3/denuczitv_0.6.3%2B1-1_amd64.deb.sha256) |
 
 </div>
 
-> Microsoft Store distribution is being prepared for 0.6.3 but is not yet
-> published. The table above lists the existing direct-download channels. See
-> [Microsoft Store MSIX distribution](docs/MICROSOFT_STORE.md) for the packaging
-> and certification process.
+**DenucziTV 0.6.3 is now available on [Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr)** (Store ID `9P25PQPHWDVR`). It is an additional Windows distribution channel; the GitHub EXE and Debian packages remain available. The Store edition receives updates through Microsoft Store, whereas the GitHub installers use DenucziTV's stable-release checker. See [Microsoft Store distribution](docs/MICROSOFT_STORE.md).
 
 **You do not need Flutter, Git, or a compiler to install DenucziTV.** Choose the
 installer for your system above. The **Source code** ZIP and TAR archives on the
@@ -48,14 +46,24 @@ DenucziTV does not include channels, movies, subscriptions, or provider accounts
 
 ## Install
 
-### Windows
+### Windows: Microsoft Store (recommended)
 
-1. Download **`DenucziTV-Setup-0.6.3-x64.exe`** using the Windows link above.
+1. Open [DenucziTV on Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr) on a compatible Windows PC.
+2. Select **Get** or **Install** in Microsoft Store and follow the prompts.
+3. Open **DenucziTV** from the Start menu. Future Store-edition updates are managed by Microsoft Store.
+
+The published Store listing is for the 0.6.3 edition. Availability can depend on the user's region and Store configuration. Microsoft Store and standalone EXE installations may have separate app data: **do not assume accounts, downloads, or favorites migrate automatically between editions**.
+
+### Windows: standalone EXE (alternative)
+
+1. Download **`DenucziTV-Setup-0.6.3-x64.exe`** using the GitHub link above.
 2. Run the installer and follow the setup steps.
 3. Open **DenucziTV** from the Start menu.
 
-The installer is for 64-bit x64 Windows. It is not digitally signed, so Windows
-may display an unknown-publisher or reputation warning.
+The standalone installer is for 64-bit x64 Windows and is not digitally signed,
+so Windows may display an unknown-publisher or reputation warning. Verify the
+published SHA-256 checksum before installing; the Store edition is an alternative
+if you prefer Store-managed installation and updates.
 
 <details>
 <summary>Optional: verify the Windows download</summary>
@@ -116,8 +124,7 @@ Download the installer for your system and install it when convenient. The app
 does not install updates or restart automatically. Versions before 0.6.2 need a
 manual upgrade to obtain the update checker. See [software updates](docs/UPDATES.md).
 
-The Microsoft Store edition receives updates through Microsoft Store and does not
-use the GitHub update checker; see [Microsoft Store MSIX distribution](docs/MICROSOFT_STORE.md).
+The [published Microsoft Store edition](https://apps.microsoft.com/detail/9p25pqphwdvr) receives updates through Microsoft Store and does not use the GitHub update checker; see [Microsoft Store distribution](docs/MICROSOFT_STORE.md).
 
 ## Features
 
@@ -180,7 +187,7 @@ content shown.
 | Understand protected connections, renewal, expiry, and data migration | [Protected Single Link](docs/PROTECTED_SINGLE_LINK.md) |
 | Build or inspect a Debian package | [Debian packaging](docs/DEBIAN_PACKAGING.md) |
 | Generate a Windows installer from Linux | [Windows packaging with GitHub Actions](docs/WINDOWS_PACKAGING.md) |
-| Prepare, verify, or submit the Microsoft Store MSIX | [Microsoft Store MSIX distribution](docs/MICROSOFT_STORE.md) |
+| Install the Microsoft Store edition or maintain its MSIX packaging | [Microsoft Store distribution](docs/MICROSOFT_STORE.md) |
 | Understand stable update checks and assisted downloads | [Software updates](docs/UPDATES.md) |
 | Run release checks | [Quality assurance](docs/QA.md) |
 | Report a vulnerability or review credential handling | [Security policy](SECURITY.md) |

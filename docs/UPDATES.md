@@ -6,11 +6,11 @@ browser. Installation remains the user's choice. It never executes an installer,
 requests administrator access, replaces application files, or restarts the app.
 Versions before 0.6.2 predate this feature and need a manual upgrade first.
 
-The Microsoft Store edition is different: it is built with
-`DENUCZI_STORE_BUILD=true`, does not create this GitHub updater, and shows a
-localized Store-managed update message in Settings. Microsoft Store handles its
-updates. The EXE and Debian channels keep the behavior described here. See
-[Microsoft Store MSIX distribution](MICROSOFT_STORE.md).
+The [published Microsoft Store edition](https://apps.microsoft.com/detail/9p25pqphwdvr)
+is different: it is built with `DENUCZI_STORE_BUILD=true`, does not create this
+GitHub updater, and shows a localized Store-managed update message in Settings.
+Microsoft Store handles its updates. The standalone EXE and Debian channels
+keep the behavior described here. See [Microsoft Store distribution](MICROSOFT_STORE.md).
 
 ## Architecture and audit
 
@@ -20,9 +20,10 @@ without pushing routes. Media/account dialogs use Navigator routes and the
 existing DialogLaunchGuard. Localisation uses English and Spanish ARB files.
 No equivalent update checker existed.
 
-The feature reuses Dio, package_info_plus, shared_preferences, url_launcher,
-Provider, the dialog guard, the theme, and notification system. No dependencies
-or native runner changes are added.
+The feature initially reused Dio, package_info_plus, shared_preferences,
+url_launcher, Provider, the dialog guard, theme, and notification system.
+The 0.6.4 Markdown release-notes improvement adds `flutter_markdown_plus`.
+No new native runner dependencies are required.
 
 | Responsibility | Location under `lib/features/updates/` |
 | --- | --- |
@@ -33,6 +34,7 @@ or native runner changes are added.
 | Single-flight checks, eligibility, session state, URL launching | `application/update_controller.dart` |
 | Startup interaction and route safety | `presentation/startup_update_listener.dart` |
 | Modal and Settings feedback | `presentation/update_dialog.dart`, `software_update_controls.dart`, `update_labels.dart` |
+| Safe GFM presentation, image blocking, HTTPS link validation | `presentation/release_notes_markdown.dart` |
 
 `main.dart` owns the update controller through Provider. Its network and state
 are independent of AppController and its account credentials. The UI coordinator
@@ -169,11 +171,25 @@ stored. Release responses and download URLs are not persisted. A failed query
 never produces an up-to-date result. Latest stable metadata is kept only in
 memory when known; a recent timestamp alone does not fabricate availability.
 
-Release notes are untrusted plain text, bounded to 1,200 code points and displayed
-in scrollable content. No HTML, scripts, Markdown links, or commands are executed.
-The dialog uses neutral theme surfaces, an explicit secondary action, focusable
-controls, Escape handling, and layouts for narrow desktop windows. Every fixed UI
-string is supplied by the existing English/Spanish ARB system.
+As of the 0.6.4 development update, the release-notes body renders as GitHub
+Flavored Markdown through `flutter_markdown_plus`. The dedicated renderer supports
+headings, emphasis, lists, tables, and code blocks with theme-aware typography.
+Remote images are replaced with a small icon and their alt text: an automatic
+update prompt must not download arbitrary images or tracking pixels.
+
+The release body is normalized and bounded to 16,000 Unicode code points to
+avoid unbounded widget work. A shortened body is explicitly labeled, and the
+verified GitHub release page remains available for reading the full version.
+Earlier builds silently cut notes at 1,200 code points and displayed the raw
+Markdown markup; neither behavior is retained. HTML and scripts are not
+executed. Inline links are never opened automatically: only deliberate clicks
+on validated absolute HTTPS URLs invoke the system browser; local, script, and
+insecure schemes are refused. Browser failures remain in the dialog.
+
+The update dialog has one scrollable content region, a persistent header and
+persistent actions. The English/Spanish UI, normal and high-contrast theme
+colors, 360-pixel desktop windows, Escape, postponement, and installer provenance
+are preserved. Every fixed UI string comes from the ARB localization system.
 
 ## Local tests and preview
 
