@@ -7,6 +7,64 @@ Changes are grouped by application version. Binary availability is listed on
 
 No additional changes recorded.
 
+## [0.6.4](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.4) — Stable
+
+### Added
+
+- Change Live TV channels inside the existing player with `0`–`9` (including
+  the numeric keypad), confirmed five seconds after the final digit or
+  immediately with `Enter`. `Backspace` edits the number and `Escape` cancels it.
+- Navigate the complete Live TV channel list with `Up`/`Down` or `W`/`S`,
+  independently of current search results and category filters. Show a brief,
+  accessible on-video indicator with the channel number, title and logo after
+  keyboard navigation; missing logos use a legible fallback.
+- Keep Live TV numbering stable throughout catalog search and filtering.
+- Support account-scoped Live TV favorites alongside movie and series favorites,
+  with type filters, local search, direct channel playback and confirmed bulk
+  deletion that preserves watch history and downloads.
+- Persist bounded artwork thumbnails for the personal library, reducing repeat
+  requests and keeping available cached covers visible without loading a catalog.
+
+### Changed
+
+- Open My Library at startup and defer Live TV catalog loading until the user
+  enters that section. Saved favorites can request the catalog on demand when
+  playback requires it.
+- Render GitHub release notes as Markdown in an accessible, responsive update
+  dialog, including headings, lists, links, tables and code blocks. Keep dialog
+  actions visible while long release notes scroll.
+- Expand release-note handling beyond the previous 1,200-character display
+  cutoff; enforce a bounded input size and offer the official release page when
+  notes exceed the limit.
+- Document Microsoft Store as an available Windows installation option while
+  retaining the standalone Windows installer and Debian packages. Distinguish
+  Store-managed updates from manual GitHub installer updates.
+
+### Fixed
+
+- Coordinate rapid Live TV channel changes through a single playback engine:
+  close the previous source before opening the next and discard superseded
+  navigation requests. Ignore held-key repeats and cancel pending navigation
+  when the player closes or account access changes.
+- Preserve account isolation and effective protected-link expiry when restoring
+  sessions, browsing favorites and changing channels.
+- Improve playback retry feedback, visibility and resilience to provider
+  connection or stream failures without closing the player.
+- Fix long release notes appearing as raw Markdown or being silently truncated;
+  reject unsafe link destinations and handle missing or invalid content.
+
+### Distribution and verification
+
+- Source version: `0.6.4+1`. The immutable tag `v0.6.4` identifies source
+  commit `d9078f636435621e176305b7eb19eb24082fde10`.
+- The maintainer reported 434 passing Flutter tests, a clean static analysis,
+  and no Dart formatting changes on Debian during release preparation.
+- Debian and Windows standalone release installers require separate packaging,
+  checksum verification and installation checks before publication. The
+  Microsoft Store MSIX update is a separate submission.
+- See the [0.6.4 release notes](docs/releases/v0.6.4.md) for user-facing
+  details and upgrade instructions.
+
 ## [0.6.3](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.3) (Stable)
 
 ### Changed
