@@ -112,11 +112,11 @@ void main() {
       expect(find.text(failure!), findsNothing);
       expect(exited, 0);
 
-      status.value = PlayerVideoStatus(failure: failure);
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Toggle fullscreen'));
       await tester.pumpAndSettle();
       expect(exited, 1);
+      status.value = PlayerVideoStatus(failure: failure);
+      await tester.pumpAndSettle();
       expect(find.text(failure!), findsOneWidget);
       expect(videoKey.currentState!.isFullscreen(), isFalse);
       expect(tester.takeException(), isNull);
@@ -126,6 +126,68 @@ void main() {
       status.dispose();
       controller.notifier.dispose();
       await player.dispose();
+    });
+  }
+
+  for (final locale in ['en', 'es']) {
+    testWidgets('failure hides loading and shows retry countdown ($locale)', (
+      tester,
+    ) async {
+      final status = ValueNotifier(
+        const PlayerVideoStatus(
+          opening: true,
+          failure: 'Stream temporarily unavailable',
+          retryCountdownSeconds: 3,
+        ),
+      );
+      addTearDown(status.dispose);
+      var manualRetries = 0;
+      var closed = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: Locale(locale),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PlayerVideoOverlay(
+              status: status,
+              controls: const Text('Native transport controls'),
+              onRetry: () => manualRetries++,
+              onClose: () => closed = true,
+              onExploreCatalog: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Native transport controls'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(
+        find.text(locale == 'es' ? 'Reintentando en 3…' : 'Retrying in 3…'),
+        findsOneWidget,
+      );
+      status.value = const PlayerVideoStatus(
+        opening: true,
+        failure: 'Stream temporarily unavailable',
+        retryCountdownSeconds: 2,
+      );
+      await tester.pump();
+      expect(
+        find.text(locale == 'es' ? 'Reintentando en 2…' : 'Retrying in 2…'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text(locale == 'es' ? 'Reintentar' : 'Retry'));
+      expect(manualRetries, 1);
+      await tester.tap(
+        find.text(locale == 'es' ? 'Cerrar reproductor' : 'Close player'),
+      );
+      expect(closed, isTrue);
+
+      status.value = const PlayerVideoStatus(opening: true);
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Native transport controls'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   }
 

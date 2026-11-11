@@ -114,8 +114,9 @@ class SettingsStore {
   Future<void> writeMediaActionsEnabled(bool enabled) =>
       _preferences.setBool(_mediaActionsKey, enabled);
 
-  /// Controls only HTTPS-to-HTTP redirects in file downloads. Direct HTTP
-  /// downloads continue to work regardless of this preference.
+  /// Retains the original v1 key so existing opt-ins are not lost. This
+  /// preference now also controls HTTPS-to-HTTP redirects in Xtream API calls.
+  /// Native playback continues to use libmpv's own redirect handling.
   Future<bool> readAllowInsecureDownloadRedirects() async =>
       await _preferences.getBool(_allowInsecureDownloadRedirectsKey) ?? false;
 

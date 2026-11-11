@@ -69,7 +69,7 @@ void main() {
     },
   );
 
-  test('HTTPS-to-HTTP download redirects are opt-in and persistent', () async {
+  test('HTTPS-to-HTTP redirect consent stays opt-in and persistent', () async {
     final settings = SettingsStore(SharedPreferencesAsync());
     expect(await settings.readAllowInsecureDownloadRedirects(), isFalse);
     await settings.writeAllowInsecureDownloadRedirects(true);

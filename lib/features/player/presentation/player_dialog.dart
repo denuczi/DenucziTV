@@ -13,6 +13,7 @@ import '../../../core/models/app_controller.dart';
 import '../../../core/network/network_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../personal_library/application/personal_library_controller.dart';
+import '../application/playback_retry_controller.dart';
 import '../../personal_library/domain/playback_policy.dart';
 import '../../library/data/xtream_api.dart';
 import '../../library/domain/media_models.dart';
@@ -57,6 +58,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
   StreamSubscription<Duration>? _positionUpdates;
   StreamSubscription<Duration>? _durationUpdates;
   StreamSubscription<bool>? _playingUpdates;
+  StreamSubscription<bool>? _bufferingUpdates;
   PersonalLibraryController? _personalLibrary;
   String? _playbackAccountId;
   Duration _position = Duration.zero;
@@ -64,6 +66,12 @@ class _PlayerDialogState extends State<PlayerDialog> {
   Duration _lastSavedPosition = Duration.zero;
   int? _pendingManualIndex;
   bool _opening = true;
+  bool _openInProgress = false;
+  bool _retryAfterOpen = false;
+  bool _reloadingSource = false;
+  bool _playbackHealthy = false;
+  int? _retrySeconds;
+  late final PlaybackRetryController _retryController;
   bool _nativeDisposed = false;
   bool _completed = false;
   String? _failure;
@@ -86,6 +94,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
     setState(update);
     _videoStatus.value = PlayerVideoStatus(
       opening: _opening,
+      retryCountdownSeconds: _retrySeconds,
       completed: _completed && _isSeriesQueue,
       failure: _failure,
       accessBlocked: _sessionRevoked || _sourceUnavailable,
@@ -112,7 +121,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
   Widget _videoControls(VideoState video) => PlayerVideoOverlay(
     status: _videoStatus,
     controls: AdaptiveVideoControls(video),
-    onRetry: _open,
+    onRetry: () => _retryPlayback(manual: true),
     onClose: () => _closeVideo(video),
     onExploreCatalog: () => _closeVideo(video, exploreCatalog: true),
   );
@@ -131,18 +140,38 @@ class _PlayerDialogState extends State<PlayerDialog> {
     _currentIndex = _isSeriesQueue
         ? widget.initialIndex.clamp(0, widget.episodeQueue.length - 1).toInt()
         : 0;
+    _retryController = PlaybackRetryController(
+      onCountdownChanged: (seconds) {
+        if (mounted) {
+          _updatePlayerState(() => _retrySeconds = seconds);
+        }
+      },
+      onRetry: _retryPlayback,
+    );
     _player = Player();
     _video = VideoController(_player);
     _accessRevocations = _credentials?.accessGrant?.revocations.listen(
       (_) => _revokeSession(),
     );
     _errors = _player.stream.error.listen((message) {
+      if (!mounted ||
+          _nativeDisposed ||
+          _reloadingSource ||
+          _sessionRevoked ||
+          _sourceUnavailable) {
+        return;
+      }
       _playbackFailed = true;
-      if (!mounted) return;
       if (_credentials?.protected == true) {
         if (RegExp(r'\b(?:401|403)\b').hasMatch(message) &&
             _playbackAccountId != null) {
-          unawaited(app.recoverProtectedCredentials(_playbackAccountId!));
+          unawaited(
+            app.recoverProtectedCredentials(_playbackAccountId!).catchError((
+              Object _,
+            ) {
+              // A failed refresh must not crash the player event listener.
+            }),
+          );
         }
         if (_credentials!.linkExpired) {
           _revokeSession();
@@ -153,12 +182,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
           return;
         }
       }
-      if (mounted) {
-        _updatePlayerState(() {
-          _opening = false;
-          _failure = context.l10n.mediaEnginePlaybackFailed;
-        });
-      }
+      _showPlaybackFailure(context.l10n.mediaEnginePlaybackFailed);
     });
     _positionUpdates = _player.stream.position.listen((position) {
       _position = position;
@@ -172,9 +196,18 @@ class _PlayerDialogState extends State<PlayerDialog> {
       _duration = duration;
     });
     _playingUpdates = _player.stream.playing.listen((playing) {
-      if (!playing && _position > Duration.zero) {
-        _recordProgress(_currentMedia);
+      if (playing) {
+        _markPlaybackHealthy();
+      } else {
+        _playbackHealthy = false;
+        _retryController.playbackInterrupted();
+        if (_position > Duration.zero) {
+          _recordProgress(_currentMedia);
+        }
       }
+    });
+    _bufferingUpdates = _player.stream.buffering.listen((buffering) {
+      if (!buffering) _markPlaybackHealthy();
     });
     _playlistUpdates = _player.stream.playlist.listen((playlist) {
       if (!mounted || playlist.medias.isEmpty) {
@@ -190,6 +223,9 @@ class _PlayerDialogState extends State<PlayerDialog> {
       // The media engine advances automatically when the preceding episode
       // ends. Manual skipping is not treated as completing an episode.
       _recordProgress(previous, completed: !manual);
+      _retryController.reset();
+      _retryAfterOpen = false;
+      _playbackHealthy = false;
       _position = Duration.zero;
       _duration = Duration.zero;
       _lastSavedPosition = Duration.zero;
@@ -216,6 +252,56 @@ class _PlayerDialogState extends State<PlayerDialog> {
     }
   }
 
+  void _showPlaybackFailure(String message) {
+    if (!mounted || _sessionRevoked || _sourceUnavailable) return;
+    _playbackHealthy = false;
+    _updatePlayerState(() {
+      _opening = false;
+      _failure = message;
+    });
+    _retryController.reportFailure();
+  }
+
+  void _markPlaybackHealthy() {
+    if (!mounted ||
+        _nativeDisposed ||
+        _sessionRevoked ||
+        _sourceUnavailable ||
+        _reloadingSource ||
+        !_player.state.playing ||
+        _player.state.buffering ||
+        _playbackHealthy) {
+      return;
+    }
+    _playbackHealthy = true;
+    _retryAfterOpen = false;
+    _playbackFailed = false;
+    _retryController.playbackRecovered();
+    _updatePlayerState(() {
+      _opening = false;
+      _failure = null;
+    });
+  }
+
+  void _retryPlayback({bool manual = false}) {
+    if (!mounted ||
+        _nativeDisposed ||
+        _sessionRevoked ||
+        _sourceUnavailable ||
+        (!manual && _failure == null)) {
+      return;
+    }
+    if (manual) _retryController.reset();
+    // Close any old error UI immediately. Opening the same Player keeps its
+    // fullscreen surface and track controls intact across a reconnect.
+    _updatePlayerState(() {
+      _opening = true;
+      _failure = null;
+      _completed = false;
+    });
+    unawaited(_open(retry: true));
+  }
+
   void _onAccountChanged() {
     if (_credentials?.protected != true) return;
     if (_credentials!.linkExpired) {
@@ -234,6 +320,8 @@ class _PlayerDialogState extends State<PlayerDialog> {
       return;
     }
     _sessionRevoked = true;
+    _retryAfterOpen = false;
+    _retryController.cancelPending();
     _recordProgress(_currentMedia);
     unawaited(_stopNativeSession());
     if (mounted) {
@@ -247,6 +335,8 @@ class _PlayerDialogState extends State<PlayerDialog> {
   void _stopUnavailable() {
     if (_sourceUnavailable) return;
     _sourceUnavailable = true;
+    _retryAfterOpen = false;
+    _retryController.cancelPending();
     _recordProgress(_currentMedia);
     unawaited(_stopNativeSession());
     if (mounted) {
@@ -370,15 +460,49 @@ class _PlayerDialogState extends State<PlayerDialog> {
     return '$minutes:$seconds';
   }
 
-  Future<void> _open() async {
-    final credentials = _credentials;
-    if (credentials?.protected == true) {
-      if (credentials!.linkExpired || _sessionRevoked) {
+  Future<void> _open({bool retry = false}) async {
+    if (!mounted || _nativeDisposed || _sessionRevoked || _sourceUnavailable) {
+      return;
+    }
+    // A retry can arrive while the previous asynchronous open is still
+    // completing. Queue at most one reload instead of racing two opens.
+    if (_openInProgress) {
+      if (retry) _retryAfterOpen = true;
+      return;
+    }
+    _openInProgress = true;
+    try {
+      await _performOpen(retry: retry);
+    } finally {
+      _openInProgress = false;
+      if (_retryAfterOpen &&
+          mounted &&
+          !_nativeDisposed &&
+          !_sessionRevoked &&
+          !_sourceUnavailable) {
+        _retryAfterOpen = false;
+        unawaited(_open(retry: true));
+      }
+    }
+  }
+
+  Future<void> _performOpen({required bool retry}) async {
+    final initialCredentials = _credentials;
+    // Protected credentials can be refreshed after a 401/403. Reuse only the
+    // current credentials for the same protected account, never a new source.
+    final credentials =
+        initialCredentials?.protected == true &&
+            _app.credentials?.sourceScope == initialCredentials?.sourceScope
+        ? _app.credentials
+        : initialCredentials;
+    if (initialCredentials?.protected == true) {
+      if (initialCredentials!.linkExpired ||
+          (credentials?.linkExpired ?? false) ||
+          _sessionRevoked) {
         _revokeSession();
         return;
       }
-      if (context.read<AppController>().credentials?.sourceScope !=
-          credentials.sourceScope) {
+      if (_app.credentials?.sourceScope != initialCredentials.sourceScope) {
         _stopUnavailable();
         return;
       }
@@ -387,11 +511,13 @@ class _PlayerDialogState extends State<PlayerDialog> {
       if (mounted) {
         _updatePlayerState(() {
           _opening = false;
-          _failure = 'No account is connected.';
+          _failure = context.l10n.mediaResourceOpenFailed;
         });
       }
       return;
     }
+    _playbackHealthy = false;
+    _retryController.playbackInterrupted();
     _updatePlayerState(() {
       _opening = true;
       _completed = false;
@@ -399,14 +525,35 @@ class _PlayerDialogState extends State<PlayerDialog> {
       _playbackFailed = false;
     });
     try {
-      final resumeAt = await _resumePosition();
-      if (!mounted) {
-        return;
-      }
+      // Reopening a stream must not show the resume dialog again. For VOD,
+      // retain the position from before the failed connection.
+      final resumeAt = retry
+          ? (_currentMedia.kind != LibraryKind.live &&
+                    _position > Duration.zero &&
+                    PlaybackPolicy.canResume(
+                      positionMs: _position.inMilliseconds,
+                      durationMs: _duration.inMilliseconds,
+                      completed: false,
+                    )
+                ? _position
+                : null)
+          : await _resumePosition();
+      if (!mounted || _nativeDisposed) return;
       if (credentials.protected &&
           _app.credentials?.sourceScope != credentials.sourceScope) {
         _stopUnavailable();
         return;
+      }
+      if (retry) {
+        // A fresh open, rather than play(), is needed to request a new HLS
+        // redirect/token when the provider's previous URL has expired.
+        _reloadingSource = true;
+        try {
+          await _player.stop();
+        } finally {
+          _reloadingSource = false;
+        }
+        if (!mounted || _nativeDisposed) return;
       }
       final items = _items
           .map((entry) {
@@ -419,6 +566,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
           })
           .toList(growable: false);
       await _player.setPlaylistMode(PlaylistMode.none);
+      if (!mounted || _nativeDisposed) return;
       if (credentials.linkExpired || _sessionRevoked) {
         _revokeSession();
         return;
@@ -429,17 +577,23 @@ class _PlayerDialogState extends State<PlayerDialog> {
         return;
       }
       await _player.open(Playlist(items, index: _currentIndex));
+      if (!mounted || _nativeDisposed) return;
       if (credentials.linkExpired || _sessionRevoked) {
         _revokeSession();
         return;
       }
-      if (resumeAt != null && mounted) {
+      if (credentials.protected &&
+          _app.credentials?.sourceScope != credentials.sourceScope) {
+        _stopUnavailable();
+        return;
+      }
+      if (resumeAt != null) {
         try {
           await _player.seek(resumeAt);
         } catch (_) {
           if (mounted) {
-            _updatePlayerState(
-              () => _failure = context.l10n.resumeNotSupported,
+            ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+              SnackBar(content: Text(context.l10n.resumeNotSupported)),
             );
           }
         }
@@ -450,14 +604,12 @@ class _PlayerDialogState extends State<PlayerDialog> {
           _revokeSession();
         } else {
           _playbackFailed = true;
-          _updatePlayerState(
-            () => _failure = context.l10n.mediaResourceOpenFailed,
-          );
+          _showPlaybackFailure(context.l10n.mediaResourceOpenFailed);
           _onAccountChanged();
         }
       }
     } finally {
-      if (mounted) {
+      if (mounted && !_nativeDisposed) {
         _updatePlayerState(() => _opening = false);
       }
     }
@@ -471,6 +623,9 @@ class _PlayerDialogState extends State<PlayerDialog> {
         index >= _items.length) {
       return;
     }
+    _retryController.reset();
+    _retryAfterOpen = false;
+    _playbackHealthy = false;
     _recordProgress(_currentMedia);
     _position = Duration.zero;
     _duration = Duration.zero;
@@ -485,7 +640,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
       await _player.jump(index);
     } catch (_) {
       if (mounted) {
-        _updatePlayerState(() => _failure = context.l10n.episodeSwitchFailed);
+        _showPlaybackFailure(context.l10n.episodeSwitchFailed);
       }
     }
   }
@@ -499,6 +654,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
       await _positionUpdates?.cancel();
       await _durationUpdates?.cancel();
       await _playingUpdates?.cancel();
+      await _bufferingUpdates?.cancel();
     } finally {
       // A subscription cancellation failure must not leak native resources.
       try {
@@ -512,6 +668,8 @@ class _PlayerDialogState extends State<PlayerDialog> {
 
   @override
   void dispose() {
+    _retryAfterOpen = false;
+    _retryController.dispose();
     _app.removeListener(_onAccountChanged);
     _recordProgress(_currentMedia);
     unawaited(_releasePlayer().catchError((Object _) {}));
@@ -586,8 +744,9 @@ class _PlayerDialogState extends State<PlayerDialog> {
               PopupMenuButton<String>(
                 tooltip: context.l10n.liveStreamFormat,
                 onSelected: (value) {
+                  if (_liveFormat == value) return;
                   _liveFormat = value;
-                  unawaited(_open());
+                  _retryPlayback(manual: true);
                 },
                 itemBuilder: (_) => const [
                   PopupMenuItem(value: 'm3u8', child: Text('HLS (.m3u8)')),

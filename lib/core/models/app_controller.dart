@@ -259,8 +259,9 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     try {
       allowInsecureDownloadRedirects = await _settings
           .readAllowInsecureDownloadRedirects();
+      _network.allowHttpsToHttpRedirects = allowInsecureDownloadRedirects;
     } catch (_) {
-      warnings.add('Download redirect preferences could not be restored.');
+      warnings.add('Redirect preferences could not be restored.');
     }
     try {
       await downloads.initialize();
@@ -715,6 +716,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> updateAllowInsecureDownloadRedirects(bool enabled) async {
     await _settings.writeAllowInsecureDownloadRedirects(enabled);
     allowInsecureDownloadRedirects = enabled;
+    _network.allowHttpsToHttpRedirects = enabled;
     notifyListeners();
   }
 

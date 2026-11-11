@@ -34,6 +34,28 @@ void main() {
         InMemorySharedPreferencesAsync.empty();
   });
 
+  test('restores and propagates the API redirect setting', () async {
+    final preferences = SharedPreferencesAsync();
+    final settings = SettingsStore(preferences);
+    await settings.writeAllowInsecureDownloadRedirects(true);
+    final network = NetworkClient();
+    final controller = AppController(
+      network: network,
+      api: XtreamApi(network),
+      accounts: AccountStore.withSecrets(preferences, EmptySecrets()),
+      settings: settings,
+    );
+    addTearDown(controller.dispose);
+
+    expect(network.allowHttpsToHttpRedirects, isFalse);
+    await controller.initialize();
+    expect(network.allowHttpsToHttpRedirects, isTrue);
+
+    await controller.updateAllowInsecureDownloadRedirects(false);
+    expect(network.allowHttpsToHttpRedirects, isFalse);
+    expect(await settings.readAllowInsecureDownloadRedirects(), isFalse);
+  });
+
   test('a failed network preference does not block theme and account initialization', () async {
     final preferences = SharedPreferencesAsync();
     await preferences.setString('settings.theme_mode.v1', ThemeMode.light.name);

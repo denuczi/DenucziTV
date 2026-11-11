@@ -195,8 +195,8 @@
   "savedCredentialsHelp": "Las contraseñas se almacenan en el sistema seguro de credenciales.",
   "directLinks": "Enlaces directos",
   "directLinksHelp": "Las URL copiadas pueden contener tu usuario y contraseña. Compártelas con precaución.",
-  "allowInsecureRedirects": "Permitir redirecciones de HTTPS a HTTP en descargas",
-  "allowInsecureRedirectsHelp": "Algunos proveedores redirigen a enlaces HTTP sin cifrado. Si activas esta opción, los tokens o credenciales de la URL podrían quedar expuestos en la red. Solo afecta a las descargas; la verificación de certificados HTTPS sigue activa.",
+  "allowInsecureRedirects": "Permitir redirecciones de HTTPS a HTTP en la API y las descargas",
+  "allowInsecureRedirectsHelp": "Permite que las solicitudes a la API Xtream y las descargas sigan redirecciones hacia HTTP sin cifrado. Los tokens o las credenciales incluidos en las URL podrían quedar expuestos en la red. El reproductor nativo gestiona sus propias redirecciones y esta opción no las controla. La verificación de certificados HTTPS continúa activa.",
   "createdBy": "Creado por Ignacio Sanguina",
   "visitGitHub": "Visitar GitHub",
   "settingsCouldNotSave": "No se pudo guardar la configuración",
@@ -587,7 +587,16 @@
   "downloadFileDeleteFailed": "No se pudo eliminar el archivo descargado.",
   "downloadedTotalUnknown": "{received} descargados · Tamaño total desconocido",
   "downloadedRemaining": "{received} / {total} · {remaining} restantes",
-  "mediaEnginePlaybackFailed": "El motor multimedia no pudo reproducir esta transmisión.",
+  "playerRetryingIn": "Reintentando en {seconds}…",
+  "@playerRetryingIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "playerPlaybackUnavailableTitle": "Reproducción no disponible",
+  "mediaEnginePlaybackFailed": "No se puede reproducir esta transmisión en este momento. Inténtalo de nuevo.",
   "resumeNotSupported": "El proveedor no permite reanudar este video.",
   "mediaResourceOpenFailed": "No se pudo abrir el recurso multimedia.",
   "episodeSwitchFailed": "No se pudo cambiar de episodio.",

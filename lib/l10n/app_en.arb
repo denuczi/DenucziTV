@@ -195,8 +195,8 @@
   "savedCredentialsHelp": "Passwords are kept in the operating system secure storage.",
   "directLinks": "Direct links",
   "directLinksHelp": "Copied stream URLs may contain your username and password. Share carefully.",
-  "allowInsecureRedirects": "Allow HTTPS-to-HTTP download redirects",
-  "allowInsecureRedirectsHelp": "Some providers redirect to unencrypted HTTP video links. Enabling this can expose stream tokens or credentials in the URL to anyone observing the network. This affects downloads only; HTTPS certificate checks remain enabled.",
+  "allowInsecureRedirects": "Allow HTTPS-to-HTTP redirects for API and downloads",
+  "allowInsecureRedirectsHelp": "Allows Xtream API requests and downloads to follow redirects to unencrypted HTTP destinations. Tokens or credentials in URLs may be exposed on the network. Playback redirects are handled independently by the native media engine and are not controlled by this setting. HTTPS certificate verification remains enabled.",
   "createdBy": "Created by Ignacio Sanguina",
   "visitGitHub": "Visit GitHub",
   "settingsCouldNotSave": "Settings could not be saved",
@@ -629,7 +629,16 @@
       }
     }
   },
-  "mediaEnginePlaybackFailed": "The media engine could not play this stream.",
+  "playerRetryingIn": "Retrying in {seconds}…",
+  "@playerRetryingIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "playerPlaybackUnavailableTitle": "Playback unavailable",
+  "mediaEnginePlaybackFailed": "Unable to play this stream right now. Please try again.",
   "resumeNotSupported": "The provider does not support resuming this video.",
   "mediaResourceOpenFailed": "Unable to open the media resource.",
   "episodeSwitchFailed": "Unable to switch episodes.",

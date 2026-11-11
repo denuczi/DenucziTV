@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n_ext.dart';
+import 'player_playback_failure_view.dart';
 
 @immutable
 class PlayerVideoStatus {
   const PlayerVideoStatus({
     this.opening = false,
+    this.retryCountdownSeconds,
     this.completed = false,
     this.failure,
     this.accessBlocked = false,
@@ -14,6 +16,7 @@ class PlayerVideoStatus {
   });
 
   final bool opening;
+  final int? retryCountdownSeconds;
   final bool completed;
   final String? failure;
   final bool accessBlocked;
@@ -46,15 +49,17 @@ class PlayerVideoOverlay extends StatelessWidget {
         builder: (context, value, controls) => Stack(
           fit: StackFit.expand,
           children: [
-            if (value.accessBlocked)
+            // Hide native buffering controls beneath an error. Otherwise the
+            // player can show a spinner and a failure message simultaneously.
+            if (value.accessBlocked || value.failure != null)
               const ColoredBox(color: Colors.black)
             else
               controls!,
-            if (value.opening)
+            if (value.opening && value.failure == null)
               const IgnorePointer(
                 child: Center(child: CircularProgressIndicator()),
               ),
-            if (value.completed)
+            if (value.completed && value.failure == null)
               IgnorePointer(
                 child: Center(
                   child: DecoratedBox(
@@ -73,50 +78,14 @@ class PlayerVideoOverlay extends StatelessWidget {
                 ),
               ),
             if (value.failure != null)
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Semantics(
-                      liveRegion: true,
-                      child: Material(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Wrap(
-                            spacing: 12,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                value.failure!,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              if (value.accessBlocked)
-                                TextButton(
-                                  onPressed: onClose,
-                                  child: Text(context.l10n.closePlayer),
-                                ),
-                              if (value.sourceUnavailable)
-                                TextButton(
-                                  onPressed: onExploreCatalog,
-                                  child: Text(context.l10n.exploreCatalog),
-                                ),
-                              if (!value.accessBlocked)
-                                TextButton.icon(
-                                  onPressed: onRetry,
-                                  icon: const Icon(Icons.refresh),
-                                  label: Text(context.l10n.retry),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              PlayerPlaybackFailureView(
+                failure: value.failure!,
+                retryCountdownSeconds: value.retryCountdownSeconds,
+                accessBlocked: value.accessBlocked,
+                sourceUnavailable: value.sourceUnavailable,
+                onRetry: onRetry,
+                onClose: onClose,
+                onExploreCatalog: onExploreCatalog,
               ),
           ],
         ),

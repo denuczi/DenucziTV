@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/models/account.dart';
+import '../../../core/network/http_redirect_policy.dart';
 import '../../../core/network/network_client.dart';
 import '../../../core/network/server_address.dart';
 import '../domain/media_models.dart';
@@ -45,23 +46,71 @@ class XtreamApi {
     final accessRevocation = credentials.accessGrant?.revocations.listen(
       (_) => requestCancellation?.cancel(),
     );
+    final policy = HttpRedirectPolicy(
+      allowHttpsToHttpRedirect: _network.allowHttpsToHttpRedirects,
+    );
+    final visited = <Uri>{};
+    var current = url;
+    var redirects = 0;
     try {
-      final response = await _network.dio.getUri<Object?>(
-        url,
-        cancelToken: requestCancellation,
-        options: Options(responseType: ResponseType.json),
-      );
-      if ((response.statusCode ?? 500) >= 300) {
-        throw const AppException(
-          'The provider redirected the API request. Verify the server URL.',
+      while (true) {
+        if (!visited.add(current)) {
+          throw const AppException(
+            'The provider returned an API redirect loop.',
+          );
+        }
+        final response = await _network.dio.getUri<Object?>(
+          current,
+          cancelToken: requestCancellation,
+          options: Options(
+            responseType: ResponseType.json,
+            followRedirects: false,
+          ),
         );
+        final status = response.statusCode ?? 500;
+        if (HttpRedirectPolicy.redirectCodes.contains(status)) {
+          if (redirects >= HttpRedirectPolicy.maxRedirects) {
+            throw const AppException(
+              'The provider exceeded the API redirect limit.',
+            );
+          }
+          final location = response.headers.value('location');
+          if (location == null) {
+            throw const AppException(
+              'The provider redirected without a Location header.',
+            );
+          }
+          final next = policy.resolve(current, location);
+          // Interceptors or custom transports may add authentication headers.
+          // Reject cross-origin redirects rather than forwarding such secrets.
+          if (next.origin != current.origin &&
+              response.requestOptions.headers.keys.any(
+                (name) => const {
+                  'authorization',
+                  'proxy-authorization',
+                  'cookie',
+                }.contains(name.toLowerCase()),
+              )) {
+            throw const AppException(
+              'Authenticated headers cannot cross provider API origins.',
+            );
+          }
+          current = next;
+          redirects++;
+          continue;
+        }
+        if (status >= 300) {
+          throw const AppException(
+            'The provider returned an unexpected API redirect.',
+          );
+        }
+        if (credentials.protected &&
+            (credentials.linkExpired ||
+                credentials.accessGrant?.allowsNewSessions != true)) {
+          throw const AppException('The protected link has expired.');
+        }
+        return response.data;
       }
-      if (credentials.protected &&
-          (credentials.linkExpired ||
-              credentials.accessGrant?.allowsNewSessions != true)) {
-        throw const AppException('The protected link has expired.');
-      }
-      return response.data;
     } catch (error) {
       throw AppException.fromNetwork(error);
     } finally {

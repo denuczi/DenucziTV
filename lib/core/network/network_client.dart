@@ -18,6 +18,11 @@ class NetworkClient {
   }
 
   final Dio dio;
+
+  /// Controls explicit HTTPS-to-HTTP redirects for Xtream API requests.
+  /// Native playback uses libmpv's independent HTTP transport.
+  bool allowHttpsToHttpRedirects = false;
+
   late String _userAgent;
 
   String get userAgent => _userAgent;
