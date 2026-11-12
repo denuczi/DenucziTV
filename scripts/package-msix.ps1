@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$ProjectRoot,
-    [string]$ExpectedPublicVersion = '0.6.3',
+    [string]$ExpectedPublicVersion = '0.6.4',
     [int]$ExpectedBuildNumber = 1,
     [string]$ExpectedSourceCommit = ''
 )
@@ -27,10 +27,10 @@ $identityName = 'IgnacioSanguina.DenucziTV'
 $publisher = 'CN=055E0D46-1999-438C-9CDB-4069928369ED'
 $publisherDisplayName = 'Ignacio Sanguina'
 $displayName = 'DenucziTV'
-$packageVersion = '1.6.3.0'
+$packageVersion = '1.6.4.0'
 $architecture = 'x64'
 $expectedOutputPath = 'build/store_msix'
-$expectedOutputName = 'DenucziTV-0.6.3-x64'
+$expectedOutputName = 'DenucziTV-0.6.4-x64'
 $storeBuildDefine = 'DENUCZI_STORE_BUILD=true'
 $storeName = "$expectedOutputName-store"
 $qaName = "$expectedOutputName-qa"

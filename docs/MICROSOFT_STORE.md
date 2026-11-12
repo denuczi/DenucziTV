@@ -12,6 +12,57 @@ requires versioned MSIX metadata, updated packaging checks, its own QA, and
 Partner Center certification. Do not change the original 0.6.3 records below
 until a new Store package has actually been approved and distributed.
 
+## Preparing the 0.6.4 Microsoft Store update
+
+The existing Store listing currently distributes the approved `0.6.3` MSIX.
+The standalone GitHub release `v0.6.4` has already been published. An update
+submission is required before Store installations can receive the same features.
+**Do not edit, recreate, or move the existing Git tag.**
+
+Prepare a separate commit on `main` with `pubspec.yaml` at `0.6.4+1`, MSIX
+version `1.6.4.0`, and output name `DenucziTV-0.6.4-x64`. Keep the application
+identity, publisher and package family unchanged so Microsoft Store recognizes
+this as an update to the existing product `9P25PQPHWDVR`:
+
+- Identity name: `IgnacioSanguina.DenucziTV`
+- Publisher: `CN=055E0D46-1999-438C-9CDB-4069928369ED`
+- Package version: `1.6.4.0` (higher than the published `1.6.3.0`)
+
+After reviewing and pushing that commit, run the existing quality gates and
+trigger the manually dispatched MSIX workflow:
+
+```bash
+flutter pub get
+flutter gen-l10n
+flutter analyze --fatal-infos --fatal-warnings
+flutter test --concurrency=1
+python3 -m unittest discover -s test/packaging -p test_msix_package.py -v
+gh workflow run microsoft-store.yml --repo denuczi/DenucziTV --ref main -f source_ref=main -f confirm_public_version=0.6.4
+```
+
+The workflow checks out the selected revision once, builds Store and QA packages
+from the same commit, runs tests, and uploads two separate CI artifacts:
+
+- `denuczitv-msix-store-SOURCE_SHA`: **unsigned**
+  `DenucziTV-0.6.4-x64-store.msix`, checksum and build-info JSON.
+- `denuczitv-msix-qa-SOURCE_SHA`: disposable **QA-signed**
+  `DenucziTV-0.6.4-x64-qa.msix`, checksum, build-info JSON and public certificate.
+
+Verify both checksums, manifest identity, x64 architecture, version `1.6.4.0`,
+`runFullTrust`, languages and payload parity before submission. Use a separate
+Windows 10/11 test environment for manual QA, retaining and then removing
+only the temporary QA certificate as described below. Test account and local
+data retention, playback, Live TV keyboard navigation and Store-managed updates.
+**Never upload the QA-signed package or its certificate to Partner Center.**
+
+For the production update, open the **existing DenucziTV product** in Partner
+Center, choose **Start update** in Product release, open **Packages**, and upload
+the **unsigned** `DenucziTV-0.6.4-x64-store.msix`. Confirm the package metadata,
+review market availability and release notes, then submit for certification.
+The Store remains on 0.6.3 until the new submission is approved and published.
+
+See [Microsoft's MSIX update instructions](https://learn.microsoft.com/windows/apps/publish/publish-your-app/msix/publish-update-to-your-app-on-store).
+
 ## Install from Microsoft Store
 
 On a compatible Windows 10/11 x64 PC, open the listing above, select **Get** or

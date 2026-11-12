@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: Branch, tag, or commit containing the 0.6.3 MSIX configuration
+        description: Branch, tag, or commit containing the 0.6.4 MSIX configuration
         required: true
         default: main
         type: string
       confirm_public_version:
-        description: Type 0.6.3 to confirm that the public application version stays unchanged
+        description: Type 0.6.4 to confirm that the public application version stays unchanged
         required: true
-        default: '0.6.3'
+        default: '0.6.4'
         type: string
 
 # This workflow reads repository contents only. It uses no repository secrets,
@@ -42,8 +42,8 @@ jobs:
           if ($env:SOURCE_REF -match '(^|/)\.\.(/|$)' -or $env:SOURCE_REF.StartsWith('-')) {
             throw 'source_ref is not a safe Git revision.'
           }
-          if ($env:CONFIRM_PUBLIC_VERSION -cne '0.6.3') {
-            throw 'This workflow intentionally keeps the public application version at 0.6.3. Type 0.6.3 to continue.'
+          if ($env:CONFIRM_PUBLIC_VERSION -cne '0.6.4') {
+            throw 'This workflow intentionally keeps the public application version at 0.6.4. Type 0.6.4 to continue.'
           }
         env:
           CONFIRM_PUBLIC_VERSION: ${{ inputs.confirm_public_version }}
@@ -187,9 +187,9 @@ jobs:
         with:
           name: denuczitv-msix-store-${{ env.SOURCE_SHA }}
           path: |
-            source/build/store_msix/DenucziTV-0.6.3-x64-store.msix
-            source/build/store_msix/DenucziTV-0.6.3-x64-store.msix.sha256
-            source/build/store_msix/DenucziTV-0.6.3-x64-store.build-info.json
+            source/build/store_msix/DenucziTV-0.6.4-x64-store.msix
+            source/build/store_msix/DenucziTV-0.6.4-x64-store.msix.sha256
+            source/build/store_msix/DenucziTV-0.6.4-x64-store.build-info.json
           if-no-files-found: error
           retention-days: 14
 
@@ -198,19 +198,19 @@ jobs:
         with:
           name: denuczitv-msix-qa-${{ env.SOURCE_SHA }}
           path: |
-            source/build/store_msix/qa/DenucziTV-0.6.3-x64-qa.msix
-            source/build/store_msix/qa/DenucziTV-0.6.3-x64-qa.msix.sha256
-            source/build/store_msix/qa/DenucziTV-0.6.3-x64-qa.build-info.json
-            source/build/store_msix/qa/DenucziTV-0.6.3-x64-qa.cer
+            source/build/store_msix/qa/DenucziTV-0.6.4-x64-qa.msix
+            source/build/store_msix/qa/DenucziTV-0.6.4-x64-qa.msix.sha256
+            source/build/store_msix/qa/DenucziTV-0.6.4-x64-qa.build-info.json
+            source/build/store_msix/qa/DenucziTV-0.6.4-x64-qa.cer
           if-no-files-found: error
           retention-days: 14
 
       - name: Publish run summary
         run: |
-          $store = Get-Content -LiteralPath 'source\build\store_msix\DenucziTV-0.6.3-x64-store.build-info.json' -Raw | ConvertFrom-Json
-          $qa = Get-Content -LiteralPath 'source\build\store_msix\qa\DenucziTV-0.6.3-x64-qa.build-info.json' -Raw | ConvertFrom-Json
+          $store = Get-Content -LiteralPath 'source\build\store_msix\DenucziTV-0.6.4-x64-store.build-info.json' -Raw | ConvertFrom-Json
+          $qa = Get-Content -LiteralPath 'source\build\store_msix\qa\DenucziTV-0.6.4-x64-qa.build-info.json' -Raw | ConvertFrom-Json
           @"
-          ## Microsoft Store MSIX 0.6.3
+          ## Microsoft Store MSIX 0.6.4
 
           - Source ref: $($store.sourceRef)
           - Source commit: $($store.sourceCommit)

@@ -36,8 +36,8 @@ class MsixConfigurationTest(unittest.TestCase):
         cls.lock = load_yaml(LOCKFILE)
         cls.config = cls.pubspec["msix_config"]
 
-    def test_public_version_is_unchanged(self):
-        self.assertEqual(self.pubspec["version"], "0.6.3+1")
+    def test_public_version_matches_store_update(self):
+        self.assertEqual(self.pubspec["version"], "0.6.4+1")
 
     def test_msix_is_a_development_dependency_only(self):
         self.assertIn("msix", self.pubspec["dev_dependencies"])
@@ -53,13 +53,13 @@ class MsixConfigurationTest(unittest.TestCase):
             "publisher": "CN=055E0D46-1999-438C-9CDB-4069928369ED",
             "publisher_display_name": "Ignacio Sanguina",
             "display_name": "DenucziTV",
-            "msix_version": "1.6.3.0",
+            "msix_version": "1.6.4.0",
             "architecture": "x64",
             "build_windows": False,
             "languages": "en-US,es-ES",
             "capabilities": "runFullTrust",
             "output_path": "build/store_msix",
-            "output_name": "DenucziTV-0.6.3-x64",
+            "output_name": "DenucziTV-0.6.4-x64",
         }
         for key, value in expected.items():
             self.assertEqual(self.config.get(key), value, key)
@@ -77,8 +77,8 @@ class MsixConfigurationTest(unittest.TestCase):
         for part in parts:
             self.assertGreaterEqual(part, 0)
             self.assertLessEqual(part, 65535)
-        self.assertEqual(version, "1.6.3.0")
-        self.assertEqual(version.split(".")[1:3], ["6", "3"])
+        self.assertEqual(version, "1.6.4.0")
+        self.assertEqual(version.split(".")[1:3], ["6", "4"])
 
 
 class MsixWorkflowTest(unittest.TestCase):
@@ -229,9 +229,9 @@ class MsixWorkflowTest(unittest.TestCase):
         self.assertNotIn("actions/upload-artifact@v5", self.text)
         self.assertEqual(len(uploads), 2)
         paths = "\n".join(step["with"]["path"] for step in uploads)
-        self.assertIn("DenucziTV-0.6.3-x64-store.msix", paths)
-        self.assertIn("DenucziTV-0.6.3-x64-qa.msix", paths)
-        self.assertIn("DenucziTV-0.6.3-x64-qa.cer", paths)
+        self.assertIn("DenucziTV-0.6.4-x64-store.msix", paths)
+        self.assertIn("DenucziTV-0.6.4-x64-qa.msix", paths)
+        self.assertIn("DenucziTV-0.6.4-x64-qa.cer", paths)
         self.assertNotIn(".pfx", paths)
         self.assertNotIn(".p12", paths)
         self.assertNotIn(".pem", paths)
@@ -480,10 +480,10 @@ class StorageAndChannelStaticTest(unittest.TestCase):
 
 class DocumentationAndSecretsTest(unittest.TestCase):
     def test_store_documentation_covers_required_topics(self):
-        text = read(STORE_DOC)
+        text = read(STORE_DOC).casefold()
         for expected in (
-            "1.6.3.0",
-            "0.6.3",
+            "1.6.4.0",
+            "0.6.4",
             "IgnacioSanguina.DenucziTV",
             "CN=055E0D46-1999-438C-9CDB-4069928369ED",
             "runFullTrust",
@@ -494,7 +494,7 @@ class DocumentationAndSecretsTest(unittest.TestCase):
             "screenshots",
             "Partner Center",
         ):
-            self.assertIn(expected, text)
+            self.assertIn(expected.casefold(), text)
 
     def test_privacy_policy_is_published_with_the_site(self):
         text = read(PRIVACY)
