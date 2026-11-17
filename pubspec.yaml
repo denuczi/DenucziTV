@@ -1,7 +1,7 @@
 name: denuczi_tv
 description: DenucziTV, an open-source IPTV player for Windows and Linux.
 publish_to: none
-version: 0.6.4+1
+version: 0.6.5+1
 
 environment:
   sdk: '>=3.13.0 <4.0.0'
@@ -41,8 +41,8 @@ dev_dependencies:
   msix: ^3.18.0
 
 # Microsoft Store packaging identity. Keep this in sync with Partner Center.
-# The public application version remains 0.6.4+1; msix_version is the internal
-# four-part package version required by Windows and the Store.
+# Standalone releases use 0.6.5+1. Store packaging remains at 0.6.4
+# until a separate Microsoft Store submission updates this configuration.
 msix_config:
   identity_name: IgnacioSanguina.DenucziTV
   publisher: "CN=055E0D46-1999-438C-9CDB-4069928369ED"

@@ -7,6 +7,41 @@ Changes are grouped by application version. Binary availability is listed on
 
 No additional changes recorded.
 
+## [0.6.5](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.5) — Stable
+
+### Added
+
+- Import extended M3U playlists from local files or remote HTTP/HTTPS URLs,
+  with a maximum of four redirects for remote sources.
+- Browse and play M3U Live TV channels and movies using existing library and
+  player views, with account-scoped favorites and playback history.
+- Support per-entry `User-Agent`, `Referer`, and `Origin` overrides from M3U
+  pipe URL syntax, while keeping the app default when no override is provided.
+- Recognize direct `.mp4`, `.mkv`, and `.avi` video URLs and explicit
+  `#EXT-X-PLAYLIST-TYPE:VOD` hints as movie entries instead of inferring the
+  content type from group names.
+- Autofill manual Xtream server URL, username, and password when a user pastes
+  a supported `get.php` playlist URL containing those query parameters.
+
+### Fixed
+
+- Close the first-download folder prompt before opening the native directory
+  picker, avoiding overlapping modal interactions on desktop.
+- Preserve normal Xtream URLs and protected-link rules when importing account
+  details; do not turn protected expiry links into manual Xtream credentials.
+- Keep the Xtream `.ts` / `.m3u8` format selector out of M3U playback, which
+  uses the original playlist stream URL.
+- Prevent Live TV channels from appearing in Movies solely because their M3U
+  group title suggests films or cinema.
+
+### Distribution
+
+- Standalone Linux and Windows version: `0.6.5+1` (stable tag `v0.6.5`).
+- Microsoft Store MSIX remains a separate release channel and is not updated
+  by the standalone EXE/DEB release.
+- M3U series, M3U downloads, and M3U exports are not supported in this release.
+- See [release notes](docs/releases/v0.6.5.md).
+
 ## [0.6.4](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.4) — Stable
 
 ### Added

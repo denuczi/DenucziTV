@@ -36,8 +36,12 @@ class MsixConfigurationTest(unittest.TestCase):
         cls.lock = load_yaml(LOCKFILE)
         cls.config = cls.pubspec["msix_config"]
 
-    def test_public_version_matches_store_update(self):
-        self.assertEqual(self.pubspec["version"], "0.6.4+1")
+    def test_standalone_version_is_valid_independently_of_store_version(self):
+        # Standalone releases can advance before a separate Store submission.
+        # Preserve Store package metadata checks in the other tests.
+        self.assertRegex(
+            self.pubspec["version"], r"^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$"
+        )
 
     def test_msix_is_a_development_dependency_only(self):
         self.assertIn("msix", self.pubspec["dev_dependencies"])
