@@ -5,6 +5,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../features/library/data/xtream_api.dart';
+import '../../features/m3u/data/m3u_source_repository.dart';
+import '../../features/m3u/domain/m3u_playlist.dart';
 import '../../features/personal_library/application/personal_library_controller.dart';
 import '../../features/personal_library/application/library_artwork_resolver.dart';
 import '../../features/personal_library/domain/library_item.dart';
@@ -81,10 +83,32 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   int catalogNavigationRequest = 0;
 
   bool get canShareLinks =>
-      activeAccount?.isProtected != true && credentials?.protected != true;
+      activeAccount?.isProtected != true &&
+      activeAccount?.isPlaylist != true &&
+      credentials?.protected != true;
   bool get copyLinksAvailable => showCopyLinkControls && canShareLinks;
   bool get exportM3uAvailable => showExportM3u && canShareLinks;
+  bool get isM3uAccount => activeAccount?.isPlaylist == true;
+
+  String? get _playlistScope =>
+      activeAccount?.isPlaylist == true ? 'm3u:${activeAccount!.id}' : null;
+
+  M3uStream? playlistStream(MediaEntry media) {
+    if (!canUseMedia(media) || !isM3uAccount) return null;
+    return _playlistCatalog?.streamFor(media.id);
+  }
+
+  List<MediaEntry> get playlistChannels =>
+      _playlistCatalog?.forKind(LibraryKind.live, _playlistScope ?? '') ??
+      const [];
+
   bool canUseMedia(MediaEntry media) {
+    if (isM3uAccount) {
+      return media.sourceScope == _playlistScope &&
+          media.kind != LibraryKind.series &&
+          _playlistCatalog?.streamFor(media.id) != null &&
+          _playlistCatalog?.hasEntry(media) == true;
+    }
     final connection = credentials;
     return connection != null &&
         !connection.linkExpired &&
@@ -100,6 +124,8 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
 
   final NetworkClient _network;
   final XtreamApi _api;
+  late final M3uSourceRepository _m3u = M3uSourceRepository(_network);
+  M3uPlaylist? _playlistCatalog;
   final AccountStore _accounts;
   final SettingsStore _settings;
   final DownloadManager downloads;
@@ -178,15 +204,27 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   XtreamApi get api => _api;
   late final _libraryArtwork = LibraryArtworkResolver(_api);
 
-  Future<String?> resolveLibraryArtwork(LibraryItem item) =>
-      _libraryArtwork.resolve(
-        item,
-        accountId: activeAccount?.id,
-        credentials: credentials,
-        catalog: entries.followedBy(
-          _catalogCache.values.expand((catalog) => catalog.entries),
-        ),
-      );
+  Future<String?> resolveLibraryArtwork(LibraryItem item) {
+    if (isM3uAccount) {
+      if (item.accountId != activeAccount?.id || !item.available) {
+        return Future<String?>.value(null);
+      }
+      for (final entry in _playlistCatalog?.entries ?? const <MediaEntry>[]) {
+        if (entry.id == item.mediaId && entry.kind == item.kind) {
+          return Future<String?>.value(safeArtworkUrl(entry.imageUrl));
+        }
+      }
+      return Future<String?>.value(null);
+    }
+    return _libraryArtwork.resolve(
+      item,
+      accountId: activeAccount?.id,
+      credentials: credentials,
+      catalog: entries.followedBy(
+        _catalogCache.values.expand((catalog) => catalog.entries),
+      ),
+    );
+  }
 
   NetworkClient get network => _network;
   AccountCredentials? get credentials =>
@@ -315,7 +353,11 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
         unawaited(
           personalLibrary?.selectAccount(
                 matches.first.id,
-                sourceScope: matches.first.isProtected ? null : '',
+                sourceScope: matches.first.isProtected
+                    ? null
+                    : (matches.first.isPlaylist
+                          ? 'm3u:${matches.first.id}'
+                          : ''),
                 protected: matches.first.isProtected,
               ) ??
               Future<void>.value(),
@@ -767,6 +809,70 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// Imports a source without contacting the Xtream API. Only source metadata
+  /// is retained in secure storage; stream URLs remain in the active catalog.
+  Future<bool> connectPlaylist(
+    String source,
+    String label, {
+    String? existingId,
+    bool loadCatalog = true,
+  }) async {
+    if (connecting) return false;
+    connecting = true;
+    error = null;
+    notifyListeners();
+    final version = ++_connectionVersion;
+    try {
+      final playlist = await _m3u.import(source);
+      if (version != _connectionVersion || _disposed) return false;
+      final id = existingId ?? randomUuid();
+      final account = Account(
+        id: id,
+        label: label.trim().isEmpty ? 'M3U Playlist' : label.trim(),
+        serverUrl: '',
+        username: '',
+        connectionType: AccountConnectionType.m3u,
+      );
+      await _accounts.savePlaylist(account, source.trim());
+      if (version != _connectionVersion || _disposed) return false;
+      savedAccounts = await _accounts.list();
+      _disconnect(clearError: false);
+      _playlistCatalog = playlist;
+      activeAccount = account;
+      offlineLibraryAccount = null;
+      accountStatus = null;
+      kind = LibraryKind.live;
+      try {
+        await personalLibrary?.selectAccount(id, sourceScope: 'm3u:$id');
+      } catch (_) {
+        error = 'The personal library could not be loaded.';
+      }
+      if (version != _connectionVersion || _disposed) return false;
+      try {
+        await _persistPreferredAccount(id);
+      } catch (_) {
+        error = 'Connected, but the account selection could not be saved.';
+      }
+      if (version != _connectionVersion || _disposed) return false;
+      if (loadCatalog) await selectKind(LibraryKind.live);
+      notifyListeners();
+      return true;
+    } catch (failure) {
+      if (version == _connectionVersion && !_disposed) {
+        error = failure is AppException
+            ? failure.message
+            : 'The M3U playlist could not be imported.';
+        notifyListeners();
+      }
+      return false;
+    } finally {
+      if (version == _connectionVersion && !_disposed) {
+        connecting = false;
+        notifyListeners();
+      }
+    }
+  }
+
   Future<bool> connect(
     AccountCredentials input, {
     String? existingId,
@@ -871,6 +977,22 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> connectSaved(Account account, {bool loadCatalog = true}) async {
+    if (account.isPlaylist) {
+      try {
+        final source = await _accounts.readPlaylistSource(account.id);
+        if (connecting || _disposed) return;
+        await connectPlaylist(
+          source,
+          account.label,
+          existingId: account.id,
+          loadCatalog: loadCatalog,
+        );
+      } on AppException catch (failure) {
+        error = failure.message;
+        notifyListeners();
+      }
+      return;
+    }
     if (account.isProtected) {
       await _connectProtectedSaved(account, loadCatalog: loadCatalog);
       return;
@@ -947,6 +1069,30 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
     final credentials = this.credentials;
     _catalogCancellation?.cancel();
     final version = ++_catalogVersion;
+    if (isM3uAccount) {
+      final playlist = _playlistCatalog;
+      final scope = _playlistScope ?? '';
+      _selectedCatalogRequested = true;
+      loading = false;
+      categories = playlist?.categoriesFor(selected) ?? [];
+      entries = playlist?.forKind(selected, scope) ?? [];
+      notifyListeners();
+      if (playlist != null && activeAccount != null) {
+        final accountId = activeAccount!.id;
+        unawaited(
+          personalLibrary
+                  ?.reconcileCatalog(
+                    accountId,
+                    selected,
+                    entries.map((item) => item.id),
+                    sourceScope: scope,
+                  )
+                  .catchError((Object _) {}) ??
+              Future<void>.value(),
+        );
+      }
+      return;
+    }
     if (credentials == null) {
       loading = false;
       categories = [];
@@ -1034,6 +1180,35 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> refresh() async {
+    if (isM3uAccount) {
+      final account = activeAccount!;
+      final version = _connectionVersion;
+      final previousCategory = categoryId;
+      final previousSearch = search;
+      try {
+        final source = await _accounts.readPlaylistSource(account.id);
+        final refreshed = await _m3u.import(source);
+        if (_disposed ||
+            version != _connectionVersion ||
+            activeAccount?.id != account.id) {
+          return;
+        }
+        _playlistCatalog = refreshed;
+        await selectKind(kind);
+        categoryId = categories.any((value) => value.id == previousCategory)
+            ? previousCategory
+            : null;
+        search = previousSearch;
+        _invalidateVisibleEntries();
+        notifyListeners();
+      } on AppException catch (failure) {
+        if (version == _connectionVersion) {
+          error = failure.message;
+          notifyListeners();
+        }
+      }
+      return;
+    }
     final selectedKind = kind;
     final accountId = activeAccount?.id;
     final previousCategory = categoryId;
@@ -1087,6 +1262,7 @@ class AppController extends ChangeNotifier with WidgetsBindingObserver {
 
   void _disconnect({required bool clearError}) {
     _libraryArtwork.clear();
+    _playlistCatalog = null;
     _catalogCancellation?.cancel();
     ++_catalogVersion;
     _catalogCache.clear();

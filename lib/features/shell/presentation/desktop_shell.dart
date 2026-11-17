@@ -62,7 +62,7 @@ class _DesktopShellState extends State<DesktopShell> {
     // Navigation can precede the asynchronous account restoration. Once
     // authenticated, load only the section the user explicitly opened.
     if (_workspace == _Workspace.library &&
-        _app.credentials != null &&
+        (_app.credentials != null || _app.isM3uAccount) &&
         !_app.selectedCatalogRequested &&
         !_app.loading) {
       unawaited(_app.selectKind(_app.kind));
@@ -255,17 +255,18 @@ class _SidePanel extends StatelessWidget {
                   onTap: () =>
                       onNavigate(_Workspace.library, LibraryKind.movies),
                 ),
-                _NavItem(
-                  narrow: narrow,
-                  id: 'series',
-                  label: context.l10n.series,
-                  icon: Icons.video_library_outlined,
-                  selected:
-                      workspace == _Workspace.library &&
-                      app.kind == LibraryKind.series,
-                  onTap: () =>
-                      onNavigate(_Workspace.library, LibraryKind.series),
-                ),
+                if (!app.isM3uAccount)
+                  _NavItem(
+                    narrow: narrow,
+                    id: 'series',
+                    label: context.l10n.series,
+                    icon: Icons.video_library_outlined,
+                    selected:
+                        workspace == _Workspace.library &&
+                        app.kind == LibraryKind.series,
+                    onTap: () =>
+                        onNavigate(_Workspace.library, LibraryKind.series),
+                  ),
                 _NavItem(
                   narrow: narrow,
                   id: 'my-library',

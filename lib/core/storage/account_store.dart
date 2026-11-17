@@ -140,6 +140,55 @@ class AccountStore {
     }
   });
 
+  /// Playlist URLs and local paths can contain sensitive query parameters.
+  /// Keep them in secure storage, never the public account metadata list.
+  Future<void> savePlaylist(
+    Account account,
+    String source,
+  ) => _serialize(() async {
+    if (!account.isPlaylist || account.label.trim().isEmpty || source.isEmpty) {
+      throw const AppException('An M3U account name and source are required.');
+    }
+    final existing = await list();
+    final key = _playlistKey(account.id);
+    final previous = await _secrets.read(key);
+    await _secrets.write(key, source);
+    try {
+      await _preferences.setString(
+        _accountsKey,
+        jsonEncode([
+          ...existing
+              .where((item) => item.id != account.id)
+              .map((item) => item.toJson()),
+          account.toJson(),
+        ]),
+      );
+    } catch (_) {
+      try {
+        if (previous == null) {
+          await _secrets.delete(key);
+        } else {
+          await _secrets.write(key, previous);
+        }
+      } catch (_) {
+        throw const AppException('Playlist metadata rollback failed.');
+      }
+      throw const AppException('The playlist account could not be saved.');
+    }
+  });
+
+  Future<String> readPlaylistSource(String accountId) async {
+    try {
+      final source = await _secrets.read(_playlistKey(accountId));
+      if (source == null || source.isEmpty) {
+        throw const FormatException('Missing M3U source');
+      }
+      return source;
+    } catch (_) {
+      throw const AppException('The saved playlist source is unavailable.');
+    }
+  }
+
   Future<void> renameProtected(
     Account account,
     String label,
@@ -314,6 +363,7 @@ class AccountStore {
       try {
         await _secrets.delete(_passwordKey(id));
         await _secrets.delete(_protectedKey(id));
+        await _secrets.delete(_playlistKey(id));
       } catch (_) {
         remaining.add(id);
       }
@@ -352,6 +402,7 @@ class AccountStore {
     try {
       await _secrets.delete(_passwordKey(accountId));
       await _secrets.delete(_protectedKey(accountId));
+      await _secrets.delete(_playlistKey(accountId));
       await _preferences.setStringList(
         _pendingDeletionKey,
         (await _readPending()).where((id) => id != accountId).toList(),
@@ -364,4 +415,5 @@ class AccountStore {
 
   String _passwordKey(String id) => 'account.$id.password';
   String _protectedKey(String id) => 'account.$id.protected.v1';
+  String _playlistKey(String id) => 'account.$id.m3u.source.v1';
 }

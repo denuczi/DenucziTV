@@ -376,16 +376,22 @@ class _PlayerDialogState extends State<PlayerDialog> {
   Future<void> _loadLiveDirectory() async {
     final accountId = _playbackAccountId;
     final credentials = _credentials;
-    if (accountId == null || credentials == null || !_canNavigateLive) return;
+    if (accountId == null ||
+        (credentials == null && !_app.isM3uAccount) ||
+        !_canNavigateLive) {
+      return;
+    }
     try {
       final cached = _app.cachedLiveChannels;
       final channels =
           cached ??
-          await _api.catalog(
-            credentials,
-            LibraryKind.live,
-            cancelToken: _liveCatalogCancellation = CancelToken(),
-          );
+          (_app.isM3uAccount
+              ? _app.playlistChannels
+              : await _api.catalog(
+                  credentials!,
+                  LibraryKind.live,
+                  cancelToken: _liveCatalogCancellation = CancelToken(),
+                ));
       if (!_canNavigateLive || _app.activeAccount?.id != accountId) return;
       final directory = LiveChannelDirectory(channels);
       _liveDirectory = directory;
@@ -614,6 +620,10 @@ class _PlayerDialogState extends State<PlayerDialog> {
       _stopUnavailable();
       return;
     }
+    if (_app.isM3uAccount) {
+      if (!_app.canUseMedia(_currentMedia)) _stopUnavailable();
+      return;
+    }
     if (_credentials?.protected != true) return;
     if (_credentials!.linkExpired) {
       _revokeSession();
@@ -835,7 +845,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
         return;
       }
     }
-    if (credentials == null) {
+    if (credentials == null && !_app.isM3uAccount) {
       if (mounted) {
         _updatePlayerState(() {
           _opening = false;
@@ -867,7 +877,8 @@ class _PlayerDialogState extends State<PlayerDialog> {
                 : null)
           : await _resumePosition();
       if (!mounted || _nativeDisposed) return;
-      if (credentials.protected &&
+      if (credentials != null &&
+          credentials.protected &&
           _app.credentials?.sourceScope != credentials.sourceScope) {
         _stopUnavailable();
         return;
@@ -885,8 +896,22 @@ class _PlayerDialogState extends State<PlayerDialog> {
       }
       final items = _items
           .map((entry) {
+            if (_app.isM3uAccount) {
+              final stream = _app.playlistStream(entry);
+              if (stream == null) {
+                throw StateError('The M3U source is unavailable.');
+              }
+              // Pipe headers are an exact per-item override. Do not merge the
+              // global User-Agent when a playlist supplies its own headers.
+              return Media(
+                stream.uri.toString(),
+                httpHeaders: stream.headers.isEmpty
+                    ? _network.mediaHeaders
+                    : stream.headers,
+              );
+            }
             final uri = _api.streamUrl(
-              credentials,
+              credentials!,
               entry,
               liveFormat: _liveFormat,
             );
@@ -895,22 +920,24 @@ class _PlayerDialogState extends State<PlayerDialog> {
           .toList(growable: false);
       await _player.setPlaylistMode(PlaylistMode.none);
       if (!mounted || _nativeDisposed) return;
-      if (credentials.linkExpired || _sessionRevoked) {
+      if (credentials?.linkExpired == true || _sessionRevoked) {
         _revokeSession();
         return;
       }
-      if (credentials.protected &&
+      if (credentials != null &&
+          credentials.protected &&
           _app.credentials?.sourceScope != credentials.sourceScope) {
         _stopUnavailable();
         return;
       }
       await _player.open(Playlist(items, index: _currentIndex));
       if (!mounted || _nativeDisposed) return;
-      if (credentials.linkExpired || _sessionRevoked) {
+      if (credentials?.linkExpired == true || _sessionRevoked) {
         _revokeSession();
         return;
       }
-      if (credentials.protected &&
+      if (credentials != null &&
+          credentials.protected &&
           _app.credentials?.sourceScope != credentials.sourceScope) {
         _stopUnavailable();
         return;
@@ -928,7 +955,7 @@ class _PlayerDialogState extends State<PlayerDialog> {
       }
     } catch (_) {
       if (mounted) {
-        if (credentials.linkExpired) {
+        if (credentials?.linkExpired == true) {
           _revokeSession();
         } else {
           _playbackFailed = true;
@@ -1080,7 +1107,10 @@ class _PlayerDialogState extends State<PlayerDialog> {
                   !_sessionRevoked &&
                   !_sourceUnavailable)
                 FavoriteToggleButton(media: current, onDarkSurface: true),
+              // The TS/HLS switch changes Xtream URL generation only.
+              // M3U streams already provide their exact media URL.
               if (current.kind == LibraryKind.live &&
+                  !_app.isM3uAccount &&
                   !_sessionRevoked &&
                   !_sourceUnavailable)
                 PopupMenuButton<String>(

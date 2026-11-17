@@ -610,6 +610,7 @@ class _LibraryPageState extends State<LibraryPage> {
                         network: app.network,
                         onOpen: () => _open(visible[index]),
                         showActions:
+                            !app.isM3uAccount &&
                             app.kind != LibraryKind.series &&
                             (app.showCopyLinkControls ||
                                 (app.showDownloadControls &&

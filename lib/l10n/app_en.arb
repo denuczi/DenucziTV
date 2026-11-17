@@ -355,7 +355,7 @@
   "subtitleFileFailed": "Unable to open the selected subtitle file.",
   "trackSwitchFailed": "Unable to switch the selected track.",
   "connectProvider": "Connect to a provider",
-  "connectProviderSubtitle": "Enter the credentials supplied by your streaming service.",
+  "connectProviderSubtitle": "Enter your credentials, or paste a get.php link into Server URL to fill in username and password.",
   "httpCredentialsWarning": "HTTP sends provider credentials without transport encryption. Prefer HTTPS.",
   "connect": "Connect",
   "accountType": "Account type",
@@ -819,6 +819,12 @@
       }
     }
   },
+  "m3uPlaylist": "M3U playlist",
+  "m3uPlaylistSource": "Playlist URL or file path",
+  "m3uSourceHelp": "Import an Extended M3U playlist from a URL or a local file. Live TV and movies are supported; series are not.",
+  "m3uChooseFile": "Choose M3U file",
+  "m3uInvalidSource": "Enter an HTTP(S) playlist URL or choose a local .m3u / .m3u8 file.",
+  "m3uSourceHidden": "The playlist location is stored securely and is not displayed.",
   "connectionMethod": "Connection method",
   "xtreamManual": "Manual Xtream account",
   "protectedSingleLink": "Protected Single Link",

@@ -225,6 +225,8 @@ class _AccountTile extends StatelessWidget {
     final app = context.watch<AppController>();
     final provider = account.isProtected
         ? context.l10n.protectedLinkConfigured
+        : account.isPlaylist
+        ? context.l10n.m3uPlaylist
         : (Uri.tryParse(account.serverUrl)?.host ?? account.serverUrl);
     final protectedExpiry = app.protectedExpirations[account.id];
     final expired = account.isProtected
@@ -310,6 +312,11 @@ class _AccountTile extends StatelessWidget {
                         context,
                         app.protectedSyncStates[account.id],
                       ),
+                    ),
+                  ] else if (account.isPlaylist) ...[
+                    _Fact(
+                      context.l10n.connectionMethod,
+                      context.l10n.m3uPlaylist,
                     ),
                   ] else ...[
                     _Fact(context.l10n.username, account.username),

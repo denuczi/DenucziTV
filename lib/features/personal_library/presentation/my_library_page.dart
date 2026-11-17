@@ -72,13 +72,14 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
       return;
     }
     final credentials = app.credentials;
-    if (credentials == null ||
+    if ((credentials == null && !app.isM3uAccount) ||
         app.activeAccount?.id != item.accountId ||
         !app.canUseMedia(item.toMediaEntry())) {
       return;
     }
     try {
       if (item.isEpisode) {
+        if (credentials == null) return;
         final seriesId = item.seriesId!;
         final details = await app.api.seriesDetails(credentials, seriesId);
         if (!mounted ||
@@ -278,13 +279,17 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
       listenable: library,
       builder: (context, _) {
         final query = _favoriteQuery;
+        final selectedFavoriteKind =
+            libraryAccount.isPlaylist && _favoriteKind == LibraryKind.series
+            ? LibraryKind.live
+            : _favoriteKind;
         final rows = switch (_view) {
           _View.continueWatching => library.continueWatching,
           _View.favorites =>
             library.favorites
                 .where(
                   (item) =>
-                      item.kind == _favoriteKind &&
+                      item.kind == selectedFavoriteKind &&
                       (query.isEmpty ||
                           item.title.toLowerCase().contains(query)),
                 )
@@ -410,25 +415,29 @@ class _MyLibraryPageState extends State<MyLibraryPage> {
                               runSpacing: 8,
                               children: [
                                 for (final kind in LibraryKind.values)
-                                  ChoiceChip(
-                                    key: Key('favoriteKind_${kind.name}'),
-                                    showCheckmark: false,
-                                    selected: _favoriteKind == kind,
-                                    avatar: Icon(switch (kind) {
-                                      LibraryKind.live =>
-                                        Icons.live_tv_outlined,
-                                      LibraryKind.movies =>
-                                        Icons.movie_outlined,
-                                      LibraryKind.series => Icons.tv_outlined,
-                                    }, size: 17),
-                                    label: Text(switch (kind) {
-                                      LibraryKind.live => context.l10n.liveTv,
-                                      LibraryKind.movies => context.l10n.movies,
-                                      LibraryKind.series => context.l10n.series,
-                                    }),
-                                    onSelected: (_) =>
-                                        setState(() => _favoriteKind = kind),
-                                  ),
+                                  if (!libraryAccount.isPlaylist ||
+                                      kind != LibraryKind.series)
+                                    ChoiceChip(
+                                      key: Key('favoriteKind_${kind.name}'),
+                                      showCheckmark: false,
+                                      selected: selectedFavoriteKind == kind,
+                                      avatar: Icon(switch (kind) {
+                                        LibraryKind.live =>
+                                          Icons.live_tv_outlined,
+                                        LibraryKind.movies =>
+                                          Icons.movie_outlined,
+                                        LibraryKind.series => Icons.tv_outlined,
+                                      }, size: 17),
+                                      label: Text(switch (kind) {
+                                        LibraryKind.live => context.l10n.liveTv,
+                                        LibraryKind.movies =>
+                                          context.l10n.movies,
+                                        LibraryKind.series =>
+                                          context.l10n.series,
+                                      }),
+                                      onSelected: (_) =>
+                                          setState(() => _favoriteKind = kind),
+                                    ),
                               ],
                             );
                             final trailingActions = Row(

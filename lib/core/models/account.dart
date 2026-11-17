@@ -1,6 +1,6 @@
 import 'protected_access_grant.dart';
 
-enum AccountConnectionType { xtream, protectedSingleLink }
+enum AccountConnectionType { xtream, protectedSingleLink, m3u }
 
 class Account {
   const Account({
@@ -18,13 +18,15 @@ class Account {
   final AccountConnectionType connectionType;
   bool get isProtected =>
       connectionType == AccountConnectionType.protectedSingleLink;
+  bool get isPlaylist => connectionType == AccountConnectionType.m3u;
 
   Map<String, String> toJson() => {
     'id': id,
     'label': label,
-    'serverUrl': isProtected ? '' : serverUrl,
-    'username': isProtected ? '' : username,
-    if (isProtected) 'connectionType': connectionType.name,
+    'serverUrl': isProtected || isPlaylist ? '' : serverUrl,
+    'username': isProtected || isPlaylist ? '' : username,
+    if (connectionType != AccountConnectionType.xtream)
+      'connectionType': connectionType.name,
   };
 
   factory Account.fromJson(Map<String, dynamic> json) => Account(
@@ -32,9 +34,11 @@ class Account {
     label: json['label'] as String,
     serverUrl: json['serverUrl'] as String,
     username: json['username'] as String,
-    connectionType: json['connectionType'] == 'protectedSingleLink'
-        ? AccountConnectionType.protectedSingleLink
-        : AccountConnectionType.xtream,
+    connectionType: switch (json['connectionType']) {
+      'protectedSingleLink' => AccountConnectionType.protectedSingleLink,
+      'm3u' => AccountConnectionType.m3u,
+      _ => AccountConnectionType.xtream,
+    },
   );
 }
 

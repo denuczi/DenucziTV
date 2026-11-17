@@ -81,7 +81,9 @@ class MediaActionMenu extends StatelessWidget {
                   title: Text(context.l10n.copyStreamUrl),
                 ),
               ),
-            if (app.showDownloadControls && media.kind != LibraryKind.live)
+            if (app.showDownloadControls &&
+                !app.isM3uAccount &&
+                media.kind != LibraryKind.live)
               PopupMenuItem(
                 value: MediaAction.download,
                 enabled: !occupied,
@@ -130,6 +132,11 @@ Future<void> performMediaAction(
     return;
   }
   try {
+    if (app.isM3uAccount) {
+      throw const AppException(
+        'Copying and downloading M3U sources is not supported.',
+      );
+    }
     if (action == MediaAction.copyLink) {
       final url = app.api.shareableStreamUrl(credentials, media);
       final confirmed = await showDialog<bool>(

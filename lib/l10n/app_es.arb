@@ -355,7 +355,7 @@
   "subtitleFileFailed": "No se pudo abrir el archivo de subtítulos.",
   "trackSwitchFailed": "No se pudo cambiar la pista seleccionada.",
   "connectProvider": "Conectar con un proveedor",
-  "connectProviderSubtitle": "Ingresa las credenciales proporcionadas por tu servicio de streaming.",
+  "connectProviderSubtitle": "Introduce tus credenciales o pega un enlace get.php en URL del servidor para completar el usuario y la contraseña.",
   "httpCredentialsWarning": "HTTP transmite las credenciales sin cifrado. Es preferible usar HTTPS.",
   "connect": "Conectar",
   "accountType": "Tipo de cuenta",
@@ -819,6 +819,12 @@
       }
     }
   },
+  "m3uPlaylist": "Lista M3U",
+  "m3uPlaylistSource": "URL o ruta del archivo de la lista",
+  "m3uSourceHelp": "Importa una lista M3U extendida desde una URL o un archivo local. Se admiten televisión en vivo y películas, pero no series.",
+  "m3uChooseFile": "Seleccionar archivo M3U",
+  "m3uInvalidSource": "Introduce una URL HTTP(S) de una lista o selecciona un archivo local .m3u / .m3u8.",
+  "m3uSourceHidden": "La ubicación de la lista se almacena de forma segura y no se muestra.",
   "connectionMethod": "Método de conexión",
   "xtreamManual": "Cuenta Xtream manual",
   "protectedSingleLink": "Link único protegido",

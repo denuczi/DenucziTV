@@ -44,6 +44,11 @@ class _MediaDetailsDialogState extends State<MediaDetailsDialog> {
     if (widget.entry.sourceScope.isNotEmpty && !app.canUseMedia(widget.entry)) {
       return Future.error(StateError('Content unavailable'));
     }
+    if (app.isM3uAccount) {
+      return Future<MediaDetails>.value(
+        MediaDetails(plot: widget.entry.plot, imageUrl: widget.entry.imageUrl),
+      );
+    }
     final credentials = app.credentials;
     return credentials == null
         ? Future.error(StateError('Account is not connected.'))
@@ -284,7 +289,8 @@ class _MediaDetailsDialogState extends State<MediaDetailsDialog> {
                         icon: const Icon(Icons.link),
                         label: Text(context.l10n.copyUrl),
                       ),
-                    if (context.watch<AppController>().showDownloadControls)
+                    if (context.watch<AppController>().showDownloadControls &&
+                        !context.watch<AppController>().isM3uAccount)
                       DownloadActionButton(
                         media: widget.entry,
                         style: _actionButtonStyle,

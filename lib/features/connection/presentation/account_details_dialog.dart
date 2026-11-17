@@ -28,6 +28,33 @@ class AccountDetailsDialog extends StatelessWidget {
     if (account == null) {
       return const SizedBox.shrink();
     }
+    if (account.isPlaylist) {
+      return AlertDialog(
+        constraints: const BoxConstraints(maxWidth: 480),
+        title: Text(context.l10n.m3uPlaylist),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                account.label,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              Text(context.l10n.m3uSourceHidden),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.l10n.close),
+          ),
+        ],
+      );
+    }
     if (account.isProtected) {
       final expiration = app.protectedExpirations[account.id];
       final updated = app.protectedLastUpdated[account.id];
