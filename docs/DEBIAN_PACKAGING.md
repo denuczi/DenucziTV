@@ -8,7 +8,7 @@ user; root access is unnecessary for packaging.
 To install the app, follow the [Linux installation steps](../README.md#linux-debian--ubuntu).
 This guide is for maintainers building or inspecting a package.
 
-The current stable GitHub release is [v0.6.4](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.4).
+The current stable GitHub release is [v0.6.5](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.5).
 The examples use its filenames; substitute the matching version for another
 release. Installers belong in release assets; keep `dist/` out of source commits.
 
@@ -41,17 +41,17 @@ From the repository root:
 
 ```bash
 bash scripts/package-deb.sh
-DENUCZITV_DEB=dist/denuczitv_0.6.4+1-1_amd64.deb python3 -m unittest discover -s test/packaging -p 'test_deb_package.py' -v
+DENUCZITV_DEB=dist/denuczitv_0.6.5+1-1_amd64.deb python3 -m unittest discover -s test/packaging -p 'test_deb_package.py' -v
 python3 -m unittest discover -s test/packaging -p 'test_linux_jni_policy.py' -v
 ```
 
-For `version: 0.6.4+1`, the default amd64 output is:
+For `version: 0.6.5+1`, the default amd64 output is:
 
 ```text
-dist/denuczitv_0.6.4+1-1_amd64.deb
-dist/denuczitv_0.6.4+1-1_amd64.deb.sha256
-dist/denuczitv_0.6.4+1-1_amd64.build-info.json
-dist/denuczitv_0.6.4+1-1_amd64.dependencies.log
+dist/denuczitv_0.6.5+1-1_amd64.deb
+dist/denuczitv_0.6.5+1-1_amd64.deb.sha256
+dist/denuczitv_0.6.5+1-1_amd64.build-info.json
+dist/denuczitv_0.6.5+1-1_amd64.dependencies.log
 ```
 
 The last `-1` is the Debian packaging revision. Increment it when redistributing
@@ -66,14 +66,17 @@ The bundle architecture must match the host (amd64 or arm64); cross-packaging is
 not supported. To verify a specific archive when multiple versions exist:
 
 ```bash
-DENUCZITV_DEB=dist/denuczitv_0.6.4+1-1_amd64.deb python3 -m unittest discover -s test/packaging -p 'test_deb_package.py' -v
+DENUCZITV_DEB=dist/denuczitv_0.6.5+1-1_amd64.deb python3 -m unittest discover -s test/packaging -p 'test_deb_package.py' -v
 python3 -m unittest discover -s test/packaging -p 'test_linux_jni_policy.py' -v
 ```
 
-The 0.6.4 Linux-specific tests passed (10 Debian and 3 JNI policy cases).
-The full `test/packaging` discovery also includes MSIX checks still pinned to
-0.6.3; those require version-policy maintenance before the separate Store 0.6.4
-submission. Do not misreport those failures as DEB packaging failures.
+The 0.6.4 Linux-specific tests passed (10 Debian and 3 JNI policy cases),
+which remains a historical result. The standalone 0.6.5 CI run
+[44096276075](https://github.com/denuczi/DenucziTV/actions/runs/44096276075)
+passed Linux packaging verification; the maintainer also confirmed a successful
+Debian 13 upgrade from 0.6.4 to 0.6.5 and application functionality. The
+MSIX tests have a separately maintained version policy; do not conflate a
+Store packaging check with a DEB packaging failure.
 
 The integration checks compare extracted files against the package checksums,
 inspect ownership and permissions, verify desktop integration, resolve relocated
@@ -175,15 +178,15 @@ build distribution, and source revision/dirty status.
 Inspect the package and simulate installation first:
 
 ```bash
-dpkg-deb --info dist/denuczitv_0.6.4+1-1_amd64.deb
-apt-get --simulate install ./dist/denuczitv_0.6.4+1-1_amd64.deb
-(cd dist && sha256sum --check denuczitv_0.6.4+1-1_amd64.deb.sha256)
+dpkg-deb --info dist/denuczitv_0.6.5+1-1_amd64.deb
+apt-get --simulate install ./dist/denuczitv_0.6.5+1-1_amd64.deb
+(cd dist && sha256sum --check denuczitv_0.6.5+1-1_amd64.deb.sha256)
 ```
 
 When ready, install through APT so dependencies are resolved:
 
 ```bash
-sudo apt install ./dist/denuczitv_0.6.4+1-1_amd64.deb
+sudo apt install ./dist/denuczitv_0.6.5+1-1_amd64.deb
 denuczitv
 ```
 
@@ -194,6 +197,10 @@ remaining [manual QA checks](QA.md) on a real desktop before publishing.
 
 Uninstall with `sudo apt remove denuczitv`. User profile data is preserved; the
 package does not delete credentials, history, or downloaded files on removal.
+
+## Verified 0.6.5 standalone package
+
+CI run [44096276075](https://github.com/denuczi/DenucziTV/actions/runs/44096276075) passed Linux release build, package verification, and artifact upload. The downloaded `denuczitv_0.6.5+1-1_amd64.deb` checksum matched; `dpkg-deb --info` identified amd64 and the expected version. The maintainer reported a successful Debian 13 installation upgrading 0.6.4 to 0.6.5 and functional application startup/use. This does not certify older Debian or Ubuntu versions.
 
 ## Verified 0.6.4 standalone package
 

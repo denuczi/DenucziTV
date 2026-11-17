@@ -66,6 +66,16 @@ Use only authorized content and synthetic credentials in shared evidence.
 - Check exported playlists and copied links locally. They may contain credentials
   and must not be attached to public issues.
 
+## M3U and Xtream account checks (0.6.5)
+
+- Import an extended M3U catalog from a local `.m3u`/`.m3u8` file and from a remote URL. Verify the four-redirect limit and rejection of oversized or invalid sources.
+- Verify Live TV and Movies classification: `.mp4`, `.mkv`, `.avi` and per-entry `#EXT-X-PLAYLIST-TYPE:VOD`; channel group names alone must not imply a movie. Real HLS segment manifests must not become IPTV catalogs.
+- Test both pipe formats with a controlled server and verify `User-Agent`, `Referer`, and `Origin` actually arrive on playback requests. The Xtream `.ts` / `.m3u8` selector must not appear for M3U accounts.
+- Verify Series and M3U downloading/export are unavailable for M3U accounts, while supported Xtream and Protected Single Link behavior remains unchanged.
+- Paste a supported Xtream `get.php` URL and verify server/port, username and password autofill; reject malformed URLs and protected-link expiry parameters without exposing secrets.
+- With no download directory configured, select a folder from the first-download prompt. Verify cancellation, valid/invalid folder handling, and no duplicate or premature download. Repeat on Windows standalone EXE.
+- Switch accounts, restart, and verify source isolation and preservation of favorites and history.
+
 ## Protected Single Link checks
 
 Use fake credentials and controlled endpoints for shared evidence. Do not record

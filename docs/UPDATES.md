@@ -220,6 +220,12 @@ The preview is a separate entry point and is not included in the normal app.
 Manual platform QA should also cover the real browser, native package metadata,
 Windows x64, Debian/Ubuntu x64, and suppression during actual playback/downloads.
 
+## Verification record for 0.6.5
+
+The standalone `v0.6.5` release was published with Windows x64 EXE and Debian amd64 DEB assets and matching SHA-256 sidecars. The 0.6.5 source passed
+[desktop CI run 44096276075](https://github.com/denuczi/DenucziTV/actions/runs/44096276075). The Windows installer build passed in
+[run 44097945590](https://github.com/denuczi/DenucziTV/actions/runs/44097945590). The maintainer confirmed the DEB upgraded from 0.6.4 to 0.6.5 on Debian 13 and the application worked. This verification does not establish a complete Windows manual QA result. The Store edition has its own update channel.
+
 ## Verification record for 0.6.4
 
 The maintainer reported 434 Flutter tests passed with a clean `flutter analyze`

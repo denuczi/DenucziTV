@@ -6,7 +6,7 @@
 
 <p align="center">
   An open-source IPTV player for <strong>Windows and Linux</strong>.<br>
-  Connect your own provider using Xtream Codes or a Protected Single Link.
+  Connect your own Xtream Codes account, Protected Single Link, or M3U playlist.
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
 <h2 align="center">Download</h2>
 
 <p align="center">
-  <strong><a href="https://github.com/denuczi/DenucziTV/releases/tag/v0.6.4">Latest stable release: 0.6.4</a></strong>
+  <strong><a href="https://github.com/denuczi/DenucziTV/releases/tag/v0.6.5">Latest stable release: 0.6.5</a></strong>
 </p>
 
 <div align="center">
@@ -30,12 +30,12 @@
 | Your system | Installer | Checksum |
 | :---: | :---: | :---: |
 | Windows 10 / 11, x64 | [Install from Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr) | Managed by Microsoft Store |
-| Windows 10 / 11, x64 (standalone) | [Download Windows installer](https://github.com/denuczi/DenucziTV/releases/download/v0.6.4/DenucziTV-Setup-0.6.4-x64.exe) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.4/DenucziTV-Setup-0.6.4-x64.exe.sha256) |
-| Debian / Ubuntu, x64 | [Download Linux package](https://github.com/denuczi/DenucziTV/releases/download/v0.6.4/denuczitv_0.6.4%2B1-1_amd64.deb) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.4/denuczitv_0.6.4%2B1-1_amd64.deb.sha256) |
+| Windows 10 / 11, x64 (standalone) | [Download Windows installer](https://github.com/denuczi/DenucziTV/releases/download/v0.6.5/DenucziTV-Setup-0.6.5-x64.exe) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.5/DenucziTV-Setup-0.6.5-x64.exe.sha256) |
+| Debian / Ubuntu, x64 | [Download Linux package](https://github.com/denuczi/DenucziTV/releases/download/v0.6.5/denuczitv_0.6.5%2B1-1_amd64.deb) | [SHA256](https://github.com/denuczi/DenucziTV/releases/download/v0.6.5/denuczitv_0.6.5%2B1-1_amd64.deb.sha256) |
 
 </div>
 
-**DenucziTV 0.6.3 is now available on [Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr)** (Store ID `9P25PQPHWDVR`). It is an additional Windows distribution channel; the GitHub EXE and Debian packages remain available. The Store edition receives updates through Microsoft Store, whereas the GitHub installers use DenucziTV's stable-release checker. See [Microsoft Store distribution](docs/MICROSOFT_STORE.md).
+**DenucziTV is also available on [Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr)** (Store ID `9P25PQPHWDVR`). It is an additional Windows distribution channel; the GitHub EXE and Debian packages remain available. The Store edition receives updates through Microsoft Store, whereas the GitHub installers use DenucziTV's stable-release checker. See [Microsoft Store distribution](docs/MICROSOFT_STORE.md).
 
 **You do not need Flutter, Git, or a compiler to install DenucziTV.** Choose the
 installer for your system above. The **Source code** ZIP and TAR archives on the
@@ -52,11 +52,11 @@ DenucziTV does not include channels, movies, subscriptions, or provider accounts
 2. Select **Get** or **Install** in Microsoft Store and follow the prompts.
 3. Open **DenucziTV** from the Start menu. Future Store-edition updates are managed by Microsoft Store.
 
-The Store listing currently distributes the 0.6.3 edition, while the standalone GitHub release is 0.6.4. Availability can depend on the user's region and Store configuration. Microsoft Store and standalone EXE installations may have separate app data: **do not assume accounts, downloads, or favorites migrate automatically between editions**.
+The Store distribution has its own version and approval schedule; the standalone GitHub release is 0.6.5. Check the Store listing for the version offered in your region. Availability can depend on the user's region and Store configuration. Microsoft Store and standalone EXE installations may have separate app data: **do not assume accounts, downloads, or favorites migrate automatically between editions**.
 
 ### Windows: standalone EXE (alternative)
 
-1. Download **`DenucziTV-Setup-0.6.4-x64.exe`** using the GitHub link above.
+1. Download **`DenucziTV-Setup-0.6.5-x64.exe`** using the GitHub link above.
 2. Run the installer and follow the setup steps.
 3. Open **DenucziTV** from the Start menu.
 
@@ -72,8 +72,8 @@ Download the matching `.exe.sha256` file. In PowerShell, open the folder contain
 both files and run:
 
 ```powershell
-Get-FileHash .\DenucziTV-Setup-0.6.4-x64.exe -Algorithm SHA256
-Get-Content .\DenucziTV-Setup-0.6.4-x64.exe.sha256
+Get-FileHash .\DenucziTV-Setup-0.6.5-x64.exe -Algorithm SHA256
+Get-Content .\DenucziTV-Setup-0.6.5-x64.exe.sha256
 ```
 
 The two SHA256 values must match; letter case does not matter.
@@ -82,13 +82,13 @@ The two SHA256 values must match; letter case does not matter.
 
 ### Linux: Debian / Ubuntu
 
-1. Download **`denuczitv_0.6.4+1-1_amd64.deb`** and its matching `.deb.sha256`
+1. Download **`denuczitv_0.6.5+1-1_amd64.deb`** and its matching `.deb.sha256`
    using the Linux links above.
 2. Open a terminal in the folder containing both files and run:
 
    ```bash
-   sha256sum --check denuczitv_0.6.4+1-1_amd64.deb.sha256 &&
-   sudo apt install ./denuczitv_0.6.4+1-1_amd64.deb
+   sha256sum --check denuczitv_0.6.5+1-1_amd64.deb.sha256 &&
+   sudo apt install ./denuczitv_0.6.5+1-1_amd64.deb
    ```
 
 3. Launch **DenucziTV** from your application menu, or run `denuczitv`.
@@ -97,19 +97,15 @@ The Linux package is built and has been installed on **Debian 13 amd64**. Other
 Debian/Ubuntu versions must satisfy its native library requirements; older
 systems may not be compatible. See [Debian package details](docs/DEBIAN_PACKAGING.md).
 
-These filenames are for the 0.6.4 standalone release. For another version,
+These filenames are for the 0.6.5 standalone release. For another version,
 use that release's filenames and matching checksum files.
 
 ## Start using the app
 
-1. Add a manual **Xtream** account with the provider's server address, username,
-   and password, or select **Protected Single Link** and enter a name and the
-   provider's permanent link.
-2. Browse **Live TV**, **Movies**, or **Series**, depending on your subscription.
-3. Use **Settings** to choose the appearance and language, and enable download
-   controls. Stream-link copying and M3U export are available for manual Xtream
-   accounts. Protected accounts show these settings as unavailable with an
-   explanation, while preserving your preferences for manual accounts.
+1. Choose a connection: **Manual Xtream**, **Protected Single Link**, or **M3U Playlist**. Manual Xtream also accepts compatible `get.php` links in Server URL and fills in the username and password.
+2. For **M3U Playlist**, import an extended `.m3u` / `.m3u8` catalog from a local file or an HTTP/HTTPS URL. M3U accounts support **Live TV and Movies**, not Series. The app does not import HLS segment manifests as channel catalogs.
+3. Browse the sections available for your account. On M3U streams, optional pipe parameters can set `User-Agent`, `Referer`, and `Origin` per entry.
+4. Use **Settings** to choose appearance, language, and download preferences. Stream-link copying and M3U export are available for manual Xtream accounts only; M3U account downloads/exports and protected-account copy/export are unavailable.
 
 Use only services and content you are authorized to access. Exported M3U files
 and copied stream URLs can contain account credentials; keep them private.
@@ -128,7 +124,9 @@ The [published Microsoft Store edition](https://apps.microsoft.com/detail/9p25pq
 
 ## Features
 
-- Multiple saved Xtream and Protected Single Link accounts.
+- Multiple saved Xtream, Protected Single Link, and M3U playlist accounts.
+- Import M3U catalogs from local files or remote URLs (up to four redirects); play Live TV and movies with optional per-entry HTTP headers.
+- Paste supported Xtream `get.php` URLs to autofill server, username, and password.
 - Live TV, movies, series, category filters, and catalog search.
 - Live TV channel switching with number keys (five-second selection timeout),
   `Enter`, `Up`/`Down`, or `W`/`S` without closing the player.
@@ -191,11 +189,12 @@ content shown.
 | Submit a change or report a bug | [Contributing](CONTRIBUTING.md) |
 | Understand favorites, history, and playback progress | [Personal library](docs/PERSONAL_LIBRARY.md) |
 | Understand protected connections, renewal, expiry, and data migration | [Protected Single Link](docs/PROTECTED_SINGLE_LINK.md) |
+| Import and troubleshoot M3U playlists, supported headers and limitations | [M3U playlists](docs/M3U_PLAYLISTS.md) |
 | Build or inspect a Debian package | [Debian packaging](docs/DEBIAN_PACKAGING.md) |
 | Generate a Windows installer from Linux | [Windows packaging with GitHub Actions](docs/WINDOWS_PACKAGING.md) |
 | Install the Microsoft Store edition or maintain its MSIX packaging | [Microsoft Store distribution](docs/MICROSOFT_STORE.md) |
 | Understand stable update checks and assisted downloads | [Software updates](docs/UPDATES.md) |
-| See what changed in 0.6.4 | [0.6.4 release notes](docs/releases/v0.6.4.md) |
+| See what changed in 0.6.5 | [0.6.5 release notes](docs/releases/v0.6.5.md) |
 | Publish source and release installers | [Release publishing](docs/PUBLISHING.md) |
 | Run release checks | [Quality assurance](docs/QA.md) |
 | Report a vulnerability or review credential handling | [Security policy](SECURITY.md) |

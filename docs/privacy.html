@@ -24,7 +24,7 @@
 <main>
   <p class="muted"><a href="index.html">← DenucziTV</a></p>
   <h1>DenucziTV Privacy Policy</h1>
-  <p class="muted">Effective date: 9 November 2026. This policy applies to DenucziTV 0.6.3, including the Microsoft Store edition and the GitHub Windows EXE and Debian packages.</p>
+  <p class="muted">Updated: 17 November 2026. This policy describes DenucziTV 0.6.5 standalone EXE/DEB and the separately distributed Microsoft Store edition; available features may differ by channel.</p>
 
   <h2>English</h2>
 
@@ -36,13 +36,13 @@
   <ul>
     <li>Application preferences, language, theme, playback options, download settings, download history, and the identifier of the active account.</li>
     <li>Your personal library: favorites, watch history, playback progress, and related catalog metadata.</li>
-    <li>Provider account metadata. Passwords and protected-connection secrets are stored in the operating system's secure credential storage (Windows DPAPI/secure storage or the Linux Secret Service), not in the developer's servers.</li>
+    <li>Provider account metadata. Passwords, protected-connection secrets, and M3U playlist source URLs or local file paths are stored in the operating system's secure credential storage (Windows secure storage or the Linux Secret Service), not in the developer's servers. The original local M3U file remains in the location you selected.</li>
     <li>Downloaded media in the folder you choose.</li>
   </ul>
   <p>This data remains on your device. The developer does not receive it, does not operate a cloud account system for it, and does not sell it. Local files can be removed through the application controls, by deleting the application data, or by uninstalling the application. Some uninstallers may leave application data; review your platform's storage settings.</p>
 
   <h3>Direct requests to your provider</h3>
-  <p>When you connect an Xtream Codes account or a Protected Single Link, DenucziTV sends requests directly from your device to the provider you configured. Those requests can include the provider URL, credentials, an account identifier, and requests for catalogs, playback, or media downloads. The media itself is downloaded from the provider to your device. The provider's own privacy policy and terms apply. The developer does not control the provider and does not receive a copy of those requests.</p>
+  <p>When you connect an Xtream Codes account, Protected Single Link, or remote M3U playlist, DenucziTV makes direct requests from your device to the provider or playlist host you configured. Requests may include source URLs, credentials or tokens embedded in URLs, an account identifier when applicable, and catalog or playback requests. M3U stream requests may include per-entry User-Agent, Referer, and Origin headers specified in your playlist. Artwork may be requested from the image hosts named by the catalog. Media downloads (where supported) are transferred directly from the provider to your device. Third-party hosts may log requests and apply their own privacy terms. The developer does not receive a copy of these requests.</p>
 
   <h3>Update checks and the Microsoft Store edition</h3>
   <p>DenucziTV does not include analytics, advertising SDKs, telemetry, crash-reporting uploads, or account tracking. The Windows EXE and Debian editions may contact the public GitHub Releases API to check for a newer stable version. That request goes to GitHub and may be subject to GitHub's logging and privacy practices. It does not include your provider credentials or library data.</p>
@@ -69,13 +69,13 @@
   <ul>
     <li>Preferencias de la aplicación, idioma, tema, opciones de reproducción, configuración e historial de descargas y el identificador de la cuenta activa.</li>
     <li>Tu biblioteca personal: favoritos, historial de visionado, progreso de reproducción y metadatos relacionados del catálogo.</li>
-    <li>Metadatos de las cuentas de proveedor. Las contraseñas y los secretos de conexión protegida se guardan en el almacén seguro del sistema operativo (DPAPI/almacenamiento seguro de Windows o Secret Service de Linux), no en servidores del desarrollador.</li>
+    <li>Metadatos de las cuentas de proveedor. Las contraseñas, los secretos de conexión protegida y las URL de origen o rutas locales de listas M3U se guardan en el almacenamiento seguro del sistema operativo (almacenamiento seguro de Windows o Secret Service de Linux), no en servidores del desarrollador. El archivo M3U local original permanece en la ubicación elegida.</li>
     <li>El contenido descargado en la carpeta que elijas.</li>
   </ul>
   <p>Estos datos permanecen en tu dispositivo. El desarrollador no los recibe, no opera un sistema de cuentas en la nube para ellos y no los vende. Puedes eliminarlos con los controles de la aplicación, borrando los datos de la aplicación o desinstalándola. Algunos desinstaladores pueden conservar datos; revisa el almacenamiento de tu plataforma.</p>
 
   <h3>Solicitudes directas a tu proveedor</h3>
-  <p>Cuando conectas una cuenta Xtream Codes o un enlace único protegido, DenucziTV envía solicitudes directamente desde tu dispositivo al proveedor que hayas configurado. Esas solicitudes pueden incluir la URL del proveedor, credenciales, un identificador de cuenta y peticiones para consultar el catálogo, reproducir contenido o descargar archivos. Los archivos multimedia se descargan del proveedor a tu dispositivo. Se aplican la política de privacidad y los términos del proveedor. El desarrollador no controla al proveedor ni recibe copia de esas solicitudes.</p>
+  <p>Cuando conectas una cuenta Xtream Codes, un enlace único protegido o una lista M3U remota, DenucziTV envía solicitudes directamente desde tu dispositivo al proveedor o al servidor de la lista configurada. Las peticiones pueden incluir URL de origen, credenciales o tokens incorporados en enlaces, un identificador de cuenta cuando corresponda y solicitudes de catálogo o reproducción. Las solicitudes de contenido M3U pueden incluir los encabezados User-Agent, Referer y Origin definidos en cada entrada. Las imágenes del catálogo pueden solicitarse a los servidores indicados en sus metadatos. Las descargas disponibles se transfieren directamente a tu equipo. Los terceros pueden registrar solicitudes y aplicar sus propias políticas de privacidad. El desarrollador no recibe copia de estas peticiones.</p>
 
   <h3>Comprobaciones de actualización y edición de Microsoft Store</h3>
   <p>DenucziTV no incluye analítica, SDK de publicidad, telemetría, envío de informes de fallos ni seguimiento de cuentas. Las ediciones EXE de Windows y Debian pueden consultar la API pública de versiones de GitHub para buscar una versión estable más reciente. Esa solicitud va a GitHub y puede estar sujeta a sus prácticas de registro y privacidad. No incluye las credenciales de tu proveedor ni los datos de tu biblioteca.</p>

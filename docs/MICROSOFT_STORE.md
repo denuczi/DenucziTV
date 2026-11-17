@@ -3,8 +3,8 @@
 **DenucziTV 0.6.3 has passed Microsoft Store certification and is published.**
 The public listing is [DenucziTV on Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr), Store ID `9P25PQPHWDVR` (first publication: November 11, 2026).
 
-**Release channel distinction (November 11, 2026):** DenucziTV
-[0.6.4 is published on GitHub](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.4)
+**Release channel distinction (November 17, 2026):** DenucziTV
+[0.6.5 is published on GitHub](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.5)
 as standalone EXE and DEB installers, but this document still describes the
 original **0.6.3 Microsoft Store submission**. Publishing the GitHub Release
 neither uploads an MSIX nor updates Store customers. A Store 0.6.4 submission
@@ -12,11 +12,13 @@ requires versioned MSIX metadata, updated packaging checks, its own QA, and
 Partner Center certification. Do not change the original 0.6.3 records below
 until a new Store package has actually been approved and distributed.
 
-## Preparing the 0.6.4 Microsoft Store update
+## Historical 0.6.4 Microsoft Store update preparation
 
-The existing Store listing currently distributes the approved `0.6.3` MSIX.
-The standalone GitHub release `v0.6.4` has already been published. An update
-submission is required before Store installations can receive the same features.
+The original Store listing distributed an approved `0.6.3` MSIX. A separate
+`0.6.4` MSIX build was submitted for Store review, but its final public
+distribution state is not confirmed in this document. Check Partner Center
+before stating the current Store version. The standalone GitHub release
+`v0.6.5` does not change any Store package.
 **Do not edit, recreate, or move the existing Git tag.**
 
 Prepare a separate commit on `main` with `pubspec.yaml` at `0.6.4+1`, MSIX
@@ -59,7 +61,7 @@ For the production update, open the **existing DenucziTV product** in Partner
 Center, choose **Start update** in Product release, open **Packages**, and upload
 the **unsigned** `DenucziTV-0.6.4-x64-store.msix`. Confirm the package metadata,
 review market availability and release notes, then submit for certification.
-The Store remains on 0.6.3 until the new submission is approved and published.
+Store installations only receive a new package after Microsoft approves and publishes its submission; verify current availability in Partner Center.
 
 See [Microsoft's MSIX update instructions](https://learn.microsoft.com/windows/apps/publish/publish-your-app/msix/publish-update-to-your-app-on-store).
 

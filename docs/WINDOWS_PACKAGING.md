@@ -57,7 +57,7 @@ Do not recreate the existing application tag.
 gh workflow run windows-installer.yml \
   --repo denuczi/DenucziTV \
   --ref main \
-  -f release_tag=v0.6.4
+  -f release_tag=v0.6.5
 ```
 
 List runs to obtain the ID of the execution you just started:
@@ -72,8 +72,8 @@ Use that numeric ID in place of `RUN_ID`:
 ```bash
 gh run watch RUN_ID --repo denuczi/DenucziTV --exit-status
 gh run download RUN_ID --repo denuczi/DenucziTV \
-  --name denuczitv-windows-v0.6.4-x64 \
-  --dir dist/windows-v0.6.4
+  --name denuczitv-windows-v0.6.5-x64 \
+  --dir dist/windows-v0.6.5
 ```
 
 If the run fails, inspect its log instead of publishing partial output:
@@ -83,7 +83,7 @@ gh run view RUN_ID --repo denuczi/DenucziTV --log-failed
 ```
 
 The same workflow is available under GitHub's Actions tab: choose **Windows
-installer**, then **Run workflow**, branch `main`, input `release_tag=v0.6.4`.
+installer**, then **Run workflow**, branch `main`, input `release_tag=v0.6.5`.
 After a successful run, download the artifact listed at the bottom of that run.
 
 ## Verify and test the result
@@ -91,15 +91,15 @@ After a successful run, download the artifact listed at the bottom of that run.
 The artifact contains:
 
 ```text
-DenucziTV-Setup-0.6.4-x64.exe
-DenucziTV-Setup-0.6.4-x64.exe.sha256
-DenucziTV-Setup-0.6.4-x64.build-info.json
+DenucziTV-Setup-0.6.5-x64.exe
+DenucziTV-Setup-0.6.5-x64.exe.sha256
+DenucziTV-Setup-0.6.5-x64.build-info.json
 ```
 
 Verify the checksum from the artifact directory:
 
 ```bash
-(cd dist/windows-v0.6.4 && sha256sum --check DenucziTV-Setup-0.6.4-x64.exe.sha256)
+(cd dist/windows-v0.6.5 && sha256sum --check DenucziTV-Setup-0.6.5-x64.exe.sha256)
 ```
 
 The build-info file records the actual application source commit/tag, numeric
@@ -123,13 +123,13 @@ it as signed or disable operating-system protections to pass QA.
 ## Publish the tested installer from Linux
 
 Only after the run and native installation tests pass, and only when the
-files are **not already present** on the release (0.6.4 assets have already been
+files are **not already present** on the release (0.6.5 assets have already been
 published):
 
 ```bash
-gh release upload v0.6.4 \
-  dist/windows-v0.6.4/DenucziTV-Setup-0.6.4-x64.exe \
-  dist/windows-v0.6.4/DenucziTV-Setup-0.6.4-x64.exe.sha256 \
+gh release upload v0.6.5 \
+  dist/windows-v0.6.5/DenucziTV-Setup-0.6.5-x64.exe \
+  dist/windows-v0.6.5/DenucziTV-Setup-0.6.5-x64.exe.sha256 \
   --repo denuczi/DenucziTV
 ```
 
@@ -140,7 +140,11 @@ unsigned status to release notes after actual QA. Preserve the existing Linux
 installer and other assets.
 
 If native testing requires application code fixes, create a new application
-version and tag rather than silently distributing changed code under v0.6.4.
+version and tag rather than silently distributing changed code under v0.6.5.
+
+## Verified 0.6.5 build
+
+[Windows installer workflow run 44097945590](https://github.com/denuczi/DenucziTV/actions/runs/44097945590) completed successfully against immutable tag `v0.6.5`: formatting, analysis, tests, Windows x64 release build, Inno Setup 7 packaging, verification and artifact upload. The published standalone installer is `DenucziTV-Setup-0.6.5-x64.exe`. CI success is not a substitute for a separately documented Windows installation and playback QA session.
 
 ## Verified 0.6.4 build
 

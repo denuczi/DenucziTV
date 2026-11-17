@@ -1,4 +1,4 @@
-# Extended M3U playlist accounts (0.6.5 development)
+# Extended M3U playlist accounts (0.6.5)
 
 ## Supported sources
 
@@ -47,7 +47,7 @@ Both `&` and repeated `|` delimiters work, in any header order. Header names are
 - Only HTTP(S) stream URLs are accepted. Playback of a specific stream depends on the remote server, codec support, and optional headers; successfully importing a catalog does not guarantee every stream will play.
 - The Live TV **HLS (.m3u8) / MPEG-TS (.ts)** format switch is only shown for Xtream accounts, where it changes the generated provider URL. For M3U playlists, the user-provided stream URL and pipe headers are used unchanged, and the format switch is not shown.
 
-## QA before merging
+## QA and regression checklist
 
 1. Run `flutter gen-l10n`, `dart format`, `flutter analyze --fatal-infos --fatal-warnings`, `flutter test --concurrency=1 test/m3u`, and the complete Flutter test suite.
 2. On Debian KDE, import a local file, cancel the file picker, import a remote URL with four redirects, and verify the five-redirect and oversized-file errors.
@@ -56,4 +56,4 @@ Both `&` and repeated `|` delimiters work, in any header order. Header names are
 5. Test strict movie classification: MP4/MKV/AVI, explicit per-entry VOD for `.m3u8`, groups named Movies/Cinema containing live channels, consecutive entries without marker leakage, and rejection of genuine HLS segment manifests. Confirm the TS/HLS switch is hidden for M3U but remains visible for Xtream. Test movie playback, Live TV numbers and keyboard navigation, and confirm Series is hidden for M3U accounts. Verify refresh preserves data on network failure.
 6. Repeat the native file-picker and playback tests on Windows 10/11 for EXE and Microsoft Store MSIX; Linux tests cannot validate those distributions.
 
-No changes to versions, release tags, packaging identities or existing secure-storage keys are required.
+M3U support first shipped with the standalone `v0.6.5` release. Microsoft Store updates use a separate certification and distribution channel.
