@@ -1,16 +1,98 @@
 # Microsoft Store distribution (MSIX)
 
-**DenucziTV 0.6.3 has passed Microsoft Store certification and is published.**
-The public listing is [DenucziTV on Microsoft Store](https://apps.microsoft.com/detail/9p25pqphwdvr), Store ID `9P25PQPHWDVR` (first publication: November 11, 2026).
+DenucziTV has an existing Microsoft Store listing:
+[DenucziTV](https://apps.microsoft.com/detail/9p25pqphwdvr)
+(Product ID `9P25PQPHWDVR`). The original 0.6.3 version was certified and
+published. A separate 0.6.4 submission was previously prepared; its final
+public distribution status must be verified in Partner Center.
 
-**Release channel distinction (November 17, 2026):** DenucziTV
-[0.6.5 is published on GitHub](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.5)
-as standalone EXE and DEB installers, but this document still describes the
-original **0.6.3 Microsoft Store submission**. Publishing the GitHub Release
-neither uploads an MSIX nor updates Store customers. A Store 0.6.4 submission
-requires versioned MSIX metadata, updated packaging checks, its own QA, and
-Partner Center certification. Do not change the original 0.6.3 records below
-until a new Store package has actually been approved and distributed.
+The standalone GitHub Release
+[`v0.6.5`](https://github.com/denuczi/DenucziTV/releases/tag/v0.6.5)
+is already available, but publishing an EXE or DEB does not update Microsoft Store.
+
+## Preparing the Microsoft Store 0.6.5 update
+
+The next Store submission uses application version `0.6.5+1` and MSIX version
+`1.6.5.0`, which is higher than both `1.6.3.0` and `1.6.4.0`. Confirm the
+current published package and any pending submissions in Partner Center before
+starting an update. Do not create a new product or replace the existing app
+identity.
+
+| Setting | Required value |
+| --- | --- |
+| Store Product ID | `9P25PQPHWDVR` |
+| Identity Name | `IgnacioSanguina.DenucziTV` |
+| Publisher | `CN=055E0D46-1999-438C-9CDB-4069928369ED` |
+| Package version | `1.6.5.0` |
+| Architecture | `x64` |
+| Languages | `en-US,es-ES` |
+| Capability | `runFullTrust` |
+| Store build define | `DENUCZI_STORE_BUILD=true` |
+| Store package | `DenucziTV-0.6.5-x64-store.msix` (unsigned) |
+| QA package | `DenucziTV-0.6.5-x64-qa.msix` (test-signed) |
+
+Keep the existing tag `v0.6.5` immutable. Commit MSIX preparation changes on
+`main` separately from the standalone release. The Store workflow accepts an
+exact source commit SHA and checks out that revision **once** for source code,
+packaging script, tests, and configuration. No secrets or write permission are
+required. Store builds do not use the GitHub release updater.
+
+### Prepare, verify, and run the workflow
+
+From the repository root on Linux, run each command separately:
+
+```bash
+flutter gen-l10n
+flutter analyze --fatal-infos --fatal-warnings
+flutter test --concurrency=1
+python3 -m unittest discover -s test/packaging -p test_msix_package.py -v
+git diff --check
+```
+
+After reviewing and committing the MSIX changes to `main`, resolve the full
+40-character SHA of the new commit and run the Windows-only workflow. Replace
+`SOURCE_SHA` with that value:
+
+```bash
+gh workflow run microsoft-store.yml --repo denuczi/DenucziTV --ref main -f source_ref=SOURCE_SHA -f confirm_public_version=0.6.5
+gh run list --repo denuczi/DenucziTV --workflow microsoft-store.yml --limit 5
+gh run watch RUN_ID --repo denuczi/DenucziTV --exit-status
+```
+
+On success, the workflow uploads two independent artifacts named
+`denuczitv-msix-store-SOURCE_SHA` and `denuczitv-msix-qa-SOURCE_SHA`.
+Download them into separate directories using `gh run download`, verify their
+SHA-256 files, and compare the `sourceCommit`, `publicVersion`, `packageVersion`,
+`identityName`, `publisher`, and `payloadMatched` fields of the build-info JSON.
+
+### QA and Partner Center submission
+
+Use a dedicated Windows 10/11 test machine or VM for the **QA-signed** MSIX.
+Its public `.cer` certificate may be temporarily imported into
+`LocalMachine\TrustedPeople` for verification and installation. The certificate
+is self-signed and must not be treated as a production certificate, and no
+private key is exported. Avoid changing trust or uninstalling packages from a
+production Store user profile. Test startup, package identity, upgrade behavior,
+M3U import/reproduction including pipe headers, Xtream/Protected Single Link,
+account data retention, and Store-managed updates. Remove only the temporary
+certificate after the QA session.
+
+In the **existing** app in Partner Center, open the Product release section,
+select **Start update**, and upload **only** the **unsigned**
+`DenucziTV-0.6.5-x64-store.msix` under Packages. The QA MSIX and `.cer` are
+never uploaded. Review store listing notes (EN/ES), privacy link, capabilities,
+and certification notes, then submit for certification. Do not claim that 0.6.5
+is available from Microsoft Store until the submission is approved and published.
+
+The Microsoft Store may retain existing MSIX application data across package
+updates when identity is unchanged; this does not imply migration of data
+between the standalone EXE and Microsoft Store editions.
+
+## Historical reference (0.6.3 and 0.6.4)
+
+The remainder is preserved for traceability and describes prior packaging
+procedures and historical versions; commands below are not instructions for
+building 0.6.5.
 
 ## Historical 0.6.4 Microsoft Store update preparation
 

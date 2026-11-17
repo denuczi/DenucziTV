@@ -41,21 +41,21 @@ dev_dependencies:
   msix: ^3.18.0
 
 # Microsoft Store packaging identity. Keep this in sync with Partner Center.
-# Standalone releases use 0.6.5+1. Store packaging remains at 0.6.4
-# until a separate Microsoft Store submission updates this configuration.
+# Standalone release and Store build use 0.6.5+1. Store distribution
+# remains independently managed by Microsoft Store.
 msix_config:
   identity_name: IgnacioSanguina.DenucziTV
   publisher: "CN=055E0D46-1999-438C-9CDB-4069928369ED"
   publisher_display_name: Ignacio Sanguina
   display_name: DenucziTV
-  msix_version: 1.6.4.0
+  msix_version: 1.6.5.0
   architecture: x64
   build_windows: false
   languages: en-US,es-ES
   capabilities: runFullTrust
   logo_path: assets/branding/denuczitv_app_icon.png
   output_path: build/store_msix
-  output_name: DenucziTV-0.6.4-x64
+  output_name: DenucziTV-0.6.5-x64
 
 flutter:
   generate: true
